@@ -1,6 +1,6 @@
 [submodule "opendbc"]
 	path = opendbc
-	url = https://github.com/flow-drive-ai/opendbc
+	url = https://github.com/phr00t/opendbc
 [submodule "panda"]
 	path = panda
 	url = https://github.com/flow-drive-ai/panda
