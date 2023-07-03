@@ -1,8 +1,6 @@
 ###
 #
-# TODO:
-# - set flowpilot to enable on SET button instead of CRUISE (or whatever)
-# - interface.py for hyundai kona ev should have steer to 0 set
+# TODO: (WFD = Wait for actual device)
 # - improve vEgo/Clu11 speed accuracy by adding the speed decimal as in OPKR carstate
 # - replace update_v_cruise with simple button control from OPKR (4mph increments etc.)
 # - add cruise control button spamming below
@@ -10,6 +8,7 @@
 # - disable forward collision warning
 #   - controlsd/interface look for fcw and needBrake
 # - make sure driver monitoring is disabled
+# - set flowpilot to enable on SET button instead of CRUISE (or whatever) *WFD*
 
 from cereal import car
 from common.conversions import Conversions as CV
