@@ -45,7 +45,10 @@ class DesireHelper:
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
 
-    if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
+    blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
+                          (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
+
+    if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX or blindspot_detected:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
     else:
@@ -63,9 +66,6 @@ class DesireHelper:
         torque_applied = carstate.steeringPressed and \
                          ((carstate.steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                           (carstate.steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
-
-        blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
-                              (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
