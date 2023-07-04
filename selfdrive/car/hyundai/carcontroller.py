@@ -1,13 +1,12 @@
 ###
 #
 # TODO: (WFD = Wait for actual device)
-# - improve vEgo/Clu11 speed accuracy by adding the speed decimal as in OPKR carstate
-# - replace update_v_cruise with simple button control from OPKR (4mph increments etc.)
-# - add cruise control button spamming below
+# - replace update_v_cruise with simple button control from OPKR (4mph increments etc.) *WFD*
+# - add cruise control button spamming below *WFD*
 #   - comment out the distspeed stuff, as the model itself might be better at speed deltas
-# - disable forward collision warning
-#   - controlsd/interface look for fcw and needBrake
-# - make sure driver monitoring is disabled
+# - improve vEgo/Clu11 speed accuracy by adding the speed decimal as in OPKR carstate
+#   - may not be needed, as ret.vEgo seems to already get accurate data from wheels
+#     (just need to convert to MPH)
 # - set flowpilot to enable on SET button instead of CRUISE (or whatever) *WFD*
 
 from cereal import car
