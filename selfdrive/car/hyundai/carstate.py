@@ -274,6 +274,7 @@ class CarState(CarStateBase):
       ("ACCEnable", "TCS13"),
       ("ACC_REQ", "TCS13"),
       ("DriverBraking", "TCS13"),
+      ("BrakeLight", "TCS13"),
       ("StandStill", "TCS13"),
       ("PBRAKE_ACT", "TCS13"),
 
