@@ -20,7 +20,7 @@ public class SetUpScreen extends ScreenAdapter {
     @Override
     public void show() {
 
-        if (!params.existsAndCompare("HasAcceptedTerms", true)) {
+        /*if (!params.existsAndCompare("HasAcceptedTerms", true)) {
             appContext.setScreen(new TermsScreen(appContext));
             return;
         }
@@ -33,7 +33,7 @@ public class SetUpScreen extends ScreenAdapter {
         if (!params.existsAndCompare("CompletedTrainingVersion", true)){
             appContext.setScreen(new TrainingScreen(appContext));
             return;
-        }
+        }*/
 
         if (!params.exists(fcamIntrinsicParam)){
            appContext.launcher.startSensorD();

@@ -304,18 +304,19 @@ def uploader_fn(exit_event):
 
 
 def main():
-  parser = argparse.ArgumentParser(prog='Flowpilot uploader')
-  parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Get verbose logs",)
+  return # disable uploader
+  #parser = argparse.ArgumentParser(prog='Flowpilot uploader')
+  #parser.add_argument("-v", "--verbose", action="store_true", default=False, help="Get verbose logs",)
 
-  args = parser.parse_args()
+  #args = parser.parse_args()
 
-  log_level = logging.DEBUG if args.verbose else logging.ERROR
-  logging.basicConfig(
-      level=log_level,
-      format="%(asctime)s %(filename)s [%(levelname)s] %(message)s",
-  )
+  #log_level = logging.DEBUG if args.verbose else logging.ERROR
+  #logging.basicConfig(
+  #    level=log_level,
+  #    format="%(asctime)s %(filename)s [%(levelname)s] %(message)s",
+  #)
 
-  uploader_fn(threading.Event())
+  #uploader_fn(threading.Event())
 
 
 if __name__ == "__main__":

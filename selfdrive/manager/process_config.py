@@ -37,7 +37,7 @@ procs = [
   ManagerProcess("flowpilot", "./gradlew", args=["desktop:run"], rename=False, offroad=True, platform=["desktop"], pipe_std=False),
   ManagerProcess("pandad", "pandad", offroad=True),
   ManagerProcess("loggerd", "./selfdrive/loggerd/loggerd", enabled=True, onroad=False, callback=logging),
-  ManagerProcess("uploader", "uploader", enabled=is_android(), offroad=True),
+  #ManagerProcess("uploader", "uploader", enabled=is_android(), offroad=True),
   ManagerProcess("deleter", "deleter", enabled=True, offroad=True),
   ManagerProcess("ubloxd", "./selfdrive/locationd/ubloxd", onroad=False),
   ManagerProcess("laikad", "laikad"),
