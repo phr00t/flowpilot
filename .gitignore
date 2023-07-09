@@ -17,8 +17,6 @@ data
 c_generated_code/
 acados_ocp_lat.json
 acados_ocp_long.json
-Definitions.java
-CarDefinitions.java
 .flowpilot_db
 android/release
 libs/capnpc-java/capnproto-java/
