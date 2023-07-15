@@ -3,7 +3,7 @@
 	url = https://github.com/phr00t/opendbc
 [submodule "panda"]
 	path = panda
-	url = https://github.com/flow-drive-ai/panda
+	url = https://github.com/phr00t/panda
 [submodule "cereal"]
 	path = cereal
 	url = https://github.com/flow-drive-ai/cereal
