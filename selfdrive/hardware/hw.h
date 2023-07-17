@@ -1,7 +1,7 @@
 #pragma once
 
 #include "selfdrive/hardware/base.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
 #ifdef QCOM
 #include "selfdrive/hardware/eon/hardware.h"
