@@ -88,6 +88,7 @@ def main() -> NoReturn:
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
+        print("Panda not found, waiting...")
         continue
 
       print(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
