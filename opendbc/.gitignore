@@ -1,0 +1,24 @@
+# Project specific
+can/msg.capnp.c++
+can/msg.capnp.h
+
+.ccls-cache
+
+.mypy_cache/
+*.pyc
+*.os
+*.o
+*.tmp
+*.dylib
+.*.swp
+.DS_Store
+.sconsign.dblite
+
+can/*.so
+can/*.a
+can/build/
+can/obj/
+can/packer_pyx.cpp
+can/parser_pyx.cpp
+can/packer_pyx.html
+can/parser_pyx.html

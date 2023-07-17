@@ -1,0 +1,8 @@
+Cython==0.29.30
+flake8==3.7.9
+Jinja2==3.0.3
+numpy==1.22.4
+pycapnp==1.0.0
+pylint==2.4.3
+pyyaml==6.0
+scons==4.3.0
