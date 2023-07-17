@@ -10,7 +10,6 @@ from functools import cmp_to_key
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:
@@ -19,7 +18,7 @@ def get_expected_signature(panda: Panda) -> bytes:
   try:
     return Panda.get_signature_from_firmware(fn)
   except Exception:
-    cloudlog.exception("Error computing expected signature")
+    print("Error computing expected signature")
     return b""
 
 
@@ -30,26 +29,26 @@ def flash_panda(panda_serial: str) -> Panda:
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
-  cloudlog.warning(f"Panda {panda_serial} connected, version: {panda_version}, signature {panda_signature.hex()[:16]}, expected {fw_signature.hex()[:16]}")
+  print(f"Panda {panda_serial} connected, version: {panda_version}, signature {panda_signature.hex()[:16]}, expected {fw_signature.hex()[:16]}")
 
   if panda.bootstub or panda_signature != fw_signature:
-    cloudlog.info("Panda firmware out of date, update required")
+    print("Panda firmware out of date, update required")
     panda.flash()
-    cloudlog.info("Done flashing")
+    print("Done flashing")
 
   if panda.bootstub:
     bootstub_version = panda.get_version()
-    cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. Bootstub version: {bootstub_version}")
+    print(f"Flashed firmware not booting, flashing development bootloader. Bootstub version: {bootstub_version}")
     panda.recover()
-    cloudlog.info("Done flashing bootloader")
+    print("Done flashing bootloader")
 
   if panda.bootstub:
-    cloudlog.info("Panda still not booting, exiting")
+    print("Panda still not booting, exiting")
     raise AssertionError
 
   panda_signature = panda.get_signature()
   if panda_signature != fw_signature:
-    cloudlog.info("Version mismatch after flashing, exiting")
+    print("Version mismatch after flashing, exiting")
     raise AssertionError
 
   return panda
@@ -83,7 +82,7 @@ def main() -> NoReturn:
 
       # Flash all Pandas in DFU mode
       for p in PandaDFU.list():
-        cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
+        print(f"Panda in DFU mode found, flashing recovery {p}")
         PandaDFU(p).recover()
       time.sleep(1)
 
@@ -91,7 +90,7 @@ def main() -> NoReturn:
       if len(panda_serials) == 0:
         continue
 
-      cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
+      print(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
       pandas = []
@@ -103,7 +102,7 @@ def main() -> NoReturn:
         health = panda.health()
         if health["heartbeat_lost"]:
           params.put_bool("PandaHeartbeatLost", True)
-          cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+          print("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
 
         #if first_run:
         #  cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
@@ -121,7 +120,7 @@ def main() -> NoReturn:
         p.close()
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
-      cloudlog.exception("Panda USB exception while setting up")
+      print("Panda USB exception while setting up")
       continue
 
     first_run = False
