@@ -29,7 +29,7 @@
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#include "boardd/pigeon.h"
+#include "selfdrive/boardd/pigeon.h"
 
 // -- Multi-panda conventions --
 // Ordering:
