@@ -26,6 +26,10 @@ def get_expected_signature(panda: Panda) -> bytes:
 
 
 def flash_panda(panda_serial: str) -> Panda:
+
+  # debug no flash panda
+  return Panda(panda_serial)
+
   panda = Panda(panda_serial)
 
   fw_signature = get_expected_signature(panda)
