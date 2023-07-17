@@ -14,10 +14,10 @@ export ZMQ_MESSAGING_PROTOCOL="TCP" # TCP, INTER_PROCESS, SHARED_MEMORY
 #export DEVICE_ADDR="127.0.0.1" # connect to external device running flowpilot over same network. useful for livestreaming.
 
 export SIMULATION="1"
-#export FINGERPRINT="HONDA CIVIC 2016"
+export FINGERPRINT="HYUNDAI KONA ELECTRIC 2019"
 
 ## android specific ##
-export USE_SNPE="0" # only works for snapdragon devices.
+export USE_SNPE="1" # only works for snapdragon devices.
 
 
 if ! command -v tmux &> /dev/null
