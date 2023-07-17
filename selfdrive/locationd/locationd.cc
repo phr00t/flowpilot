@@ -359,7 +359,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
-/*void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
+void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
   if(!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
     this->determine_gps_mode(current_time);
@@ -438,7 +438,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   this->last_gps_msg = sensor_time;
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
-}*/
+}
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
   this->car_speed = std::abs(log.getVEgo());
