@@ -78,7 +78,7 @@ def main() -> NoReturn:
 
   while True:
     try:
-      params.delete("PandaSignatures")
+      params.remove("PandaSignatures")
 
       # Flash all Pandas in DFU mode
       for p in PandaDFU.list():
