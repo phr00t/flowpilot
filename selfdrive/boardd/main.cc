@@ -1,11 +1,11 @@
 #include <cassert>
 
-#include "selfdrive/boardd/boardd.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
-  printf("starting boardd");
+  LOGW("starting boardd");
 
   if (!Hardware::PC()) {
     int err;
