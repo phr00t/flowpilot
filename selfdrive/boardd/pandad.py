@@ -130,5 +130,8 @@ def main() -> NoReturn:
     os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
     subprocess.run(["./boardd", *panda_serials], check=True)
 
+def run():
+  main()
+
 if __name__ == "__main__":
   main()
