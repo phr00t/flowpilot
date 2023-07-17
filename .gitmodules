@@ -1,12 +1,3 @@
-[submodule "opendbc"]
-	path = opendbc
-	url = https://github.com/phr00t/opendbc
-[submodule "panda"]
-	path = panda
-	url = https://github.com/phr00t/panda
-[submodule "cereal"]
-	path = cereal
-	url = https://github.com/flow-drive-ai/cereal
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = https://github.com/flowdriveai/rednose.git
