@@ -25,6 +25,10 @@ def get_expected_signature(panda: Panda) -> bytes:
 def flash_panda(panda_serial: str) -> Panda:
   panda = Panda(panda_serial)
 
+  # debug skip flashing as its broken in flowpilot
+  # use freeon clone to flash panda if needed running OPKR from phr00t's openpilot rep
+  return panda
+
   fw_signature = get_expected_signature(panda)
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
@@ -99,11 +103,12 @@ def main() -> NoReturn:
         pandas.append(flash_panda(serial))
 
       # check health for lost heartbeat
-      for panda in pandas:
-        health = panda.health()
-        if health["heartbeat_lost"]:
-          params.put_bool("PandaHeartbeatLost", True)
-          print("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+      # OPKR panda doesn't seem to have this
+      #for panda in pandas:
+      #  health = panda.health()
+      #  if health["heartbeat_lost"]:
+      #    params.put_bool("PandaHeartbeatLost", True)
+      #    print("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
 
         #if first_run:
         #  cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
