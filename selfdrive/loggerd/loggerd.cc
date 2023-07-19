@@ -111,7 +111,8 @@ int main(int argc, char** argv) {
     assert(ret == 0);
   }
 
-  loggerd_thread();
+  // disable logger for performance/thermal reasons
+  //loggerd_thread();
 
   return 0;
 }
