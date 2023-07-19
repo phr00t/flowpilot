@@ -93,7 +93,7 @@ class CarState(CarStateBase):
     ret.steerFaultTemporary = cp.vl["MDPS12"]["CF_Mdps_ToiUnavail"] != 0 or cp.vl["MDPS12"]["CF_Mdps_ToiFlt"] != 0
 
     # TODO: enable/disable open pilot
-    #ret.cruiseState.available = cp.vl["TCS13"]["ACCEnable"] == 0
+    ret.cruiseState.available = True # open pilot is available to be used
     #ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
     #ret.cruiseState.standstill = False
 
