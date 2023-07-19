@@ -196,6 +196,7 @@ class SubMaster:
         continue
 
       s = msg.which()
+      original_s = s
 
       # handle swapped camera selection
       if (s not in self.rcv_time) or (s not in self.freq) or (s not in self.recv_dts):
@@ -216,7 +217,7 @@ class SubMaster:
 
       self.rcv_time[s] = cur_time
       self.rcv_frame[s] = self.frame
-      self.data[s] = getattr(msg, s)
+      self.data[s] = getattr(msg, original_s)
       self.logMonoTime[s] = msg.logMonoTime
       self.valid[s] = msg.valid
 
