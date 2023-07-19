@@ -31,16 +31,25 @@ int main(int argc, char **argv) {
 
   uint32_t last_frame_id = 0;
 
+  //debug
+  printf("modelparsed started")
+
   while (!do_exit) {
     if (poller->poll(100).size() < 1){
+      //debug
+      printf("modelparsed continuing...")
       continue;
     }
 
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
       if (errno == EINTR) {
+        //debug
+        printf("error in modelparsed!")
         do_exit = true;
       }
+      //debug
+      printf("no message..")
       continue;
     }
 
@@ -55,7 +64,10 @@ int main(int argc, char **argv) {
 
     uint32_t vipc_dropped_frames = modelRaw.getFrameId() - last_frame_id - 1;
     
-    model_publish(pm, modelRaw.getFrameId(), modelRaw.getFrameIdExtra(), modelRaw.getFrameId(), modelRaw.getFrameDropPerc()/100, 
+    //debug
+    printf("publishing parsed model!")
+
+    model_publish(pm, modelRaw.getFrameId(), modelRaw.getFrameIdExtra(), modelRaw.getFrameId(), modelRaw.getFrameDropPerc()/100,
                   model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getModelExecutionTime(), modelRaw.getValid());
     posenet_publish(pm, modelRaw.getFrameId(), vipc_dropped_frames, model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getValid());
 
