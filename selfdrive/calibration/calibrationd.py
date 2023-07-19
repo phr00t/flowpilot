@@ -120,6 +120,10 @@ class Calibrator:
         angle_std_threshold = MAX_VEL_ANGLE_STD
         certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                             (self.valid_blocks < INPUTS_NEEDED))
+
+        # debug
+        print("Straight and fast? " + str(straight_and_fast) + ", certain_if_calib? " + str(certain_if_calib))
+
         if not (straight_and_fast and certain_if_calib):
             return None
 
@@ -200,6 +204,10 @@ def calibrationd_thread(sm=None, pm=None):
         sm.update()
 
         if sm.updated['cameraOdometry'] and sm.valid['cameraOdometry']:
+
+            #debug
+            print("Got valid camera data")
+
             calibrator.handle_v_ego(sm['carState'].vEgo)
             new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                                 sm['cameraOdometry'].rot,
@@ -210,6 +218,10 @@ def calibrationd_thread(sm=None, pm=None):
 
         # 4Hz driven by cameraOdometry
         if sm.frame % 5 == 0:
+
+            #debug
+            print("Calibration thread running")
+
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
                 calibrator.reset()
                 calibrator.params.put_bool("ResetExtrinsicCalibration", False)
