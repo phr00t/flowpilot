@@ -274,9 +274,9 @@ void can_recv_thread(std::vector<Panda *> pandas) {
     if (remaining > 0) {
       std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
-      if (ignition) {
-        LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
-      }
+      //if (ignition) {
+      //  LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
+      //}
       next_frame_time = cur_time;
     }
 
