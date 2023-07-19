@@ -196,6 +196,18 @@ class SubMaster:
         continue
 
       s = msg.which()
+
+      # handle swapped camera selection
+      if (s not in self.rcv_time) or (s not in self.freq) or (s not in self.recv_dts):
+        if s == "roadCameraState":
+          s = "wideRoadCameraState"
+        elif s == "roadCameraBuffer":
+          s = "wideRoadCameraBuffer"
+        elif s == "wideRoadCameraState":
+          s = "roadCameraState"
+        elif s == "wideRoadCameraBuffer":
+          s = "roadCameraBuffer"
+
       self.updated[s] = True
 
       if self.rcv_time[s] > 1e-5 and self.freq[s] > 1e-5 and (s not in self.non_polled_services) \
