@@ -78,42 +78,14 @@ interfaces = load_interfaces(interface_names)
 # **** for use live only ****
 def fingerprint(logcan, sendcan, num_pandas):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
-  skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   ecu_rx_addrs = set()
   params = Params()
 
-  if not skip_fw_query:
-    # Vin query only reliably works through OBDII
-    bus = 1
+  # just skip VIN to speed things up
+  vin, vin_rx_addr = VIN_UNKNOWN, 0
+  exact_fw_match, fw_candidates, car_fw = True, set(), []
+  cached = False
 
-    cached_params = params.get("CarParamsCache")
-    if cached_params is not None:
-      cached_params = car.CarParams.from_bytes(cached_params)
-      if cached_params.carName == "mock":
-        cached_params = None
-
-    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
-      cloudlog.warning("Using cached CarParams")
-      vin, vin_rx_addr = cached_params.carVin, 0
-      car_fw = list(cached_params.carFw)
-      cached = True
-    else:
-      cloudlog.warning("Getting VIN & FW versions")
-      set_obd_multiplexing(params, True)
-      vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
-      ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
-      cached = False
-
-    exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
-  else:
-    vin, vin_rx_addr = VIN_UNKNOWN, 0
-    exact_fw_match, fw_candidates, car_fw = True, set(), []
-    cached = False
-
-  if not is_valid_vin(vin):
-    cloudlog.event("Malformed VIN", vin=vin, error=True)
-    vin = VIN_UNKNOWN
   cloudlog.warning("VIN %s", vin)
   params.put("CarVin", vin)
 
