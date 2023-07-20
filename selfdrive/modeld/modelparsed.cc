@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <sched.h>
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/modeld/models/driving.h"
@@ -25,31 +26,26 @@ int main(int argc, char **argv) {
 
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "modelRaw"));
-  std::unique_ptr<Poller> poller(Poller::create());
   assert(subscriber != NULL);
-  poller->registerSocket(subscriber.get());
 
   uint32_t last_frame_id = 0;
 
   //debug
-  printf("modelparsed started");
+  printf("modelparsed started\n");
 
   while (!do_exit) {
-    if (poller->poll(100).size() < 1){
-      //debug
-      printf("modelparsed continuing...");
-      continue;
-    }
+    // wait...
+    sched_yield();
 
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
       if (errno == EINTR) {
         //debug
-        printf("error in modelparsed!");
+        printf("error in modelparsed!\n");
         do_exit = true;
       }
       //debug
-      printf("no message..");
+      printf("no message..\n");
       continue;
     }
 
@@ -65,7 +61,7 @@ int main(int argc, char **argv) {
     uint32_t vipc_dropped_frames = modelRaw.getFrameId() - last_frame_id - 1;
     
     //debug
-    printf("publishing parsed model!");
+    printf("publishing parsed model!\n");
 
     model_publish(pm, modelRaw.getFrameId(), modelRaw.getFrameIdExtra(), modelRaw.getFrameId(), modelRaw.getFrameDropPerc()/100,
                   model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getModelExecutionTime(), modelRaw.getValid());
