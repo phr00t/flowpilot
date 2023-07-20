@@ -10,16 +10,6 @@ ExitHandler do_exit;
 float model_raw_preds[NET_OUTPUT_SIZE];
 
 int main(int argc, char **argv) {
-
-  // TODO: fix android hangs on running this as root. 
-  // if (!Hardware::PC()) {
-  //   int ret;
-  //   ret = util::set_realtime_priority(54);
-  //   assert(ret == 0);
-  //   util::set_core_affinity({7});
-  //   assert(ret == 0);
-  // }
-
   AlignedBuffer aligned_buf;
 
   PubMaster pm({"modelV2", "cameraOdometry"});
@@ -30,9 +20,6 @@ int main(int argc, char **argv) {
 
   uint32_t last_frame_id = 0;
 
-  //debug
-  printf("modelparsed started\n");
-
   while (!do_exit) {
     // wait...
     sched_yield();
@@ -40,12 +27,8 @@ int main(int argc, char **argv) {
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
       if (errno == EINTR) {
-        //debug
-        printf("error in modelparsed!\n");
         do_exit = true;
       }
-      //debug
-      printf("no message..\n");
       continue;
     }
 
@@ -59,9 +42,6 @@ int main(int argc, char **argv) {
       model_raw_preds[i] = model_raw[i];
 
     uint32_t vipc_dropped_frames = modelRaw.getFrameId() - last_frame_id - 1;
-    
-    //debug
-    printf("publishing parsed model!\n");
 
     model_publish(pm, modelRaw.getFrameId(), modelRaw.getFrameIdExtra(), modelRaw.getFrameId(), modelRaw.getFrameDropPerc()/100,
                   model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getModelExecutionTime(), modelRaw.getValid());
