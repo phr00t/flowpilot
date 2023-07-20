@@ -203,15 +203,18 @@ def calibrationd_thread(sm=None, pm=None):
     while True:
         sm.update()
 
-        if sm.updated['cameraOdometry'] and sm.valid['cameraOdometry']:
+        if sm.updated['cameraOdometry']:
 
             #debug
-            print("Got valid camera data")
+            print("Got camera data...")
+
+            if not sm.valid['cameraOdometry']:
+                print(" but it wasn't valid?");
 
             calibrator.handle_v_ego(sm['carState'].vEgo)
             new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
-                                                sm['cameraOdometry'].rot,
-                                                sm['cameraOdometry'].transStd)
+                                                 sm['cameraOdometry'].rot,
+                                                 sm['cameraOdometry'].transStd)
             
             if DEBUG and new_rpy is not None:
                 cloudlog.info('got new rpy', new_rpy)

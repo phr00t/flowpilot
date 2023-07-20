@@ -239,6 +239,10 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
     calibrator.not_car = sm['carParams'].notCar
 
     if sm.updated['cameraOdometry']:
+
+      #debug
+      print("got cameraOdometry in locationd")
+
       calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                            sm['cameraOdometry'].rot,
@@ -250,6 +254,10 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
 
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
+
+      #debug
+      print("locationd calibration thread running...")
+
       calibrator.send_data(pm)
 
 
