@@ -292,7 +292,7 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   const auto &t_std = net_outputs.wide_from_device_euler.std;
 
   //debug
-  printf("posenet_valid:%d dropped_frames:%d\n", valid, vipc_dropped_frames)
+  printf("posenet_valid:%d dropped_frames:%d\n", valid, vipc_dropped_frames);
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
