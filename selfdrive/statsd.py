@@ -50,7 +50,11 @@ class StatLog:
     self._send(f"{name}:{value}|{METRIC_TYPE.SAMPLE}")
 
 
-def main() -> NoReturn:
+def main():
+
+  #disable statsd
+  return
+
   dongle_id = Params().get("DongleId", encoding='utf-8')
   def get_influxdb_line(measurement: str, value: Union[float, Dict[str, float]],  timestamp: datetime, tags: dict) -> str:
     res = f"{measurement}"
