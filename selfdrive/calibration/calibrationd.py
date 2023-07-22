@@ -211,9 +211,11 @@ def calibrationd_thread(sm=None, pm=None):
         # 4Hz driven by cameraOdometry
         if sm.frame % 5 == 0:
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
+                calibrator.params.put_bool("ResetExtrinsicCalibration", False)
+                self.params.remove("CalibrationParams")
                 calibrator.reset()
                 self.update_status() # make sure we update status after a reset
-                calibrator.params.put_bool("ResetExtrinsicCalibration", False)
+                print("External calibration reset!")
             calibrator.send_data(pm)
 
 def main():
