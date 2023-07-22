@@ -34,6 +34,8 @@ class CarState(CarStateBase):
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
 
+    self.openPilotEnabled = False
+
     self.is_metric = False
     self.buttons_counter = 0
 
@@ -92,9 +94,17 @@ class CarState(CarStateBase):
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
     ret.steerFaultTemporary = cp.vl["MDPS12"]["CF_Mdps_ToiUnavail"] != 0 or cp.vl["MDPS12"]["CF_Mdps_ToiFlt"] != 0
 
-    # TODO: enable/disable open pilot
     ret.cruiseState.available = True # open pilot is available to be used
-    #ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
+
+    cruiseMainButton = cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"]
+    cruiseUpDownNow = cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"]
+
+    if cruiseUpDownNow == Buttons.SET_DECEL:
+      self.openPilotEnabled = True
+    elif cruiseUpDownNow == Buttons.CANCEL:
+      self.openPilotEnabled = False
+
+    ret.cruiseState.enabled = self.openPilotEnabled
     #ret.cruiseState.standstill = False
 
     # TODO: Find brake pressure
@@ -136,8 +146,8 @@ class CarState(CarStateBase):
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
-    self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
-    self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
+    self.cruise_buttons.extend(cruiseUpDownNow)
+    self.main_buttons.extend(cruiseMainButton)
 
     return ret
 
