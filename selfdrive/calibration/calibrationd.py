@@ -212,9 +212,9 @@ def calibrationd_thread(sm=None, pm=None):
         if sm.frame % 5 == 0:
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
                 calibrator.params.put_bool("ResetExtrinsicCalibration", False)
-                self.params.remove("CalibrationParams")
+                calibrator.params.remove("CalibrationParams")
                 calibrator.reset()
-                self.update_status() # make sure we update status after a reset
+                calibrator.update_status() # make sure we update status after a reset
                 print("External calibration reset!")
             calibrator.send_data(pm)
 
