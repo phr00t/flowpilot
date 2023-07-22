@@ -122,7 +122,7 @@ class Calibrator:
                             (self.valid_blocks < INPUTS_NEEDED))
 
         # debug
-        print("sat:" + str(straight_and_fast) + " ccalib:" + str(certain_if_calib) + " rot[2]:" + "{:.2f}".format(vcurv) + " trans[0]:" + "{:.2f}".format(trans[0]))
+        print("sat:" + str(straight_and_fast) + " ccalib:" + str(certain_if_calib) + " rot[2]:" + "{:.2f}".format(rot[2]) + " trans[0]:" + "{:.2f}".format(trans[0]))
 
         if not (straight_and_fast and certain_if_calib):
             return None
