@@ -42,8 +42,8 @@ int main(int argc, char **argv) {
       model_raw_preds[i] = model_raw[i];
 
     uint32_t vipc_dropped_frames = modelRaw.getFrameId() - last_frame_id - 1;
-
-    model_publish(pm, modelRaw.getFrameId(), modelRaw.getFrameIdExtra(), modelRaw.getFrameId(), modelRaw.getFrameDropPerc()/100,
+    
+    model_publish(pm, modelRaw.getFrameId(), modelRaw.getFrameIdExtra(), modelRaw.getFrameId(), modelRaw.getFrameDropPerc()/100, 
                   model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getModelExecutionTime(), modelRaw.getValid());
     posenet_publish(pm, modelRaw.getFrameId(), vipc_dropped_frames, model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getValid());
 

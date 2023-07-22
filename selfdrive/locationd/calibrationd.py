@@ -250,10 +250,6 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
 
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
-
-      #debug
-      print("locationd calibration thread running...")
-
       calibrator.send_data(pm)
 
 

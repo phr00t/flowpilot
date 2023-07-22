@@ -66,9 +66,6 @@ class Calibrator:
             return self.rpy
 
     def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
-
-        print("Reset external calibration data...")
-
         if not np.isfinite(rpy_init).all():
             self.rpy = RPY_INIT.copy()
         else:
@@ -123,7 +120,6 @@ class Calibrator:
         angle_std_threshold = MAX_VEL_ANGLE_STD
         certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                             (self.valid_blocks < INPUTS_NEEDED))
-
         if not (straight_and_fast and certain_if_calib):
             return None
 
@@ -203,7 +199,7 @@ def calibrationd_thread(sm=None, pm=None):
     while True:
         sm.update()
 
-        if sm.updated['cameraOdometry']:
+        if sm.updated['cameraOdometry'] and sm.valid['cameraOdometry']:
             calibrator.handle_v_ego(sm['carState'].vEgo)
             new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                                  sm['cameraOdometry'].rot,
