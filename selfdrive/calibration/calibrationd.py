@@ -66,6 +66,9 @@ class Calibrator:
             return self.rpy
 
     def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
+
+        print("Reset external calibration data...")
+
         if not np.isfinite(rpy_init).all():
             self.rpy = RPY_INIT.copy()
         else:
@@ -213,6 +216,7 @@ def calibrationd_thread(sm=None, pm=None):
         if sm.frame % 5 == 0:
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
                 calibrator.reset()
+                self.update_status() # make sure we update status after a reset
                 calibrator.params.put_bool("ResetExtrinsicCalibration", False)
             calibrator.send_data(pm)
 
