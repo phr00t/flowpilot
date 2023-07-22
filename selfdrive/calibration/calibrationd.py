@@ -199,7 +199,7 @@ def calibrationd_thread(sm=None, pm=None):
     while True:
         sm.update()
 
-        if sm.updated['cameraOdometry'] and sm.valid['cameraOdometry']:
+        if sm.updated['cameraOdometry']:
             calibrator.handle_v_ego(sm['carState'].vEgo)
             new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                                  sm['cameraOdometry'].rot,
