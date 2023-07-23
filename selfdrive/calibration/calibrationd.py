@@ -204,6 +204,10 @@ def calibrationd_thread(sm=None, pm=None):
         sm.update()
 
         if sm.updated['cameraOdometry']:
+
+            #debug
+            print("Cam valid? " + str(sm.valid['cameraOdometry']))
+
             calibrator.handle_v_ego(sm['carState'].vEgo)
             new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                                  sm['cameraOdometry'].rot,
@@ -215,11 +219,8 @@ def calibrationd_thread(sm=None, pm=None):
         # 4Hz driven by cameraOdometry
         if sm.frame % 5 == 0:
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
-                calibrator.params.put_bool("ResetExtrinsicCalibration", False)
-                calibrator.params.remove("CalibrationParams")
                 calibrator.reset()
-                calibrator.update_status() # make sure we update status after a reset
-                print("External calibration reset!")
+                calibrator.params.put_bool("ResetExtrinsicCalibration", False)
             calibrator.send_data(pm)
 
 def main():
