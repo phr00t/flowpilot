@@ -88,10 +88,19 @@ class Calibrator:
             self.old_rpy = smooth_from
             self.old_rpy_weight = 1.0
 
+    def get_valid_idxs(self) -> List[int]:
+        # exclude current block_idx from validity window
+        before_current = list(range(self.block_idx))
+        after_current = list(range(min(self.valid_blocks, self.block_idx + 1), self.valid_blocks))
+        return before_current + after_current
+
     def update_status(self):
-        if self.valid_blocks > 0:
-            max_rpy_calib = np.array(np.max(self.rpys[:self.valid_blocks], axis=0))
-            min_rpy_calib = np.array(np.min(self.rpys[:self.valid_blocks], axis=0))
+        valid_idxs = self.get_valid_idxs()
+        if valid_idxs:
+            rpys = self.rpys[valid_idxs]
+            self.rpy = np.mean(rpys, axis=0)
+            max_rpy_calib = np.array(np.max(rpys, axis=0))
+            min_rpy_calib = np.array(np.min(rpys, axis=0))
             self.calib_spread = np.abs(max_rpy_calib - min_rpy_calib)
         else:
             self.calib_spread = np.zeros(3)
@@ -110,7 +119,7 @@ class Calibrator:
 
         write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED // 5) == 5)
         if write_this_cycle:
-            self.dump_params()
+            put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
 
     def handle_cam_odom(self, trans, rot, trans_std):
         self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1 / SMOOTH_CYCLES)
@@ -120,10 +129,6 @@ class Calibrator:
         angle_std_threshold = MAX_VEL_ANGLE_STD
         certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                             (self.valid_blocks < INPUTS_NEEDED))
-
-        # debug
-        print("sat:" + str(straight_and_fast) + " ccalib:" + str(certain_if_calib) + " rot[2]:" + "{:.2f}".format(rot[2]) + " trans[0]:" + "{:.2f}".format(trans[0]))
-
         if not (straight_and_fast and certain_if_calib):
             return None
 
@@ -140,8 +145,6 @@ class Calibrator:
             self.block_idx += 1
             self.valid_blocks = max(self.block_idx, self.valid_blocks)
             self.block_idx = self.block_idx % INPUTS_WANTED
-        if self.valid_blocks > 0:
-            self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
 
         self.update_status()
         return new_rpy
@@ -161,9 +164,6 @@ class Calibrator:
 
     def handle_v_ego(self, v_ego):
         self.v_ego = v_ego
-
-    def dump_params(self):
-        self.params.put("CalibrationParams", self.get_msg().to_bytes())
 
     def get_extrinsic_matrix(self): # move to common
         R = rot_from_euler(self.get_smooth_rpy())
@@ -205,13 +205,7 @@ def calibrationd_thread(sm=None, pm=None):
 
         if sm.updated['cameraOdometry'] and sm.valid['cameraOdometry']:
             calibrator.handle_v_ego(sm['carState'].vEgo)
-            new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
-                                                sm['cameraOdometry'].rot,
-                                                sm['cameraOdometry'].transStd)
-
-            # only send data when we've got good data to send
-            if new_rpy is not None and calibrator.valid_blocks > 0:
-                calibrator.send_data(pm)
+            calibrator.handle_cam_odom(sm['cameraOdometry'].trans, sm['cameraOdometry'].rot, sm['cameraOdometry'].transStd)
 
         # 4Hz driven by cameraOdometry
         if sm.frame % 5 == 0:
@@ -219,6 +213,7 @@ def calibrationd_thread(sm=None, pm=None):
                 calibrator.reset()
                 calibrator.update_status()
                 calibrator.params.put_bool("ResetExtrinsicCalibration", False)
+            calibrator.send_data(pm)
 
 
 def main():
