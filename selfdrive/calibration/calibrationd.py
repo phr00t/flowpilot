@@ -120,7 +120,7 @@ class Calibrator:
         write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED // 5) == 5)
         if write_this_cycle:
             self.params.put("CalibrationParams", self.get_msg().to_bytes())
-            calibrator.send_data(pm)
+            self.send_data(pm)
 
     def handle_cam_odom(self, trans, rot, trans_std):
         self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1 / SMOOTH_CYCLES)
