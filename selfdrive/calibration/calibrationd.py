@@ -203,25 +203,23 @@ def calibrationd_thread(sm=None, pm=None):
     while True:
         sm.update()
 
-        if sm.updated['cameraOdometry']:
-
-            #debug
-            print("Cam valid? " + str(sm.valid['cameraOdometry']))
-
+        if sm.updated['cameraOdometry'] and sm.valid['cameraOdometry']:
             calibrator.handle_v_ego(sm['carState'].vEgo)
             new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
-                                                 sm['cameraOdometry'].rot,
-                                                 sm['cameraOdometry'].transStd)
-            
-            if DEBUG and new_rpy is not None:
-                cloudlog.info('got new rpy', new_rpy)
+                                                sm['cameraOdometry'].rot,
+                                                sm['cameraOdometry'].transStd)
+
+            # only send data when we've got good data to send
+            if new_rpy is not None and calibrator.valid_blocks > 0:
+                calibrator.send_data(pm)
 
         # 4Hz driven by cameraOdometry
         if sm.frame % 5 == 0:
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
                 calibrator.reset()
+                calibrator.update_status()
                 calibrator.params.put_bool("ResetExtrinsicCalibration", False)
-            calibrator.send_data(pm)
+
 
 def main():
     calibrationd_thread()
