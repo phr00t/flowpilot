@@ -651,13 +651,10 @@ void boardd_main_thread(std::vector<std::string> serials) {
     // connect to all
     serials = Panda::list();
 
-    // send dummy info if no pandas are connected
+    // exit if no pandas are connected
     if (serials.size() == 0) {
-        while(true) {
-          send_dummy_panda_state(&pm);
-          send_empty_peripheral_state(&pm);
-          util::sleep_for(500);
-        }
+      LOGW("no pandas found, exiting");
+      return;
     }
   }
 
