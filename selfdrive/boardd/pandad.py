@@ -83,7 +83,7 @@ def main() -> NoReturn:
   # debug
   os.environ['MANAGER_DAEMON'] = 'boardd'
   os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-  subprocess.run(["./boardd"], check=True)
+  subprocess.run(["./boardd", list(map("012345", "panda"))], check=True)
 
   while True:
     time.sleep(1)
