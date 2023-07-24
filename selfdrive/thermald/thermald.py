@@ -96,7 +96,7 @@ def thermald_thread(end_event, hw_queue):
   count = 0
 
   onroad_conditions: Dict[str, bool] = {
-    "ignition": True,
+    "ignition": False,
   }
   startup_conditions: Dict[str, bool] = {}
   startup_conditions_prev: Dict[str, bool] = {}

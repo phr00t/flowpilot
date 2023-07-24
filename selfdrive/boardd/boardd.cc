@@ -298,6 +298,36 @@ void send_empty_panda_state(PubMaster *pm) {
   pm->send("pandaStates", msg);
 }
 
+void send_dummy_panda_state(PubMaster *pm) {
+    // build msg
+    MessageBuilder msg;
+    auto evt = msg.initEvent();
+    auto pss = evt.initPandaStates(1);
+
+    evt.setValid(true);
+
+    auto ps = pss[0];
+    ps.setUptime(20);
+    ps.setSafetyTxBlocked(0);
+    ps.setIgnitionLine(1);
+    ps.setIgnitionCan(1);
+    ps.setControlsAllowed(1);
+    ps.setGasInterceptorDetected(0);
+    ps.setGmlanSendErrs(0);
+    //ps.setPandaType(0);
+    //ps.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_mode_pkt));
+    //ps.setSafetyParam(health.safety_param_pkt);
+    //ps.setFaultStatus(cereal::PandaState::FaultStatus(health.fault_status_pkt));
+    //ps.setPowerSaveEnabled((bool)(health.power_save_enabled_pkt));
+    //ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
+    //ps.setAlternativeExperience(health.alternative_experience_pkt);
+    ps.setHarnessStatus(1);
+    //ps.setInterruptLoad(health.interrupt_load);
+
+    pm->send("pandaStates", msg);
+    return true;
+}
+
 std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
   bool ignition_local = false;
 
@@ -635,7 +665,8 @@ void boardd_main_thread(std::vector<std::string> serials) {
     Panda *p = usb_connect(serials[i], i);
     if (!p) {
       // send empty pandaState & peripheralState and try again
-      send_empty_panda_state(&pm);
+      //send_empty_panda_state(&pm);
+      send_dummy_panda_state(&pm);
       send_empty_peripheral_state(&pm);
       util::sleep_for(500);
       continue;
