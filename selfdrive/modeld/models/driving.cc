@@ -292,6 +292,10 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   const auto &t_std = net_outputs.wide_from_device_euler.std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
+
+  //debug
+  printf("Posting cam X speed: %d\n", v_mean.x);
+
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
   posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});

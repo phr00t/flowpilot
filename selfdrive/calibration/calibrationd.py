@@ -129,7 +129,15 @@ class Calibrator:
         angle_std_threshold = MAX_VEL_ANGLE_STD
         certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                             (self.valid_blocks < INPUTS_NEEDED))
-        if not (straight_and_fast and certain_if_calib):
+
+        if not straight_and_fast:
+            #debug
+            print("Not straight/fast! rot[2](yaw):" + "{:.2f}".format(rot[2]) + ", trans[0](speed):" + "{:.2f}".format(trans[0]))
+            return None
+
+        if certain_if_calib:
+            #debug
+            print("Not certain_if_calib!")
             return None
 
         observed_rpy = np.array([0,
