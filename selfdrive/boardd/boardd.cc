@@ -321,7 +321,7 @@ void send_dummy_panda_state(PubMaster *pm) {
     //ps.setPowerSaveEnabled((bool)(health.power_save_enabled_pkt));
     //ps.setHeartbeatLost((bool)(health.heartbeat_lost_pkt));
     //ps.setAlternativeExperience(health.alternative_experience_pkt);
-    ps.setHarnessStatus(1);
+    //ps.setHarnessStatus(1);
     //ps.setInterruptLoad(health.interrupt_load);
 
     pm->send("pandaStates", msg);
