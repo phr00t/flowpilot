@@ -325,6 +325,7 @@ void send_dummy_panda_state(PubMaster *pm) {
     //ps.setInterruptLoad(health.interrupt_load);
 
     pm->send("pandaStates", msg);
+    return true;
 }
 
 std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
