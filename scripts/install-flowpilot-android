@@ -54,7 +54,8 @@ sudo apt install -y python3.9 python3.9-dev python3.9-distutils python-is-python
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
 
-cd ~/ && [ ! -d 'flowpilot' ] && git clone https://github.com/phr00t/flowpilot.git || true
+cd ~/ && [ ! -d 'flowpilot' ] && git clone -b bleeding-edge https://github.com/phr00t/flowpilot.git || true
+git clone https://github.com/capnproto/capnproto-java.git && cd ~/capnproto-java && make && cp capnpc-java /usr/local/bin/
 cd ~/flowpilot && git submodule update --init
 
 echo "set -g mouse on" >> ~/.tmux.conf # enable mouse scrolling in tmux
