@@ -80,14 +80,6 @@ def main() -> NoReturn:
   first_run = True
   params = Params()
 
-  # debug
-  os.environ['MANAGER_DAEMON'] = 'boardd'
-  os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-  subprocess.run(["./boardd", list(map("012345", "panda"))], check=True)
-
-  while True:
-    time.sleep(1)
-
   while True:
     try:
       params.remove("PandaSignatures")
