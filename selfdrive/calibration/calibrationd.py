@@ -180,12 +180,6 @@ class Calibrator:
 
     def get_msg(self):
         smooth_rpy = self.get_smooth_rpy()
-
-        #debug
-        smooth_rpy[0] = 0
-        smooth_rpy[1] = 0
-        smooth_rpy[2] = 0
-
         extrinsic_matrix = get_view_frame_from_road_frame(0, smooth_rpy[1], smooth_rpy[2], model_height)
 
         msg = messaging.new_message('liveCalibration')
@@ -227,7 +221,7 @@ def calibrationd_thread(sm=None, pm=None):
                 calibrator.reset()
                 calibrator.update_status()
                 calibrator.params.put_bool("ResetExtrinsicCalibration", False)
-            calibrator.send_data(pm)
+            #calibrator.send_data(pm)
 
 
 def main():
