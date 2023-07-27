@@ -180,8 +180,13 @@ class Calibrator:
 
     def get_msg(self):
         smooth_rpy = self.get_smooth_rpy()
-        #extrinsic_matrix = get_view_frame_from_road_frame(0, smooth_rpy[1], smooth_rpy[2], model_height)
-        extrinsic_matrix = get_view_frame_from_road_frame(0, 0, 0, model_height)
+
+        #debug
+        smooth_rpy[0] = 0
+        smooth_rpy[1] = 0
+        smooth_rpy[2] = 0
+
+        extrinsic_matrix = get_view_frame_from_road_frame(0, smooth_rpy[1], smooth_rpy[2], model_height)
 
         msg = messaging.new_message('liveCalibration')
         liveCalibration = msg.liveCalibration
