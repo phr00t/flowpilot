@@ -221,7 +221,7 @@ def calibrationd_thread(sm=None, pm=None):
                 calibrator.reset()
                 calibrator.update_status()
                 calibrator.params.put_bool("ResetExtrinsicCalibration", False)
-            #calibrator.send_data(pm)
+            calibrator.send_data(pm)
 
 
 def main():
