@@ -9,7 +9,6 @@ from typing import Dict, Optional, Tuple
 import psutil
 
 import cereal.messaging as messaging
-from common.logger import checkIfPyLog
 from cereal import log
 from common.dict_helpers import strip_deprecated_keys
 from common.filter_simple import FirstOrderFilter
