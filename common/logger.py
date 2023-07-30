@@ -6,12 +6,15 @@ PyLog = ''
 
 def AddLog(log):
     global PyLog
+
+    print('Adding: ' + log)
+
     PyLog = log + " "
 
 def checkIfPyLog(pm):
     global PyLog
 
-    print("Checking PyLog...")
+    print("Checking PyLog, which is: " + PyLog)
 
     if len(PyLog) > 0:
 
