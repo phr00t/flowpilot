@@ -11,7 +11,7 @@ class SocketLogger:
         self.connection, self.address = self.s.accept()
 
     def Send(self, log):
-        self.s.send(log + "\n")
+        self.s.send((log + "\n").encode())
 
 sLogger = SocketLogger()
 
