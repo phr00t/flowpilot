@@ -6,7 +6,7 @@ import socket
 class SocketLogger:
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.bind(("localhost", 9000))
+        self.s.bind(('', 9000))
         self.s.listen(10)
         self.connection, self.address = self.s.accept()
 
