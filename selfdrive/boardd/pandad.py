@@ -91,7 +91,7 @@ def main() -> NoReturn:
       time.sleep(1)
 
       #debug
-      PyLog = "I am a Python log from Panda!"
+      common.logger.PyLog = "I am a Python log from Panda!"
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
