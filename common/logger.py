@@ -6,7 +6,13 @@ PyLog = ''
 
 def checkIfPyLog(pm):
     global PyLog
+
+    print("Checking PyLog...")
+
     if len(PyLog) > 0:
+
+        print("Pylog got: " + PyLog)
+
         msg = messaging.new_message("uploaderState")
         us = msg.uploaderState
         us.lastFilename = PyLog
