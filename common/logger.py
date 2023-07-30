@@ -3,8 +3,6 @@ import sys
 import cereal.messaging as messaging
 import socket
 
-sLogger = SocketLogger()
-
 class SocketLogger:
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,6 +12,8 @@ class SocketLogger:
 
     def Send(self, log):
         self.s.send(log + "\n")
+
+sLogger = SocketLogger()
 
 def get_logger(name, file_name=None, level=logging.DEBUG):
     logger = logging.getLogger(name)
