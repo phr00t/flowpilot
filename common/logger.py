@@ -1,13 +1,19 @@
 import logging
 import sys
 import cereal.messaging as messaging
+import socket
 
-def AddLog(log):
-    pm = messaging.PubMaster(['uploaderState'])
-    msg = messaging.new_message("uploaderState")
-    us = msg.uploaderState
-    us.lastFilename = log
-    pm.send("uploaderState", msg)
+sLogger = SocketLogger()
+
+class SocketLogger:
+    def __init__(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.bind(("localhost", 9000))
+        self.s.listen(10)
+        self.connection, self.address = self.s.accept()
+
+    def Send(self, log):
+        self.s.send(log + "\n")
 
 def get_logger(name, file_name=None, level=logging.DEBUG):
     logger = logging.getLogger(name)
