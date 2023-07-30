@@ -249,59 +249,7 @@ class Uploader():
 
 
 def uploader_fn(exit_event):
-  try:
-    set_core_affinity([0, 1, 2, 3])
-  except Exception:
-    cloudlog.exception("failed to set core affinity")
-    logger.warning("failed to set core affinity")
-
-  clear_locks(ROOT)
-  clear_video_locks()
-
-  params = Params()
-  dongle_id = params.get("DongleId", encoding='utf8')
-
-  if dongle_id is None:
-    cloudlog.info("uploader missing dongle_id")
-
-  sm = messaging.SubMaster(['deviceState'])
-  pm = messaging.PubMaster(['uploaderState'])
-  uploader = Uploader(dongle_id, ROOT)
-
-  backoff = 0.1
-  while not exit_event.is_set():
-    sm.update(0)
-    offroad = params.get_bool("IsOffroad")
-    
-    # Flowpilot stores a single long video. Need to make and sync segments
-    # with respective route segments.
-    if offroad:
-      segment_sync_videos()
-   
-    d = uploader.next_file_to_upload()
-    if d is None:  # Nothing to upload
-      if allow_sleep:
-        time.sleep(60 if offroad else 5)
-      continue
-
-    name, key, fn = d
-
-    # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
-      key += ".bz2"
-
-    success = uploader.upload(name, key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
-    if success:
-      cloudlog.info(f"Uploaded {key}")
-      backoff = 0.1
-    elif allow_sleep:
-      logger.warning(f"Failed to upload {key}, retrying with a backoff")
-      cloudlog.info("upload backoff %r", backoff)
-      time.sleep(backoff + random.uniform(0, backoff))
-      backoff = min(backoff*2, 120)
-
-    pm.send("uploaderState", uploader.get_msg())
-
+  return
 
 def main():
   return # disable uploader
