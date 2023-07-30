@@ -4,6 +4,10 @@ import cereal.messaging as messaging
 
 PyLog = ''
 
+def AddLog(log):
+    global PyLog
+    PyLog = log + " "
+
 def checkIfPyLog(pm):
     global PyLog
 

@@ -4,7 +4,6 @@ import os
 import usb1
 import time
 import subprocess
-import common.logger
 
 from typing import NoReturn
 from functools import cmp_to_key
@@ -12,6 +11,7 @@ from functools import cmp_to_key
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
+from common.logger import AddLog
 
 def get_expected_signature(panda: Panda) -> bytes:
   fn = DEFAULT_H7_FW_FN if (panda.get_mcu_type() == MCU_TYPE_H7) else DEFAULT_FW_FN
@@ -92,7 +92,7 @@ def main() -> NoReturn:
       time.sleep(1)
 
       #debug
-      common.logger.PyLog = "I am a Python log from Panda!"
+      AddLog("Plog!")
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
