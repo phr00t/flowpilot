@@ -3,9 +3,8 @@ import sys
 import cereal.messaging as messaging
 
 PyLog = ''
-pm = messaging.PubMaster(['uploaderState'])
 
-def checkIfPyLog():
+def checkIfPyLog(pm):
     if len(PyLog) > 0:
         msg = messaging.new_message("uploaderState")
         us = msg.uploaderState
