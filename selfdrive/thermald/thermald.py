@@ -91,7 +91,7 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
 
 
 def thermald_thread(end_event, hw_queue):
-  pm = messaging.PubMaster(['deviceState', 'uploaderState'])
+  pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
 
   count = 0
@@ -122,9 +122,6 @@ def thermald_thread(end_event, hw_queue):
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
-
-    # any logs to send to the android app?
-    checkIfPyLog(pm)
 
     msg = get_device_state()
 

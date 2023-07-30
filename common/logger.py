@@ -2,29 +2,12 @@ import logging
 import sys
 import cereal.messaging as messaging
 
-PyLog = ''
-
 def AddLog(log):
-    global PyLog
-
-    print('Adding: ' + log)
-
-    PyLog = log + " "
-
-def checkIfPyLog(pm):
-    global PyLog
-
-    print("Checking PyLog, which is: " + PyLog)
-
-    if len(PyLog) > 0:
-
-        print("Pylog got: " + PyLog)
-
-        msg = messaging.new_message("uploaderState")
-        us = msg.uploaderState
-        us.lastFilename = PyLog
-        pm.send("uploaderState", msg)
-        PyLog = ''
+    pm = messaging.PubMaster(['uploaderState'])
+    msg = messaging.new_message("uploaderState")
+    us = msg.uploaderState
+    us.lastFilename = log
+    pm.send("uploaderState", msg)
 
 def get_logger(name, file_name=None, level=logging.DEBUG):
     logger = logging.getLogger(name)
