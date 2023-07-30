@@ -1,5 +1,17 @@
 import logging
 import sys
+import cereal.messaging as messaging
+
+PyLog = ''
+pm = messaging.PubMaster(['uploaderState'])
+
+def checkIfPyLog():
+    if len(PyLog) > 0:
+        msg = messaging.new_message("uploaderState")
+        us = msg.uploaderState
+        us.lastFilename = PyLog
+        pm.send("uploaderState", msg)
+        PyLog = ''
 
 def get_logger(name, file_name=None, level=logging.DEBUG):
     logger = logging.getLogger(name)
