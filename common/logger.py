@@ -6,10 +6,9 @@ import socket
 class SocketLogger:
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s.bind(('', 9000))
 
     def Send(self, log):
-        self.s.send((log + "\n").encode())
+        self.s.sendto((log + "\n").encode(), ("127.0.0.1", 9000))
 
 sLogger = SocketLogger()
 
