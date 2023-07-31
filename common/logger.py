@@ -5,10 +5,8 @@ import socket
 
 class SocketLogger:
     def __init__(self):
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.bind(('', 9000))
-        self.s.listen(10)
-        self.connection, self.address = self.s.accept()
 
     def Send(self, log):
         self.s.send((log + "\n").encode())
