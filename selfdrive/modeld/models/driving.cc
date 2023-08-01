@@ -343,8 +343,8 @@ uint32_t parse_posenet(uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
   const auto &v_std = net_outputs.pose.velocity_std;
   const auto &r_std = net_outputs.pose.rotation_std;
   const auto &t_std = net_outputs.wide_from_device_euler.std;
-  const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
-  const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
+  //const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
+  //const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
