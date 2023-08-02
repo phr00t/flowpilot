@@ -15,7 +15,7 @@ class CarController:
     self.brake_counter = 0
     self.frame = 0
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, sm, CS, now_nanos):
     can_sends = []
 
     apply_steer = 0

@@ -34,7 +34,7 @@ class CarController:
     self.lkas_enabled_last = False
     self.steer_alert_last = False
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, sm, CS, now_nanos):
     can_sends = []
 
     actuators = CC.actuators

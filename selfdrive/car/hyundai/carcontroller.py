@@ -69,7 +69,7 @@ class CarController:
 
     self.temp_disable_spamming = 0
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, sm, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -132,7 +132,28 @@ class CarController:
       can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))
 
     # phr00t fork start for cruise spamming
-    # TODO: insert code here
+    path_plan = sm['lateralPlan']
+    clu11_speed = CS.vEgo * 2.23694 # convert to MS -> MPH
+    #stoplinesp = sm['longitudinalPlan'].stoplineProb # where are you now...
+    max_speed_in_mph = sm['controlsState'].vCruise * 0.621371
+    driver_doing_speed = CS.out.brakeLights or CS.out.gasPressed
+
+    # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
+    vcurv = 0
+    curv_len = len(path_plan.curvatures)
+    if curv_len > 0:
+      curv_middle = math.floor((curv_len - 1)/2)
+      for x in range(curv_middle, curv_len):
+        acurval = abs(path_plan.curvatures[x] * 100)
+        if acurval > vcurv:
+          vcurv = acurval
+
+    # lead car info
+    radarState = self.sm['radarState']
+    l0prob = radarState.leadOne.modelProb
+    l0d = radarState.leadOne.dRel
+    l0v = radarState.leadOne.vRel
+    lead_vdiff_mph = l0v * 2.23694
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
