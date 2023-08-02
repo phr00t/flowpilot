@@ -246,8 +246,8 @@ class CarInterfaceBase(ABC):
       events.add(EventName.wrongGear)
     if cs_out.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
-    if not cs_out.cruiseState.available:
-      events.add(EventName.wrongCarMode)
+    #if not cs_out.cruiseState.available:
+    #  events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
       events.add(EventName.espDisabled)
     if cs_out.stockFcw:
@@ -256,8 +256,8 @@ class CarInterfaceBase(ABC):
       events.add(EventName.stockAeb)
     if cs_out.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
-    if cs_out.cruiseState.nonAdaptive:
-      events.add(EventName.wrongCruiseMode)
+    #if cs_out.cruiseState.nonAdaptive:
+    #  events.add(EventName.wrongCruiseMode)
     if cs_out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
       events.add(EventName.brakeHold)
     if cs_out.parkingBrake:

@@ -54,18 +54,23 @@ class VCruiseHelper:
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
 
-    if CS.cruiseState.available:
-      if not self.CP.pcmCruise:
-        # if stock cruise is completely disabled, then we can use our own set speed logic
-        self._update_v_cruise_non_pcm(CS, enabled, is_metric)
-        self.v_cruise_cluster_kph = self.v_cruise_kph
-        self.update_button_timers(CS, enabled)
-      else:
-        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
-        self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
+    # if we are adjusting speed manually, track it
+    if CS.brakeLightsDEPRECATED or CS.gasPressed or CS.cruiseState.speed <= 0 and not CS.cruiseState.nonAdaptive:
+      set_to_mph = 26  # default base speed
+      current_mph = CS.vEgo * 2.23694  # convert m/s -> mph
+      if current_mph > 26:
+        interval = 4
+        # if we are going above 70 mph, we go by 2 mph intervals
+        if current_mph > 70.5:
+          interval = 2
+        interval_count = round((current_mph - 26) / interval)
+        set_to_mph = 26 + interval_count * interval
+      self.v_cruise_kph = set_to_mph * 1.60934  # convert back to mph
     else:
-      self.v_cruise_kph = V_CRUISE_UNSET
-      self.v_cruise_cluster_kph = V_CRUISE_UNSET
+      self._update_v_cruise_non_pcm(CS, enabled, is_metric)
+      self.update_button_timers(CS, enabled)
+
+    self.v_cruise_cluster_kph = self.v_cruise_kph
 
   def _update_v_cruise_non_pcm(self, CS, enabled, is_metric):
     # handle button presses. TODO: this should be in state_control, but a decelCruise press
@@ -73,10 +78,10 @@ class VCruiseHelper:
     if not enabled:
       return
 
-    long_press = False
     button_type = None
 
-    v_cruise_delta = 1. if is_metric else IMPERIAL_INCREMENT
+    # convert to mph for processing
+    current_mph = round(self.v_cruise_kph * 0.621371)
 
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers and not b.pressed:
@@ -88,32 +93,28 @@ class VCruiseHelper:
       for k in self.button_timers.keys():
         if self.button_timers[k] and self.button_timers[k] % CRUISE_LONG_PRESS == 0:
           button_type = k
-          long_press = True
           break
 
-    if button_type is None:
-      return
+    # was a button pressed?
+    if button_type:
+      if button_type == ButtonType.accelCruise:
+        if current_mph >= 70:  # make smaller changes up when at high speeds
+          current_mph += 2
+        else:
+          current_mph += 4
+      elif button_type == ButtonType.decelCruise:
+        if current_mph > 70:
+          current_mph = 70  # hop right down to 70 when pressing slow above 70
+        else:
+          current_mph -= 4
 
-    # Don't adjust speed when pressing resume to exit standstill
-    cruise_standstill = self.button_change_states[button_type]["standstill"] or CS.cruiseState.standstill
-    if button_type == ButtonType.accelCruise and cruise_standstill:
-      return
+      # apply limits
+      if current_mph > 80:
+        current_mph = 80
+      elif current_mph < 26:
+        current_mph = 26
 
-    # Don't adjust speed if we've enabled since the button was depressed (some ports enable on rising edge)
-    if not self.button_change_states[button_type]["enabled"]:
-      return
-
-    v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
-      self.v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](self.v_cruise_kph / v_cruise_delta) * v_cruise_delta
-    else:
-      self.v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
-
-    # If set is pressed while overriding, clip cruise speed to minimum of vEgo
-    if CS.gasPressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
-      self.v_cruise_kph = max(self.v_cruise_kph, CS.vEgo * CV.MS_TO_KPH)
-
-    self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
+      self.v_cruise_kph = current_mph * 1.60934  # back to kph
 
   def update_button_timers(self, CS, enabled):
     # increment timer for buttons still pressed

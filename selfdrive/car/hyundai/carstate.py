@@ -39,6 +39,10 @@ class CarState(CarStateBase):
     self.is_metric = False
     self.buttons_counter = 0
 
+    # phr00t fork
+    self.clu_Vanz = 0
+    self.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1, 0)
+
     self.cruise_info = {}
 
     # On some cars, CLU15->CF_Clu_VehicleSpeed can oscillate faster than the dash updates. Sample at 5 Hz
@@ -94,8 +98,6 @@ class CarState(CarStateBase):
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
     ret.steerFaultTemporary = cp.vl["MDPS12"]["CF_Mdps_ToiUnavail"] != 0 or cp.vl["MDPS12"]["CF_Mdps_ToiFlt"] != 0
 
-    ret.cruiseState.available = True # open pilot is available to be used
-
     cruiseMainButton = cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"]
     cruiseUpDownNow = cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"]
 
@@ -104,7 +106,8 @@ class CarState(CarStateBase):
     elif cruiseUpDownNow == Buttons.CANCEL:
       self.openPilotEnabled = False
 
-    ret.cruiseState.enabled = self.openPilotEnabled
+    ret.cruiseState.speed = cp.vl["E_EMS11"]["Cruise_Limit_Target"]
+    ret.cruiseState.available = ret.cruiseState.enabled = self.openPilotEnabled
     #ret.cruiseState.standstill = False
 
     # TODO: Find brake pressure
@@ -113,6 +116,7 @@ class CarState(CarStateBase):
     ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2  # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
     ret.accFaulted = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
+    ret.brakeLightsDEPRECATED = bool(cp.vl["TCS13"]["BrakeLight"] or ret.brakePressed)
 
     if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       if self.CP.carFingerprint in HYBRID_CAR:
@@ -140,6 +144,15 @@ class CarState(CarStateBase):
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
       ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
+
+    # autoresume features
+    ret.cruiseState.nonAdaptive = False
+    if ret.brakePressed or ret.gasPressed or self.clu_Vanz < 20 or bool(cruiseMainButton):
+      # dont re-enable cruise if are manually modifying speed, pressed the cruise button, or we've dropped below cruise speed
+      self.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
+    elif not self.acc_active:
+      seconds_from_cancel = (datetime.datetime.now() - self.time_cruise_cancelled).total_seconds()
+      ret.cruiseState.nonAdaptive = 0 <= seconds_from_cancel < 7.0
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
@@ -184,6 +197,8 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.1
+
+    self.clu_Vanz = cp.vl["CLU11"]["CF_Clu_Vanz"] + cp.vl["CLU11"]["CF_Clu_VanzDecimal"]
 
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEERING_RATE"]
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"] * -1
