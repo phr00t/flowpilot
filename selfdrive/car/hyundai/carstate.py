@@ -291,6 +291,8 @@ class CarState(CarStateBase):
       ("ESC_Off_Step", "TCS15"),
       ("AVH_LAMP", "TCS15"),
 
+      ("Cruise_Limit_Target", "E_EMS11"),
+
       ("CR_Mdps_StrColTq", "MDPS12"),
       ("CF_Mdps_ToiActive", "MDPS12"),
       ("CF_Mdps_ToiUnavail", "MDPS12"),
