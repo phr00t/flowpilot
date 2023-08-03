@@ -124,7 +124,7 @@ class CarController:
 
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
-    clu11_speed = CS.vEgo * 2.23694 # convert to MS -> MPH
+    clu11_speed = CS.out.vEgo * 2.23694 # convert to MS -> MPH
 
     # perhaps instead of 'stoplinep', we should take info from the long planner which considers all sorts of things
     # may need to fudge the openpilotLongitudinalControl so it parses all the accel stuff out for use here instead of
