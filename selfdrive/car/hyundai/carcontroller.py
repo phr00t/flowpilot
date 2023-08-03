@@ -1,14 +1,3 @@
-###
-#
-# TODO: (WFD = Wait for actual device)
-# - replace update_v_cruise with simple button control from OPKR (4mph increments etc.) *WFD*
-# - add cruise control button spamming below *WFD*
-#   - comment out the distspeed stuff, as the model itself might be better at speed deltas
-# - improve vEgo/Clu11 speed accuracy by adding the speed decimal as in OPKR carstate
-#   - may not be needed, as ret.vEgo seems to already get accurate data from wheels
-#     (just need to convert to MPH)
-# - set flowpilot to enable on SET button instead of CRUISE (or whatever) *WFD*
-
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import clip
@@ -83,10 +72,9 @@ class CarController:
     self.apply_steer_last = apply_steer
 
     # accel + longitudinal
-    # disabled for Kona EV without SCC
-    #accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-    #stopping = actuators.longControlState == LongCtrlState.stopping
-    #set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
+    accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    stopping = actuators.longControlState == LongCtrlState.stopping
+    set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
@@ -134,7 +122,12 @@ class CarController:
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
     clu11_speed = CS.vEgo * 2.23694 # convert to MS -> MPH
-    #stoplinesp = sm['longitudinalPlan'].stoplineProb # where are you now...
+
+    # perhaps instead of 'stoplinep', we should take info from the long planner which considers all sorts of things
+    # may need to fudge the openpilotLongitudinalControl so it parses all the accel stuff out for use here instead of
+    # CAN messages for SCC
+    #stoplinesp = sm['longitudinalPlan'].stoplineProb
+
     max_speed_in_mph = sm['controlsState'].vCruise * 0.621371
     driver_doing_speed = CS.out.brakeLights or CS.out.gasPressed
 
