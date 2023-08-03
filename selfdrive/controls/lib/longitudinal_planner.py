@@ -75,7 +75,8 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm):
-    self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
+    # force experimental mode
+    self.mpc.mode = 'blended' #if sm['controlsState'].experimentalMode else 'acc'
 
     v_ego = sm['carState'].vEgo
     v_cruise_kph = sm['controlsState'].vCruise
@@ -86,7 +87,7 @@ class LongitudinalPlanner:
     force_slow_decel = sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
-    reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['controlsState'].enabled
+    reset_state = long_control_off #if self.CP.openpilotLongitudinalControl else not sm['controlsState'].enabled
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
