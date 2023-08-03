@@ -60,7 +60,7 @@ class CarController:
 
     self.temp_disable_spamming = 0
 
-  def update(self, CC, sm, CS, now_nanos):
+  def update(self, CC, sm, vcruise, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -131,11 +131,7 @@ class CarController:
     # CAN messages for SCC ("stopping" might be useful above, or an negative accel value?)
     #stoplinesp = sm['longitudinalPlan'].stoplineProb
 
-    max_speed_in_mph = 26
-    if 'controlsState' in sm:
-      max_speed_in_mph = sm['controlsState'].vCruise * 0.621371
-      print("Got max speed from controlsState")
-
+    max_speed_in_mph = vcruise * 0.621371
     driver_doing_speed = CS.out.brakeLights or CS.out.gasPressed
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
@@ -149,7 +145,7 @@ class CarController:
           vcurv = acurval
 
     # lead car info
-    radarState = self.sm['radarState']
+    radarState = sm['radarState']
     l0prob = radarState.leadOne.modelProb
     l0d = radarState.leadOne.dRel
     l0v = radarState.leadOne.vRel
