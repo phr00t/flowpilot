@@ -86,6 +86,10 @@ def create_clu11(packer, frame, clu11, button, car_fingerprint):
   bus = 2 if car_fingerprint in CAMERA_SCC_CAR else 0
   return packer.make_can_msg("CLU11", bus, values)
 
+def create_cpress(packer, clu11, button):
+  values = clu11
+  values["CF_Clu_CruiseSwState"] = button
+  return packer.make_can_msg("CLU11", 0, values)
 
 def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   values = {
