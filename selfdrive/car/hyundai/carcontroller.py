@@ -131,7 +131,11 @@ class CarController:
     # CAN messages for SCC ("stopping" might be useful above, or an negative accel value?)
     #stoplinesp = sm['longitudinalPlan'].stoplineProb
 
-    max_speed_in_mph = sm['controlsState'].vCruise * 0.621371
+    max_speed_in_mph = 26
+    if 'controlsState' in sm:
+      max_speed_in_mph = sm['controlsState'].vCruise * 0.621371
+      print("Got max speed from controlsState")
+
     driver_doing_speed = CS.out.brakeLights or CS.out.gasPressed
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
