@@ -132,7 +132,7 @@ class CarController:
     #stoplinesp = sm['longitudinalPlan'].stoplineProb
 
     max_speed_in_mph = vcruise * 0.621371
-    driver_doing_speed = CS.out.brakeLights or CS.out.gasPressed
+    driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
