@@ -1,9 +1,11 @@
 package ai.flow.app.headless;
 
 import ai.flow.app.FlowUI;
+import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.SystemUtils;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.hardware.DesktopHardwareManager;
 import ai.flow.hardware.HardwareManager;
 import ai.flow.launcher.Launcher;
@@ -30,13 +32,17 @@ public class HeadlessLauncher {
 
 	private static Application createApplication() throws IOException {
 		// Note: you can use a custom ApplicationListener implementation for the headless project instead of FlowUI.
-		CameraManager fCameraManager = new CameraManager(20, System.getenv("ROAD_CAMERA_SOURCE"), Camera.frameSize[0], Camera.frameSize[1]);
+		CameraManager eCameraManager = new CameraManager(Camera.CAMERA_TYPE_WIDE, 20, System.getenv("WIDE_ROAD_CAMERA_SOURCE"), Camera.frameSize[0], Camera.frameSize[1]);
+		CameraManager fCameraManager = new CameraManager(Camera.CAMERA_TYPE_ROAD, 20, System.getenv("ROAD_CAMERA_SOURCE"), Camera.frameSize[0], Camera.frameSize[1]);
 
 		SensorManager sensorManager = new SensorManager();
 		Map<String, SensorInterface> sensors = new HashMap<String, SensorInterface>() {{
+			put("wideRoadCamera", eCameraManager);
 			put("roadCamera", fCameraManager);
 			put("motionSensors", sensorManager);
 		}};
+
+		ParamsInterface params = ParamsInterface.getInstance();
 
 		String modelPath = Path.getModelDir();
 
@@ -48,7 +54,7 @@ public class HeadlessLauncher {
 			model = new ONNXModelRunner(modelPath, getUseGPU());
 
 		ModelExecutor modelExecutor;
-		modelExecutor = new ModelExecutorF2(model);
+		modelExecutor = utils.F3Mode ? new ModelExecutorF3(model) : new ModelExecutorF2(model);
 
 		Launcher launcher = new Launcher(sensors, modelExecutor);
 		HardwareManager hardwareManager = new DesktopHardwareManager();

@@ -3,6 +3,7 @@ package ai.flow.launcher;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.modeld.*;
 import ai.flow.sensor.SensorInterface;
 import ai.flow.sensor.SensorManager;
@@ -49,9 +50,11 @@ public class Launcher {
     }
 
     public void main(String[] args) {
-        CameraManager fCameraManager = new CameraManager(20, System.getenv("ROAD_CAMERA_SOURCE"), Camera.frameSize[0], Camera.frameSize[1]);
+        CameraManager eCameraManager = new CameraManager(Camera.CAMERA_TYPE_WIDE, 20, System.getenv("WIDE_ROAD_CAMERA_SOURCE"), Camera.frameSize[0], Camera.frameSize[1]);
+        CameraManager fCameraManager = new CameraManager(Camera.CAMERA_TYPE_ROAD, 20, System.getenv("ROAD_CAMERA_SOURCE"), Camera.frameSize[0], Camera.frameSize[1]);
         SensorManager sensorManager = new SensorManager();
         this.sensors = new HashMap<String, SensorInterface>() {{
+            put("wideRoadCamera", eCameraManager);
             put("roadCamera", fCameraManager);
             put("motionSensors", sensorManager);
         }};
@@ -61,7 +64,7 @@ public class Launcher {
         ModelRunner model = new TNNModelRunner(modelPath, true);
 
         ModelExecutor modelExecutor;
-        modelExecutor = new ModelExecutorF2(model);
+        modelExecutor = utils.F3Mode ? new ModelExecutorF3(model) : new ModelExecutorF2(model);
 
         this.modeld = modelExecutor;
         this.startAllD();

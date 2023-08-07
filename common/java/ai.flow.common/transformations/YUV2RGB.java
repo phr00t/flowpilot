@@ -114,10 +114,6 @@ public class YUV2RGB {
         return rgbBuffer;
     }
 
-    public Mat getRGBMat(){
-        return matRGB;
-    }
-
     public void dispose(){
         matRGB.release();
         yuv_mat.release();

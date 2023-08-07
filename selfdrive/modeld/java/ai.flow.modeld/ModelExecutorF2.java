@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static ai.flow.common.SystemUtils.getUseGPU;
 import static ai.flow.common.utils.numElements;
 import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
@@ -55,6 +56,7 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
 
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
     public static INDArray fcam_intrinsics = Camera.fcam_intrinsics.dup();
+    public static INDArray ecam_intrinsics = Camera.ecam_intrinsics.dup();
     public final ZMQPubHandler ph = new ZMQPubHandler();
     public final ZMQSubHandler sh = new ZMQSubHandler(true);
     public Definitions.LiveCalibrationData.Reader liveCalib;
@@ -121,18 +123,26 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, fcam_intrinsics, false, false);
+        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, false, false);
 
         updateCameraState();
         updateCameraMatrix(frameData.getIntrinsics());
-        desireNDArr.put(0, 0, 1);
 
         // TODO:Clean this shit.
         ImagePrepare imagePrepare;
-        boolean rgb = msgFrameBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
-        imagePrepare = new ImagePrepareCPU(FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1], rgb, msgFrameBuffer.getYWidth(), msgFrameBuffer.getYHeight(),
-                msgFrameBuffer.getYPixelStride(), msgFrameBuffer.getUvWidth(), msgFrameBuffer.getUvHeight(), msgFrameBuffer.getUvPixelStride(),
-                msgFrameBuffer.getUOffset(), msgFrameBuffer.getVOffset(), msgFrameBuffer.getStride());
+        boolean rgb;
+        if (getUseGPU()){
+            rgb = msgFrameBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
+            imagePrepare = new ImagePrepareGPU(FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1], rgb, msgFrameBuffer.getYWidth(), msgFrameBuffer.getYHeight(),
+                    msgFrameBuffer.getYPixelStride(), msgFrameBuffer.getUvWidth(), msgFrameBuffer.getUvHeight(), msgFrameBuffer.getUvPixelStride(),
+                    msgFrameBuffer.getUOffset(), msgFrameBuffer.getVOffset(), msgFrameBuffer.getStride());
+        }
+        else{
+            rgb = msgFrameBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
+            imagePrepare = new ImagePrepareCPU(FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1], rgb, msgFrameBuffer.getYWidth(), msgFrameBuffer.getYHeight(),
+                    msgFrameBuffer.getYPixelStride(), msgFrameBuffer.getUvWidth(), msgFrameBuffer.getUvHeight(), msgFrameBuffer.getUvPixelStride(),
+                    msgFrameBuffer.getUOffset(), msgFrameBuffer.getVOffset(), msgFrameBuffer.getStride());
+        }
 
         lastFrameID = frameData.getFrameId();
 
@@ -151,13 +161,27 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
             updateCameraState();
             start = System.currentTimeMillis();
 
+            if (sh.updated("lateralPlan")){
+                desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
+                if (desire >= 0 && desire < CommonModelF2.DESIRE_LEN)
+                    desireIn[desire] = 1.0f;
+            }
+
+            for (int i=1; i<CommonModelF2.DESIRE_LEN; i++){
+                if (desireIn[i] - prevDesire[i] > 0.99f)
+                    desireNDArr.put(0, i, desireIn[i]);
+                else
+                    desireNDArr.put(0, i, 0.0f);
+                prevDesire[i] = desireIn[i];
+            }
+
             if (sh.updated("liveCalibration")) {
                 liveCalib = sh.recv("liveCalibration").getLiveCalibration();
                 PrimitiveList.Float.Reader rpy = liveCalib.getRpyCalib();
                 for (int i = 0; i < 3; i++) {
                     augmentRot.putScalar(i, rpy.get(i));
                 }
-                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, fcam_intrinsics, false, false);
+                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, false, false);
             }
 
             netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
@@ -236,12 +260,12 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
         exit = true;
     }
 
+    public void stop() {
+        stopped = true;
+    }
     public void start(){
         if (thread == null)
             init();
         stopped = false;
-    }
-    public void stop() {
-        stopped = true;
     }
 }

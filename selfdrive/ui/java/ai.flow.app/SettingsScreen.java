@@ -1,9 +1,7 @@
 package ai.flow.app;
 
-import ai.flow.app.CalibrationScreens.CalibrationInfo;
 import ai.flow.app.helpers.Utils;
-import ai.flow.common.ParamsInterface;
-import ai.flow.common.SystemUtils;
+import ai.flow.common.transformations.Camera;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
@@ -18,6 +16,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import ai.flow.app.CalibrationScreens.CalibrationInfo;
+import ai.flow.common.ParamsInterface;
+import ai.flow.common.SystemUtils;
+import ai.flow.common.utils;
 
 import static ai.flow.app.FlowUI.getPaddedButton;
 
@@ -27,7 +29,7 @@ public class SettingsScreen extends ScreenAdapter {
     FlowUI appContext;
     ParamsInterface params = ParamsInterface.getInstance();
     Stage stage;
-    TextButton buttonDevice, buttonCalibrate, buttonCalibrateExtrinsic,
+    TextButton buttonDevice, buttonCalibrate, buttonWideCalibrate, buttonCalibrateExtrinsic,
             buttonTraining, buttonPowerOff, buttonReboot, buttonSoftware,
             buttonUninstall, buttonToggle, buttonCheckUpdate, buttonLogOut;
     ImageButton closeButton;
@@ -71,7 +73,14 @@ public class SettingsScreen extends ScreenAdapter {
         String deviceModel = params.exists("DeviceModel") ? params.getString("DeviceModel") : "";
         addKeyValueTable(currentSettingTable, "Device Name", deviceModel, true);
         addKeyValueTable(currentSettingTable, "Log Out", buttonLogOut, true);
-        addKeyValueTable(currentSettingTable, "Reset Intrinsic Calibration", buttonCalibrate, true);
+        if (!utils.F3Mode) {
+            addKeyValueTable(currentSettingTable, "Reset Intrinsic Calibration", buttonCalibrate, true);
+        }
+        else{
+            if (!utils.WideCameraOnly)
+                addKeyValueTable(currentSettingTable, "Reset Intrinsic Calibration", buttonCalibrate, true);
+            addKeyValueTable(currentSettingTable, "Reset Wide Intrinsic Calibration", buttonWideCalibrate, true);
+        }
         addKeyValueTable(currentSettingTable, "Reset Extrinsic Calibration", buttonCalibrateExtrinsic, true);
         addKeyValueTable(currentSettingTable, "Review Training Guide", buttonTraining, true);
         currentSettingTable.add(buttonReboot).pad(20);
@@ -99,6 +108,7 @@ public class SettingsScreen extends ScreenAdapter {
     public void fillToggleSettings(){
         currentSettingTable.clear();
         addKeyValueTable(currentSettingTable, "Enable FlowPilot", FPToggle, true);
+        //addKeyValueTable(currentSettingTable, "Enable F3", F3Toggle, true);
         addKeyValueTable(currentSettingTable, "Enable Lane Departure Warnings", LDWToggle, true);
         addKeyValueTable(currentSettingTable, "Enable Right Hand Driving", RHDToggle, true);
         addKeyValueTable(currentSettingTable, "Use Metric System", MetricToggle, true);
@@ -174,7 +184,15 @@ public class SettingsScreen extends ScreenAdapter {
         buttonCalibrate.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                appContext.setScreen(new CalibrationInfo(appContext,true));
+                appContext.setScreen(new CalibrationInfo(appContext, Camera.CAMERA_TYPE_ROAD,true));
+            }
+        });
+
+        buttonWideCalibrate = getPaddedButton("RESET", appContext.skin, 5);
+        buttonWideCalibrate.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                appContext.setScreen(new CalibrationInfo(appContext, Camera.CAMERA_TYPE_WIDE,true));
             }
         });
 
@@ -182,8 +200,19 @@ public class SettingsScreen extends ScreenAdapter {
         buttonCalibrateExtrinsic.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                params.putBool("ResetExtrinsicCalibration", true);
-                params.deleteKey("LiveTorqueParameters");
+                dialog = new Dialog("confirm", appContext.skin) {
+                    public void result(Object obj) {
+                        if (obj.equals(true)) {
+                            params.putBool("ResetExtrinsicCalibration", true);
+                            dialog.hide();
+                        }
+                    }
+                };
+                dialog.text("Are you sure ?");
+                dialog.button(getPaddedButton("Yes", appContext.skin, 5), true);
+                dialog.button(getPaddedButton("No", appContext.skin, "blue", 5), false);
+                dialog.getContentTable().pad(20);
+                dialog.show(stage);
             }
         });
 
@@ -254,6 +283,15 @@ public class SettingsScreen extends ScreenAdapter {
                 params.putBool("FlowpilotEnabledToggle", FPToggle.isChecked());
             }
         });
+
+        /*F3Toggle = new TextButton("  ", appContext.skin, "toggle");
+        F3Toggle.setChecked(params.exists("F3") && params.getBool("F3"));
+        F3Toggle.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                params.putBool("F3", F3Toggle.isChecked());
+            }
+        });*/
 
         LDWToggle = new TextButton("  ", appContext.skin, "toggle");
         LDWToggle.setChecked(params.exists("IsLdwEnabled") && params.getBool("IsLdwEnabled"));

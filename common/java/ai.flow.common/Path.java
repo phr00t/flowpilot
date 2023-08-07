@@ -20,7 +20,7 @@ public class Path {
     }
 
     public static String getModelDir(){
-        String prefix = "f2";
+        String prefix = utils.F3Mode ? "f3" : "f2";
         return internal("selfdrive/assets/models/" + prefix + "/supercombo");
     }
 

@@ -71,6 +71,7 @@ android {
 			debuggable false
 			minifyEnabled false
 			shrinkResources false
+			signingConfig signingConfigs.debug
 		}
 	}
 }
@@ -107,7 +108,7 @@ dependencies {
 	implementation "androidx.appcompat:appcompat:1.4.1"
 	implementation 'com.github.bumptech.glide:glide:4.12.0'
 	annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
-	implementation files("$rootProject.projectDir/libs/opencv-nolibs-4.5.1-2.jar")
+	implementation files("$rootProject.projectDir/third_party/opencv-nolibs-4.5.1-2.jar")
 
 	implementation ("org.nd4j:nd4j-native-platform:$rootProject.nd4j_version")
 			{
@@ -135,6 +136,8 @@ dependencies {
 	implementation "ch.acra:acra-http:$acraVersion"
 	implementation "ch.acra:acra-toast:$acraVersion"
 	implementation "ch.acra:acra-limiter:$acraVersion"
+
+	implementation "com.squareup.okhttp3:okhttp:4.10.0"
 
 	natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
 	natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"

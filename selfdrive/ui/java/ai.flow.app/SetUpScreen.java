@@ -2,11 +2,12 @@ package ai.flow.app;
 
 import ai.flow.app.CalibrationScreens.CalibrationInfo;
 import ai.flow.common.ParamsInterface;
+import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
-
-import static ai.flow.common.transformations.Camera.fcamIntrinsicParam;
 
 public class SetUpScreen extends ScreenAdapter {
 
@@ -35,11 +36,25 @@ public class SetUpScreen extends ScreenAdapter {
             return;
         }*/
 
-        if (!params.exists(fcamIntrinsicParam)){
-           appContext.launcher.startSensorD();
-           appContext.setScreen(new CalibrationInfo(appContext, false));
-           return;
-        }
+        appContext.launcher.startSensorD();
+
+         if (!utils.F3Mode){
+             if (!params.exists("CameraMatrix")){
+                 appContext.setScreen(new CalibrationInfo(appContext, Camera.CAMERA_TYPE_ROAD, false));
+                 return;
+             }
+         }
+         else {
+             // calibrating fcam is not required in WideCameraOnly mode.
+             if (!utils.WideCameraOnly && !params.exists("CameraMatrix")){
+                 appContext.setScreen(new CalibrationInfo(appContext, Camera.CAMERA_TYPE_ROAD, false));
+                 return;
+             }
+             if (!params.exists("WideCameraMatrix")){
+                 appContext.setScreen(new CalibrationInfo(appContext, Camera.CAMERA_TYPE_WIDE, false));
+                 return;
+             }
+         }
 
         appContext.launcher.startAllD();
         appContext.setScreen(new IntroScreen(appContext));

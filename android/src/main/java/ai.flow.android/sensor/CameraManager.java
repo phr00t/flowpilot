@@ -11,6 +11,8 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
 import android.util.Range;
@@ -36,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 
@@ -52,9 +55,9 @@ public class CameraManager extends SensorInterface {
     public boolean running = false;
     public int W = Camera.frameSize[0];
     public int H = Camera.frameSize[1];
-    public MsgFrameData msgFrameData = new MsgFrameData(CAMERA_TYPE_ROAD);
+    public MsgFrameData msgFrameData;
     public MsgFrameBuffer msgFrameBuffer;
-    public PrimitiveList.Float.Builder K = msgFrameData.intrinsics;
+    public PrimitiveList.Float.Builder K;
     public int frequency;
     public int frameID = 0;
     public boolean recording = false;
@@ -68,6 +71,38 @@ public class CameraManager extends SensorInterface {
     String videoFileName, vidFilePath, videoLockPath;
     File lockFile;
 
+    public CameraSelector getCameraSelector(boolean  wide){
+        if (wide) {
+            List<CameraInfo> availableCamerasInfo = cameraProvider.getAvailableCameraInfos();
+            android.hardware.camera2.CameraManager cameraService = (android.hardware.camera2.CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+
+            float minFocalLen = Float.MAX_VALUE;
+            String wideAngleCameraId = null;
+
+            try {
+                String[] cameraIds = cameraService.getCameraIdList();
+                for (String id : cameraIds) {
+                    CameraCharacteristics characteristics = cameraService.getCameraCharacteristics(id);
+                    float focal_length = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+                    boolean backCamera = CameraCharacteristics.LENS_FACING_BACK == characteristics.get(CameraCharacteristics.LENS_FACING);
+                    if ((focal_length < minFocalLen) && backCamera) {
+                        minFocalLen = focal_length;
+                        wideAngleCameraId = id;
+                    }
+                }
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+            if (params.exists("WideCameraID")){
+                wideAngleCameraId = params.getString("WideCameraID");
+                System.out.println("Using camera ID provided by 'WideCameraID' param, ID: " + wideAngleCameraId);
+            }
+            return availableCamerasInfo.get(Integer.parseInt(wideAngleCameraId)).getCameraSelector();
+        }
+        else
+            return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+    }
+
     @SuppressLint("RestrictedApi")
     public VideoCapture videoCapture = new VideoCapture.Builder()
             .setTargetResolution(new Size(Camera.frameSize[0], Camera.frameSize[1]))
@@ -76,16 +111,24 @@ public class CameraManager extends SensorInterface {
             .setTargetRotation(Surface.ROTATION_90)
             .build();
 
-    public CameraManager(Context context, int frequency){
+    public CameraManager(Context context, int frequency, int cameraType){
+        msgFrameData = new MsgFrameData(cameraType);
+        K = msgFrameData.intrinsics;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
         this.frequency = frequency;
+        this.cameraType = cameraType;
 
-        this.frameDataTopic = "roadCameraState";
-        this.frameBufferTopic = "roadCameraBuffer";
+        if (cameraType == Camera.CAMERA_TYPE_WIDE){
+            this.frameDataTopic = "wideRoadCameraState";
+            this.frameBufferTopic = "wideRoadCameraBuffer";
+        } else if (cameraType == CAMERA_TYPE_ROAD) {
+            this.frameDataTopic = "roadCameraState";
+            this.frameBufferTopic = "roadCameraBuffer";
+        }
 
-        msgFrameBuffer = new MsgFrameBuffer(W * H * 3/2, CAMERA_TYPE_ROAD);
+        msgFrameBuffer = new MsgFrameBuffer(W * H * 3/2, cameraType);
         yuvBuffer = msgFrameBuffer.frameBuffer.getImage().asByteBuffer();
         msgFrameBuffer.frameBuffer.setEncoding(Definitions.FrameBuffer.Encoding.YUV);
         msgFrameBuffer.frameBuffer.setFrameHeight(H);
@@ -175,7 +218,8 @@ public class CameraManager extends SensorInterface {
             }
         });
 
-        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        // f3 uses wide camera.
+        CameraSelector cameraSelector = getCameraSelector(cameraType == Camera.CAMERA_TYPE_WIDE);
 
         androidx.camera.core.Camera camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector,
                 imageAnalysis, videoCapture);

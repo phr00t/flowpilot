@@ -6,6 +6,8 @@ import ai.flow.android.vision.SNPEModelRunner;
 import ai.flow.app.FlowUI;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
+import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.hardware.HardwareManager;
 import ai.flow.launcher.Launcher;
 import ai.flow.modeld.*;
@@ -19,6 +21,7 @@ import android.provider.Settings;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -81,11 +84,11 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ai.flow.app::wakelock");
 
 		// acquiring wakelock causes crash on some devices.
-		try {
-			wakeLock.acquire();
-		} catch (Exception e){
-			System.err.println(e);
-		}
+		//try {
+		//	wakeLock.acquire();
+		//} catch (Exception e){
+		//	System.err.println(e);
+		//}
 
 		// tune system for max throughput. Does this really help ?
 		//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -93,6 +96,8 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		//}
 
 		params = ParamsInterface.getInstance();
+		//utils.F3Mode = true; //params.existsAndCompare("F3", true);
+		//utils.WideCameraOnly = true; //params.existsAndCompare("WideCameraOnly", true);
 
 		TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
 		String dongleID = "";
@@ -106,10 +111,12 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		params.put("DeviceModel", Build.MODEL);
 
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
-		CameraManager cameraManager = new CameraManager(getApplication().getApplicationContext(), 20);
+		int cameraType = utils.F3Mode ? Camera.CAMERA_TYPE_WIDE : Camera.CAMERA_TYPE_ROAD;
+		CameraManager cameraManager = new CameraManager(getApplication().getApplicationContext(), 20, cameraType);
 		SensorManager sensorManager = new SensorManager(appContext, 100);
 		sensors = new HashMap<String, SensorInterface>() {{
 			put("roadCamera", cameraManager);
+			put("wideRoadCamera", cameraManager); // use same camera until we move away from wide camera-only mode.
 			put("motionSensors", sensorManager);
 		}};
 
@@ -125,7 +132,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			model = new TNNModelRunner(modelPath, useGPU);
 
 		ModelExecutor modelExecutor;
-		modelExecutor = new ModelExecutorF2(model);
+		modelExecutor = utils.F3Mode ? new ModelExecutorF3(model) : new ModelExecutorF2(model);
 		Launcher launcher = new Launcher(sensors, modelExecutor);
 
 		ErrorReporter ACRAreporter = ACRA.getErrorReporter();

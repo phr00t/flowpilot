@@ -23,6 +23,7 @@ dependencies {
         implementation 'com.microsoft.onnxruntime:onnxruntime_gpu:1.4.0'
     else
         implementation files("$rootProject.projectDir/third_party/onnxruntime-stripped-1.7.0.jar")
+    implementation files("$rootProject.projectDir/third_party/jocl-2.0.4.jar")
     implementation ("org.nd4j:nd4j-native-platform:$rootProject.nd4j_version")
     {
         exclude ((HashMap) [group: 'org.bytedeco', module: 'openblas-platform'])

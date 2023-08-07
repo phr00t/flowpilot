@@ -44,9 +44,6 @@ public class CommonModelF2 {
 
     public static final float[] prev_brake_5ms2_probs = {0f, 0f, 0f, 0f, 0f};
     public static final float[] prev_brake_3ms2_probs = {0f, 0f, 0f};
-    public static final int MODEL_WIDTH = 512;
-    public static final int MODEL_HEIGHT = 256;
-    public static final int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
 
     public static final  float[] T_IDXS = {0.f, 0.00976562f, 0.0390625f, 0.08789062f, 0.15625f, 0.24414062f,  0.3515625f,  0.47851562f,
             0.625f, 0.79101562f, 0.9765625f, 1.18164062f,  1.40625f,  1.65039062f,  1.9140625f,

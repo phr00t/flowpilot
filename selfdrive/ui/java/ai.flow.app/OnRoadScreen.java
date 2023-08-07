@@ -5,15 +5,17 @@ import ai.flow.app.helpers.Utils;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.definitions.CarDefinitions.CarControl.HUDControl.AudibleAlert;
 import ai.flow.definitions.Definitions;
-import ai.flow.modeld.CommonModelF2;
+import ai.flow.modeld.CommonModelF3;
 import ai.flow.modeld.ParsedOutputs;
 import ai.flow.modeld.Preprocess;
 import ai.flow.modeld.messages.MsgModelDataV2;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -28,7 +30,9 @@ import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
+import messaging.ZMQPubHandler;
 import messaging.ZMQSubHandler;
+import org.apache.commons.lang3.ArrayUtils;
 import org.capnproto.PrimitiveList;
 import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
@@ -37,7 +41,18 @@ import org.nd4j.linalg.api.memory.enums.LearningPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketOption;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -93,14 +108,16 @@ public class OnRoadScreen extends ScreenAdapter {
     // comm params
     boolean modelAlive, controlsAlive;
     ZMQSubHandler sh;
+    ZMQPubHandler ph;
     Definitions.ControlsState.Reader controlState;
     String modelTopic = "modelV2";
-    String cameraTopic = "roadCameraState";
-    String cameraBufferTopic = "roadCameraBuffer";
+    String cameraTopic = "wideRoadCameraState";
+    String cameraBufferTopic = "wideRoadCameraBuffer";
     String calibrationTopic = "liveCalibration";
     String carStateTopic = "carState";
     String controlsStateTopic = "controlsState";
     String deviceStateTopic = "deviceState";
+    String CDebugLine = "Empty", PYDebugLine = "Empty";
 
     Label velocityLabel, velocityUnitLabel, alertText1, alertText2, maxCruiseSpeedLabel, dateLabel, vesrionLabel;
     Table velocityTable, maxCruiseTable, alertTable, infoTable, offRoadTable, rootTable, offRoadRootTable;
@@ -115,7 +132,7 @@ public class OnRoadScreen extends ScreenAdapter {
     float uiHeight = 640;
     int notificationWidth = 950;
     float settingsBarWidth;
-    INDArray K = Camera.fcam_intrinsics.dup();
+    INDArray K = Camera.ecam_intrinsics.dup();
     boolean cameraMatrixUpdated = false;
     boolean isMetric;
     boolean laneLess;
@@ -129,7 +146,30 @@ public class OnRoadScreen extends ScreenAdapter {
         put("Offroad_ConnectivityNeeded", "Connect to internet to check for updates. flowpilot won't automatically start until it connects to internet to check for updates.");
         put("Offroad_InvalidTime", "Invalid date and time settings, system won't start until date time are set correctly.");
     }};
+    Map<AudibleAlert, Sound> soundAlerts;
     double elapsed;
+
+    public void PrepareDebugReader() {
+        Thread thread = new Thread(() -> {
+            try {
+                InetAddress localhost = InetAddress.getByName("localhost");
+                DatagramSocket s      = new DatagramSocket(9000);
+                byte[] buf = new byte[512];
+                while(true) {
+                    DatagramPacket p = new DatagramPacket(buf, buf.length);
+                    s.receive(p);
+                    String debugLine = new String(buf, 0, p.getLength());
+                    if (debugLine.startsWith("C"))
+                        CDebugLine = debugLine;
+                    else
+                        PYDebugLine = debugLine;
+                }
+            } catch (Exception e) {}
+        });
+        thread.setDaemon(true);
+        thread.setPriority(Thread.NORM_PRIORITY - 1);
+        thread.start();
+    }
 
     public enum UIStatus {
         STATUS_DISENGAGED,
@@ -199,6 +239,22 @@ public class OnRoadScreen extends ScreenAdapter {
         statusLabel.getChild(1).setColor(color[0], color[1], color[2], 0.8f);
     }
 
+    float updateTempTimer;
+    NumberFormat formatter = new DecimalFormat("0.0");
+    String tempStr = "--c";
+
+    public void UpdateTemps() {
+        java.nio.file.Path cpuPath = Paths.get("/sys/devices/virtual/thermal/thermal_zone0/temp");
+        java.nio.file.Path gpuPath = Paths.get("/sys/devices/virtual/thermal/thermal_zone10/temp");
+        float CPUTemp = 0f, GPUTemp = 0f;
+        try {
+            CPUTemp = Float.parseFloat(Files.readAllLines(cpuPath).get(0)) / 1000f;
+            GPUTemp = Float.parseFloat(Files.readAllLines(gpuPath).get(0)) / 1000f;
+        } catch (Exception e) {}
+        float MaxTemp = Math.max(CPUTemp, GPUTemp);
+        tempStr = formatter.format(MaxTemp) + "c";
+    }
+
     public void updateDeviceState(){
         Definitions.DeviceState.Reader deviceState = sh.recv(deviceStateTopic).getDeviceState();
         Definitions.DeviceState.ThermalStatus thermalStatus = deviceState.getThermalStatus();
@@ -236,6 +292,25 @@ public class OnRoadScreen extends ScreenAdapter {
     @SuppressWarnings("NewApi")
     public OnRoadScreen(FlowUI appContext) {
         this.appContext = appContext;
+
+        PrepareDebugReader();
+
+        if (!utils.F3Mode){
+            cameraTopic = "roadCameraState";
+            cameraBufferTopic = "roadCameraBuffer";
+            K = Camera.fcam_intrinsics.dup();
+        }
+
+        soundAlerts = new HashMap<AudibleAlert, Sound>() {{
+            put(AudibleAlert.ENGAGE, appContext.engageSound);
+            put(AudibleAlert.DISENGAGE, appContext.disengageSound);
+            put(AudibleAlert.REFUSE, appContext.refuseSound);
+            put(AudibleAlert.PROMPT, appContext.promptSound);
+            put(AudibleAlert.PROMPT_REPEAT, appContext.promptSound);
+            put(AudibleAlert.PROMPT_DISTRACTED, appContext.promptDistractedSound);
+            put(AudibleAlert.WARNING_SOFT, appContext.warningSoft);
+            put(AudibleAlert.WARNING_IMMEDIATE, appContext.warningImmediate);
+        }};
 
         batch = new SpriteBatch();
         pixelMap = new Pixmap(defaultImageWidth, defaultImageHeight, Pixmap.Format.RGB888);
@@ -356,7 +431,7 @@ public class OnRoadScreen extends ScreenAdapter {
         infoTable.add(statusLabelOnline).align(Align.top).height(uiHeight/8f).width(settingsBarWidth*0.8f).padTop(20);
         infoTable.row();
         Image logoTexture = new Image(loadTextureMipMap("selfdrive/assets/icons/circle-white.png"));
-        logoTexture.setColor(1, 1, 1, 0.85f);
+        logoTexture.setColor(1, 215/255f, 0, 0.6f);
         infoTable.add(logoTexture).align(Align.top).size(110).padTop(35).padBottom(40);
 
         stageFill.addActor(texImage);
@@ -446,8 +521,14 @@ public class OnRoadScreen extends ScreenAdapter {
     }
 
     public void updateCamera() {
-        msgframeBuffer = sh.recv(cameraBufferTopic).getRoadCameraBuffer();
-        msgframeData = sh.recv(cameraTopic).getRoadCameraState();
+        if (utils.F3Mode){
+            msgframeBuffer = sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
+            msgframeData = sh.recv(cameraTopic).getWideRoadCameraState();
+        }
+        else{
+            msgframeBuffer = sh.recv(cameraBufferTopic).getRoadCameraBuffer();
+            msgframeData = sh.recv(cameraTopic).getRoadCameraState();
+        }
         imgBuffer = updateImageBuffer(msgframeBuffer, imgBuffer);
 
         updateCameraMatrix(msgframeData);
@@ -497,7 +578,7 @@ public class OnRoadScreen extends ScreenAdapter {
             INDArray Rt;
             Rt = Preprocess.eulerAnglesToRotationMatrix(-augmentRot.getFloat(0, 1), -augmentRot.getFloat(0, 2), -augmentRot.getFloat(0, 0), 0.0, false);
             RtPath = Preprocess.eulerAnglesToRotationMatrix(-augmentRot.getFloat(0, 1), -augmentRot.getFloat(0, 2), -augmentRot.getFloat(0, 0), 1.22, false);
-            for (int i = 0; i< CommonModelF2.TRAJECTORY_SIZE; i++) {
+            for (int i = 0; i< CommonModelF3.TRAJECTORY_SIZE; i++) {
                 parsed.position.get(0)[i] = Math.max(parsed.position.get(0)[i], minZ);
                 parsed.roadEdges.get(0).get(0)[i] = Math.max(parsed.roadEdges.get(0).get(0)[i], minZ);
                 parsed.roadEdges.get(1).get(0)[i] = Math.max(parsed.roadEdges.get(1).get(0)[i], minZ);
@@ -511,8 +592,37 @@ public class OnRoadScreen extends ScreenAdapter {
             edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), K, Rt, 0.1f);
 
             lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), K, Rt, leadDrawScale);
-            lead2s = Draw.getTriangleCameraFrame(parsed.leads.get(1), K, Rt, leadDrawScale);
-            lead3s = Draw.getTriangleCameraFrame(parsed.leads.get(2), K, Rt, leadDrawScale);
+            //lead2s = Draw.getTriangleCameraFrame(parsed.leads.get(1), K, Rt, leadDrawScale);
+            //lead3s = Draw.getTriangleCameraFrame(parsed.leads.get(2), K, Rt, leadDrawScale);
+        }
+    }
+
+    public void handleSounds(Definitions.ControlsState.Reader controlState){
+        if (controlState==null)
+            return;
+
+        AudibleAlert alert = controlState.getAlertSound();
+
+        if (currentAudibleAlert == alert)
+            return;
+        currentAudibleAlert = alert;
+
+        for (AudibleAlert repeatAlerts : repeatingAlerts){
+            soundAlerts.get(repeatAlerts).stop();
+        }
+
+        if (alert != AudibleAlert.NONE){
+            Sound sound = soundAlerts.get(alert);
+            if (ArrayUtils.contains(repeatingAlerts, alert))
+                sound.loop();
+            else
+                sound.play();
+        }
+    }
+
+    public void stopSounds(){
+        for (AudibleAlert alert : soundAlerts.keySet()){
+            soundAlerts.get(alert).stop();
         }
     }
 
@@ -655,22 +765,26 @@ public class OnRoadScreen extends ScreenAdapter {
             if (sh.updated(carStateTopic))
                 updateCarState();
 
-            drawAlert(controlState);
+            //drawAlert(controlState); //debug
 
             stageUI.getViewport().apply();
             stageUI.draw();
 
+            updateTempTimer -= delta;
+            if (updateTempTimer <= 0f) {
+                updateTempTimer = 1f;
+                UpdateTemps();
+            }
+
             batch.begin();
-            if (appContext.launcher.modeld.getIterationRate() > 50)
-                appContext.font.setColor(1, 0, 0, 1);
-            else
-                appContext.font.setColor(0, 1, 0, 1);
-            appContext.font.draw(batch, String.valueOf(appContext.launcher.modeld.getIterationRate()),
-                    Gdx.graphics.getWidth() - 200,
-                    Gdx.graphics.getHeight() - 200);
+            appContext.font.setColor(1, 1, 1, 1);
+            appContext.font.draw(batch, "Clog: " + CDebugLine + "\nPYLog: " + PYDebugLine,20,200);
+            appContext.font.draw(batch, tempStr, Gdx.graphics.getWidth() - 200f, 150f);
             batch.end();
         }
         else{
+            stopSounds();
+
             modelAlive = false;
             controlsAlive = false;
             setDefaultAlert();
@@ -707,6 +821,7 @@ public class OnRoadScreen extends ScreenAdapter {
 
         if (sh.updated(controlsStateTopic)) {
             updateControls();
+            handleSounds(controlState);
             controlsAlive = true;
         }
 

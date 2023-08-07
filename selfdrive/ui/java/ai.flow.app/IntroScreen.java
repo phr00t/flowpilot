@@ -20,8 +20,8 @@ import java.nio.ByteBuffer;
 
 public class IntroScreen extends ScreenAdapter {
     public Mat imgBGR888;
-    public String videoName = "intro.avi";
-    public VideoCapture capture;
+    //public String videoName = "intro.avi";
+    //public VideoCapture capture;
     FlowUI appContext;
     ByteBuffer imgBuffer;
     Pixmap pixelMap;
@@ -38,10 +38,10 @@ public class IntroScreen extends ScreenAdapter {
     public IntroScreen(FlowUI appContext) {
         this.appContext = appContext;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        capture = new VideoCapture(Path.internal("selfdrive/assets/videos/" + videoName));
+        /*capture = new VideoCapture(Path.internal("selfdrive/assets/videos/" + videoName));
         frameCount = (int) capture.get(Videoio.CAP_PROP_FRAME_COUNT);
         vidWidth = (int) capture.get(Videoio.CAP_PROP_FRAME_WIDTH);
-        vidHeight = (int) capture.get(Videoio.CAP_PROP_FRAME_HEIGHT);
+        vidHeight = (int) capture.get(Videoio.CAP_PROP_FRAME_HEIGHT);*/
         if (imgBuffer == null)
             imgBuffer = ByteBuffer.allocateDirect(vidWidth * vidHeight * 3);
         imgBGR888 = new Mat(vidHeight, vidWidth, CvType.CV_8UC3, imgBuffer);
@@ -63,16 +63,16 @@ public class IntroScreen extends ScreenAdapter {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        if (count == frameCount) {
-            capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
+        /*if (count == frameCount) {
+            //capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
             count = 0;
-        }
+        }*/
 
-        ret = capture.read(imgBGR888);
-        Imgproc.cvtColor(imgBGR888, imgBGR888, Imgproc.COLOR_BGR2RGB);
+        //ret = capture.read(imgBGR888);
+        //Imgproc.cvtColor(imgBGR888, imgBGR888, Imgproc.COLOR_BGR2RGB);
 
-        pixelMap.setPixels(imgBuffer);
-        texture.draw(pixelMap, 0, 0);
+        //pixelMap.setPixels(imgBuffer);
+        //texture.draw(pixelMap, 0, 0);
 
         texImage.setColor(1.0f, 1.0f, 1.0f, alpha);
         stage.act(Gdx.graphics.getDeltaTime());
@@ -89,7 +89,7 @@ public class IntroScreen extends ScreenAdapter {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
-        capture.release();
+        //capture.release();
         texture.dispose();
         pixelMap.dispose();
         imgBGR888.release();

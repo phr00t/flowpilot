@@ -24,6 +24,10 @@ public class MsgFrameBuffer extends MessageBase {
         event = messageBuilder.initRoot(Definitions.Event.factory);
         if (cameraType == Camera.CAMERA_TYPE_ROAD)
             frameBuffer = event.initRoadCameraBuffer();
+        else if (cameraType == Camera.CAMERA_TYPE_WIDE)
+            frameBuffer = event.initWideRoadCameraBuffer();
+        else if (cameraType == Camera.CAMERA_TYPE_DRIVER)
+            frameBuffer = event.initDriverCameraBuffer();
         else
             throw new IllegalArgumentException("Invalid camera type specified");
         if (imgSize > 0) {

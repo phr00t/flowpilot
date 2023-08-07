@@ -12,8 +12,8 @@ import org.opencv.core.Size;
 
 import java.nio.ByteBuffer;
 
-import static ai.flow.modeld.CommonModelF2.MODEL_HEIGHT;
-import static ai.flow.modeld.CommonModelF2.MODEL_WIDTH;
+import static ai.flow.modeld.CommonModelF3.MODEL_HEIGHT;
+import static ai.flow.modeld.CommonModelF3.MODEL_WIDTH;
 
 public class ImagePrepareCPU implements ImagePrepare{
     public int H;
