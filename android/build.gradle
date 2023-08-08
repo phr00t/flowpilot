@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-	compileSdkVersion 31
+	compileSdkVersion 33
 	ndkVersion "21.1.6352462"
 	sourceSets {
 		main {
@@ -86,7 +86,7 @@ dependencies {
 	implementation project(":sensord")
 	implementation project(':ui')
 	implementation project(':modeld')
-	def camerax_version = "1.1.0-beta02"
+	def camerax_version = "1.2.3"
 	implementation "androidx.camera:camera-camera2:$camerax_version"
 	implementation "androidx.camera:camera-lifecycle:$camerax_version"
 	implementation "androidx.camera:camera-view:$camerax_version"
