@@ -168,35 +168,6 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 	@Override
 	protected void attachBaseContext(Context base) {
 		super.attachBaseContext(base);
-		initACRA(base);
-	}
-
-	private void initACRA(Context base) {
-		String ACRA_URI = null, ACRA_AUTH_LOGIN = null, ACRA_AUTH_PASSWORD = null;
-		try {
-			ACRA_URI = (String)ai.flow.app.BuildConfig.class.getField("ACRA_URI").get(null);
-			ACRA_AUTH_LOGIN = (String)ai.flow.app.BuildConfig.class.getField("ACRA_AUTH_LOGIN").get(null);
-			ACRA_AUTH_PASSWORD = (String)ai.flow.app.BuildConfig.class.getField("ACRA_AUTH_PASSWORD").get(null);
-		} catch (Exception e) {}
-
-		if (ACRA_URI == null || ACRA_AUTH_LOGIN == null || ACRA_AUTH_PASSWORD == null)
-			return;
-
-		CoreConfigurationBuilder builder = new CoreConfigurationBuilder(this)
-				.withBuildConfigClass(BuildConfig.class)
-				.withReportFormat(StringFormat.JSON);
-
-		builder.getPluginConfigurationBuilder(HttpSenderConfigurationBuilder.class)
-				.withUri(ACRA_URI)
-				.withBasicAuthLogin(ACRA_AUTH_LOGIN)
-				.withBasicAuthPassword(ACRA_AUTH_PASSWORD)
-				.withHttpMethod(HttpSender.Method.POST)
-				.setEnabled(true);
-		builder.getPluginConfigurationBuilder(ToastConfigurationBuilder.class)
-				.withText("crash report sent to flowpilot maintainers")
-				.setEnabled(false);
-
-		ACRA.init((Application) base.getApplicationContext(), builder);
 	}
 
 	private Boolean checkVersionMisMatch() {

@@ -35,20 +35,6 @@ android {
 		targetSdkVersion 30
 		versionCode 1
 
-		// set acra config for crash reporting.
-		if (System.getenv('ACRA_URI')!=null) {
-			buildConfigField("String", "ACRA_URI", System.getenv('ACRA_URI'))
-			project.logger.lifecycle('ACRA URI found')
-		}
-		if (System.getenv('ACRA_AUTH_LOGIN')!=null) {
-			buildConfigField("String", "ACRA_AUTH_LOGIN", System.getenv('ACRA_AUTH_LOGIN'))
-			project.logger.lifecycle('ACRA AUTH LOGIN found')
-		}
-		if (System.getenv('ACRA_AUTH_PASSWORD')!=null) {
-			buildConfigField("String", "ACRA_AUTH_PASSWORD", System.getenv('ACRA_AUTH_PASSWORD'))
-			project.logger.lifecycle('ACRA AUTH PASSWORD found')
-		}
-
 		// set app version
 		versionName = rootProject.file('common/version.h').text.split("\"")[1].trim()
 
