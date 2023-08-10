@@ -124,3 +124,8 @@ env.bak/
 venv.bak/
 
 !**/.gitkeep
+.vs
+c.7z
+devlog.txt
+log.txt
+android/debug
