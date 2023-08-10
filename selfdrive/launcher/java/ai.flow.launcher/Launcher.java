@@ -64,7 +64,7 @@ public class Launcher {
         ModelRunner model = new TNNModelRunner(modelPath, true);
 
         ModelExecutor modelExecutor;
-        modelExecutor = utils.F3Mode ? new ModelExecutorF3(model) : new ModelExecutorF2(model);
+        modelExecutor = new ModelExecutorF3(model);
 
         this.modeld = modelExecutor;
         this.startAllD();

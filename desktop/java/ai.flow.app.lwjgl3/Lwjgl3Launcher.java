@@ -51,7 +51,7 @@ public class Lwjgl3Launcher {
 			model = new ONNXModelRunner(modelPath, getUseGPU());
 
 		ModelExecutor modelExecutor;
-		modelExecutor = utils.F3Mode ? new ModelExecutorF3(model) : new ModelExecutorF2(model);
+		modelExecutor = new ModelExecutorF3(model);
 
 		Launcher launcher = new Launcher(sensors, modelExecutor);
 		HardwareManager hardwareManager = new DesktopHardwareManager();

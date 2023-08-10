@@ -45,12 +45,11 @@ import java.util.concurrent.ExecutionException;
 import static ai.flow.android.sensor.Utils.fillYUVBuffer;
 import static ai.flow.common.BufferUtils.byteToFloat;
 import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
-import static ai.flow.common.transformations.Camera.fcamIntrinsicParam;
 
 public class CameraManager extends SensorInterface {
 
     public ProcessCameraProvider cameraProvider;
-    public String frameDataTopic, frameBufferTopic;
+    public String frameDataTopic, frameBufferTopic, intName;
     public ZMQPubHandler ph;
     public boolean running = false;
     public int W = Camera.frameSize[0];
@@ -123,9 +122,11 @@ public class CameraManager extends SensorInterface {
         if (cameraType == Camera.CAMERA_TYPE_WIDE){
             this.frameDataTopic = "wideRoadCameraState";
             this.frameBufferTopic = "wideRoadCameraBuffer";
+            this.intName = "WideCameraMatrix";
         } else if (cameraType == CAMERA_TYPE_ROAD) {
             this.frameDataTopic = "roadCameraState";
             this.frameBufferTopic = "roadCameraBuffer";
+            this.intName = "CameraMatrix";
         }
 
         msgFrameBuffer = new MsgFrameBuffer(W * H * 3/2, cameraType);
@@ -141,8 +142,8 @@ public class CameraManager extends SensorInterface {
     }
 
     public void loadIntrinsics(){
-        if (params.exists(fcamIntrinsicParam)) {
-            float[] cameraMatrix = byteToFloat(params.getBytes(fcamIntrinsicParam));
+        if (params.exists(intName)) {
+            float[] cameraMatrix = byteToFloat(params.getBytes(intName));
             updateProperty("intrinsics", cameraMatrix);
         }
     }

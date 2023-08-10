@@ -295,12 +295,6 @@ public class OnRoadScreen extends ScreenAdapter {
 
         PrepareDebugReader();
 
-        if (!utils.F3Mode){
-            cameraTopic = "roadCameraState";
-            cameraBufferTopic = "roadCameraBuffer";
-            K = Camera.fcam_intrinsics.dup();
-        }
-
         soundAlerts = new HashMap<AudibleAlert, Sound>() {{
             put(AudibleAlert.ENGAGE, appContext.engageSound);
             put(AudibleAlert.DISENGAGE, appContext.disengageSound);
@@ -521,14 +515,8 @@ public class OnRoadScreen extends ScreenAdapter {
     }
 
     public void updateCamera() {
-        if (utils.F3Mode){
-            msgframeBuffer = sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
-            msgframeData = sh.recv(cameraTopic).getWideRoadCameraState();
-        }
-        else{
-            msgframeBuffer = sh.recv(cameraBufferTopic).getRoadCameraBuffer();
-            msgframeData = sh.recv(cameraTopic).getRoadCameraState();
-        }
+        msgframeBuffer = sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
+        msgframeData = sh.recv(cameraTopic).getWideRoadCameraState();
         imgBuffer = updateImageBuffer(msgframeBuffer, imgBuffer);
 
         updateCameraMatrix(msgframeData);

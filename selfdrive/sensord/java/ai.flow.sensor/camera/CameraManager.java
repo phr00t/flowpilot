@@ -24,7 +24,6 @@ import java.util.Arrays;
 import static ai.flow.common.BufferUtils.bufferFromAddress;
 import static ai.flow.common.BufferUtils.byteToFloat;
 import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
-import static ai.flow.common.transformations.Camera.fcamIntrinsicParam;
 
 public class CameraManager extends SensorInterface implements Runnable {
     public Thread thread;
@@ -66,7 +65,7 @@ public class CameraManager extends SensorInterface implements Runnable {
         } else if (cameraType == CAMERA_TYPE_ROAD) {
             frameDataTopic = "roadCameraState";
             frameBufferTopic = "roadCameraBuffer";
-            cameraParamName = fcamIntrinsicParam;
+            cameraParamName = "CameraMatrix";
         }
 
         msgFrameBuffer = new MsgFrameBuffer(frameWidth*frameHeight*3/2, cameraType);

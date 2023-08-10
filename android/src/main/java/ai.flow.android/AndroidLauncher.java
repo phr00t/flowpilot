@@ -111,14 +111,27 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		params.put("DeviceModel", Build.MODEL);
 
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
-		int cameraType = utils.F3Mode ? Camera.CAMERA_TYPE_WIDE : Camera.CAMERA_TYPE_ROAD;
-		CameraManager cameraManager = new CameraManager(getApplication().getApplicationContext(), 20, cameraType);
+		CameraManager cameraManager, cameraManagerWide = null;
 		SensorManager sensorManager = new SensorManager(appContext, 100);
-		sensors = new HashMap<String, SensorInterface>() {{
-			put("roadCamera", cameraManager);
-			put("wideRoadCamera", cameraManager); // use same camera until we move away from wide camera-only mode.
-			put("motionSensors", sensorManager);
-		}};
+		if (utils.WideCameraOnly) {
+			cameraManager = new CameraManager(getApplication().getApplicationContext(), 20, Camera.CAMERA_TYPE_WIDE);
+			CameraManager finalCameraManager = cameraManager; // stupid java
+			sensors = new HashMap<String, SensorInterface>() {{
+				put("roadCamera", finalCameraManager);
+				put("wideRoadCamera", finalCameraManager); // use same camera until we move away from wide camera-only mode.
+				put("motionSensors", sensorManager);
+			}};
+		} else {
+			cameraManager = new CameraManager(getApplication().getApplicationContext(), 20, Camera.CAMERA_TYPE_ROAD);
+			cameraManagerWide = new CameraManager(getApplication().getApplicationContext(), 20, Camera.CAMERA_TYPE_WIDE);
+			CameraManager finalCameraManager = cameraManager; // stupid java
+			CameraManager finalCameraManagerWide = cameraManagerWide;
+			sensors = new HashMap<String, SensorInterface>() {{
+				put("roadCamera", finalCameraManager);
+				put("wideRoadCamera", finalCameraManagerWide);
+				put("motionSensors", sensorManager);
+			}};
+		}
 
 		int pid = Process.myPid();
 
@@ -132,7 +145,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			model = new TNNModelRunner(modelPath, useGPU);
 
 		ModelExecutor modelExecutor;
-		modelExecutor = utils.F3Mode ? new ModelExecutorF3(model) : new ModelExecutorF2(model);
+		modelExecutor = new ModelExecutorF3(model);
 		Launcher launcher = new Launcher(sensors, modelExecutor);
 
 		ErrorReporter ACRAreporter = ACRA.getErrorReporter();
@@ -147,6 +160,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 
 		MainFragment fragment = new MainFragment(new FlowUI(launcher, androidHardwareManager, pid));
 		cameraManager.setLifeCycleFragment(fragment);
+		if (cameraManagerWide != null) cameraManagerWide.setLifeCycleFragment(fragment);
 		FragmentTransaction trans = getSupportFragmentManager().beginTransaction();
 		trans.replace(android.R.id.content, fragment);
 		trans.commit();
