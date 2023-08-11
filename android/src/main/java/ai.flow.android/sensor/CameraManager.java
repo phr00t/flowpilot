@@ -102,14 +102,6 @@ public class CameraManager extends SensorInterface {
             return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
     }
 
-    @SuppressLint("RestrictedApi")
-    public VideoCapture videoCapture = new VideoCapture.Builder()
-            .setTargetResolution(new Size(Camera.frameSize[0], Camera.frameSize[1]))
-            .setVideoFrameRate(20)
-            .setBitRate(2000_000)
-            .setTargetRotation(Surface.ROTATION_90)
-            .build();
-
     public CameraManager(Context context, int frequency, int cameraType){
         msgFrameData = new MsgFrameData(cameraType);
         K = msgFrameData.intrinsics;
@@ -223,73 +215,12 @@ public class CameraManager extends SensorInterface {
         CameraSelector cameraSelector = getCameraSelector(cameraType == Camera.CAMERA_TYPE_WIDE);
 
         androidx.camera.core.Camera camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector,
-                imageAnalysis, videoCapture);
+                imageAnalysis);
 
         cameraControl = camera.getCameraControl();
 
         // disable autofocus
         cameraControl.cancelFocusAndMetering();
-    }
-
-    @SuppressLint("RestrictedApi")
-    public void startRecordCamera() {
-        if (recording)
-            return;
-        recording = true;
-        @SuppressLint("SdCardPath") File movieDir = new File(Path.getVideoStorageDir());
-
-        if (!movieDir.exists()) {
-            movieDir.mkdirs();
-        }
-
-        videoFileName = df.format(new Date());
-        vidFilePath = movieDir.getAbsolutePath() + "/" + videoFileName + ".mp4";
-        videoLockPath = movieDir.getAbsolutePath() + "/" + videoFileName + ".lock";
-
-        lockFile = new File(videoLockPath);
-        try {
-            lockFile.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        File vidFile = new File(vidFilePath);
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Do something
-        }
-
-        videoCapture.startRecording(
-                new VideoCapture.OutputFileOptions.Builder(vidFile).build(),
-                ContextCompat.getMainExecutor(context),
-                new VideoCapture.OnVideoSavedCallback() {
-                    @Override
-                    public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
-                        System.out.println("[INFO] Video Saved: " + vidFile.getName());
-                        lockFile.delete();
-                    }
-                    @Override
-                    public void onError(int videoCaptureError, @NonNull String message, @Nullable Throwable cause) {
-                        System.err.println("[WARNING] Video Save Error: " + vidFile.getName() + " " + message);
-                        lockFile.delete();
-                    }
-                }
-        );
-    }
-
-    @Override
-    public void record(boolean shouldRecord) {
-        if (shouldRecord)
-            startRecordCamera();
-        else
-            stopRecordCamera();
-    }
-
-    @SuppressLint("RestrictedApi")
-    public void stopRecordCamera() {
-        if (!recording)
-            return;
-        videoCapture.stopRecording();
-        recording = false;
     }
 
     @Override
@@ -310,7 +241,6 @@ public class CameraManager extends SensorInterface {
         // TODO: add pause/resume functionality
         if (!running)
             return;
-        videoCapture.stopRecording();
         cameraProvider.unbindAll();
         running = false;
     }
