@@ -3,6 +3,7 @@ package ai.flow.android.sensor;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.messages.MsgFrameData;
 import ai.flow.sensor.SensorInterface;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -48,6 +50,8 @@ import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
 
 public class CameraManager extends SensorInterface {
 
+    private ImageAnalysis.Analyzer myAnalyzer;
+    public static List<CameraManager> Managers = new ArrayList<>();
     public ProcessCameraProvider cameraProvider;
     public String frameDataTopic, frameBufferTopic, intName;
     public ZMQPubHandler ph;
@@ -156,18 +160,85 @@ public class CameraManager extends SensorInterface {
         if (running)
             return;
         running = true;
+        CameraManager myCamManager = this;
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(context);
         cameraProviderFuture.addListener(new Runnable() {
             @Override
             public void run() {
                 try {
                     cameraProvider = cameraProviderFuture.get();
-                    bindUseCases(cameraProvider);
+                    myAnalyzer = new ImageAnalysis.Analyzer() {
+                        @RequiresApi(api = Build.VERSION_CODES.N)
+                        @Override
+                        public void analyze(@NonNull ImageProxy image) {
+
+                            fillYUVBuffer(image, yuvBuffer);
+
+                            ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
+
+                            msgFrameBuffer.frameBuffer.setYWidth(W);
+                            msgFrameBuffer.frameBuffer.setYHeight(H);
+                            msgFrameBuffer.frameBuffer.setYPixelStride(yPlane.getPixelStride());
+                            msgFrameBuffer.frameBuffer.setUvWidth(W /2);
+                            msgFrameBuffer.frameBuffer.setUvHeight(H /2);
+                            msgFrameBuffer.frameBuffer.setUvPixelStride(image.getPlanes()[1].getPixelStride());
+                            msgFrameBuffer.frameBuffer.setUOffset(W * H);
+                            if (image.getPlanes()[1].getPixelStride() == 2)
+                                msgFrameBuffer.frameBuffer.setVOffset(W * H +1);
+                            else
+                                msgFrameBuffer.frameBuffer.setVOffset(W * H + W * H /4);
+                            msgFrameBuffer.frameBuffer.setStride(yPlane.getRowStride());
+
+                            msgFrameData.frameData.setFrameId(frameID);
+
+                            ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
+                            ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
+
+                            image.close();
+                            frameID += 1;
+                        }
+                    };
+
+                    if (utils.WideCameraOnly)
+                        bindUseCases(cameraProvider);
+                    else {
+                        Managers.add(myCamManager);
+                        if (Managers.size() == 2)
+                            bindUseCasesGroup(Managers, cameraProvider);
+                    }
                 } catch (ExecutionException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         }, ContextCompat.getMainExecutor(context));
+    }
+
+    @SuppressLint({"RestrictedApi", "UnsafeOptInUsageError"})
+    private static void bindUseCasesGroup(List<CameraManager> managers, ProcessCameraProvider cameraProvider) {
+        List<ConcurrentCamera.SingleCameraConfig> configs = new ArrayList<>();
+        for (int i=0; i<managers.size(); i++) {
+            CameraManager cm = managers.get(i);
+            ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
+            builder.setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST);
+            builder.setTargetResolution(new Size(cm.W, cm.H));
+            Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
+            ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(cm.frequency, cm.frequency));
+            ImageAnalysis imageAnalysis = builder.build();
+            imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(cm.context), cm.myAnalyzer);
+            ConcurrentCamera.SingleCameraConfig camconfig = new ConcurrentCamera.SingleCameraConfig(
+                    cm.getCameraSelector(cm.cameraType == Camera.CAMERA_TYPE_WIDE),
+                    new UseCaseGroup.Builder()
+                            .addUseCase(imageAnalysis)
+                            .build(),
+                    cm.lifeCycleFragment.getViewLifecycleOwner());
+            configs.add(camconfig);
+        }
+        ConcurrentCamera concurrentCamera = cameraProvider.bindToLifecycle(configs);
+        List<androidx.camera.core.Camera> cams = concurrentCamera.getCameras();
+        for (int i=0; i<cams.size(); i++) {
+            CameraControl cc = cams.get(i).getCameraControl();
+            cc.cancelFocusAndMetering();
+        }
     }
 
     @SuppressLint({"RestrictedApi", "UnsafeOptInUsageError"})
@@ -179,37 +250,7 @@ public class CameraManager extends SensorInterface {
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(frequency, frequency));
         ImageAnalysis imageAnalysis = builder.build();
 
-        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), new ImageAnalysis.Analyzer() {
-            @RequiresApi(api = Build.VERSION_CODES.N)
-            @Override
-            public void analyze(@NonNull ImageProxy image) {
-
-                fillYUVBuffer(image, yuvBuffer);
-
-                ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
-
-                msgFrameBuffer.frameBuffer.setYWidth(W);
-                msgFrameBuffer.frameBuffer.setYHeight(H);
-                msgFrameBuffer.frameBuffer.setYPixelStride(yPlane.getPixelStride());
-                msgFrameBuffer.frameBuffer.setUvWidth(W /2);
-                msgFrameBuffer.frameBuffer.setUvHeight(H /2);
-                msgFrameBuffer.frameBuffer.setUvPixelStride(image.getPlanes()[1].getPixelStride());
-                msgFrameBuffer.frameBuffer.setUOffset(W * H);
-                if (image.getPlanes()[1].getPixelStride() == 2)
-                    msgFrameBuffer.frameBuffer.setVOffset(W * H +1);
-                else
-                    msgFrameBuffer.frameBuffer.setVOffset(W * H + W * H /4);
-                msgFrameBuffer.frameBuffer.setStride(yPlane.getRowStride());
-
-                msgFrameData.frameData.setFrameId(frameID);
-
-                ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
-                ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
-
-                image.close();
-                frameID += 1;
-            }
-        });
+        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
 
         // f3 uses wide camera.
         CameraSelector cameraSelector = getCameraSelector(cameraType == Camera.CAMERA_TYPE_WIDE);
