@@ -73,7 +73,7 @@ public class SettingsScreen extends ScreenAdapter {
         String deviceModel = params.exists("DeviceModel") ? params.getString("DeviceModel") : "";
         addKeyValueTable(currentSettingTable, "Device Name", deviceModel, true);
         addKeyValueTable(currentSettingTable, "Log Out", buttonLogOut, true);
-        if (!utils.WideCameraOnly)
+        if (!utils.SingleCameraOnly)
             addKeyValueTable(currentSettingTable, "Reset Intrinsic Calibration", buttonCalibrate, true);
         addKeyValueTable(currentSettingTable, "Reset Wide Intrinsic Calibration", buttonWideCalibrate, true);
         addKeyValueTable(currentSettingTable, "Reset Extrinsic Calibration", buttonCalibrateExtrinsic, true);

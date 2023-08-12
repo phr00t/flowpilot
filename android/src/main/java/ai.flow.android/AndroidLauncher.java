@@ -13,7 +13,6 @@ import ai.flow.launcher.Launcher;
 import ai.flow.modeld.*;
 import ai.flow.sensor.SensorInterface;
 import android.annotation.SuppressLint;
-import android.app.Application;
 import android.content.Context;
 import android.os.Process;
 import android.os.*;
@@ -21,7 +20,6 @@ import android.provider.Settings;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,13 +29,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.AndroidFragmentApplication;
 import org.acra.ACRA;
-import org.acra.BuildConfig;
 import org.acra.ErrorReporter;
-import org.acra.config.CoreConfigurationBuilder;
-import org.acra.config.HttpSenderConfigurationBuilder;
-import org.acra.config.ToastConfigurationBuilder;
-import org.acra.data.StringFormat;
-import org.acra.sender.HttpSender;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -113,7 +105,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
 		CameraManager cameraManager, cameraManagerWide = null;
 		SensorManager sensorManager = new SensorManager(appContext, 100);
-		if (utils.WideCameraOnly) {
+		if (utils.SingleCameraOnly) {
 			cameraManager = new CameraManager(getApplication().getApplicationContext(), 20, Camera.CAMERA_TYPE_WIDE);
 			CameraManager finalCameraManager = cameraManager; // stupid java
 			sensors = new HashMap<String, SensorInterface>() {{

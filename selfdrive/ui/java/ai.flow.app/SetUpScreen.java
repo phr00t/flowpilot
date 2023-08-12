@@ -39,7 +39,7 @@ public class SetUpScreen extends ScreenAdapter {
         appContext.launcher.startSensorD();
 
          // calibrating fcam is not required in WideCameraOnly mode.
-         if (!utils.WideCameraOnly && !params.exists("CameraMatrix")){
+         if (!utils.SingleCameraOnly && !params.exists("CameraMatrix")){
              appContext.setScreen(new CalibrationInfo(appContext, Camera.CAMERA_TYPE_ROAD, false));
              return;
          }

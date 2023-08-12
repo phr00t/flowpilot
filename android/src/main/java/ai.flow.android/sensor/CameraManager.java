@@ -1,31 +1,27 @@
 package ai.flow.android.sensor;
 
 import ai.flow.common.ParamsInterface;
-import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
 import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.messages.MsgFrameData;
 import ai.flow.sensor.SensorInterface;
 import ai.flow.sensor.messages.MsgFrameBuffer;
-import android.Manifest;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
 import android.util.Range;
 import android.util.Size;
-import android.view.Surface;
+
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.core.*;
 import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -34,12 +30,10 @@ import org.capnproto.PrimitiveList;
 import org.opencv.core.Core;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
@@ -47,10 +41,13 @@ import java.util.concurrent.ExecutionException;
 import static ai.flow.android.sensor.Utils.fillYUVBuffer;
 import static ai.flow.common.BufferUtils.byteToFloat;
 import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
+import static ai.flow.common.transformations.Camera.CAMERA_TYPE_WIDE;
 
 public class CameraManager extends SensorInterface {
 
+    private CameraSelector wideCamSelected, roadCamSelected, currentActiveCam;
     private ImageAnalysis.Analyzer myAnalyzer;
+    private ImageAnalysis analysis;
     public static List<CameraManager> Managers = new ArrayList<>();
     public ProcessCameraProvider cameraProvider;
     public String frameDataTopic, frameBufferTopic, intName;
@@ -103,7 +100,20 @@ public class CameraManager extends SensorInterface {
             return availableCamerasInfo.get(Integer.parseInt(wideAngleCameraId)).getCameraSelector();
         }
         else
-            return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+            return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
+    }
+
+    public void SetCameraParameters() {
+        if (cameraType == Camera.CAMERA_TYPE_WIDE){
+            this.frameDataTopic = "wideRoadCameraState";
+            this.frameBufferTopic = "wideRoadCameraBuffer";
+            this.intName = "WideCameraMatrix";
+        } else if (cameraType == CAMERA_TYPE_ROAD) {
+            this.frameDataTopic = "roadCameraState";
+            this.frameBufferTopic = "roadCameraBuffer";
+            this.intName = "CameraMatrix";
+        }
+        loadIntrinsics();
     }
 
     public CameraManager(Context context, int frequency, int cameraType){
@@ -115,26 +125,20 @@ public class CameraManager extends SensorInterface {
         this.frequency = frequency;
         this.cameraType = cameraType;
 
-        if (cameraType == Camera.CAMERA_TYPE_WIDE){
-            this.frameDataTopic = "wideRoadCameraState";
-            this.frameBufferTopic = "wideRoadCameraBuffer";
-            this.intName = "WideCameraMatrix";
-        } else if (cameraType == CAMERA_TYPE_ROAD) {
-            this.frameDataTopic = "roadCameraState";
-            this.frameBufferTopic = "roadCameraBuffer";
-            this.intName = "CameraMatrix";
-        }
-
         msgFrameBuffer = new MsgFrameBuffer(W * H * 3/2, cameraType);
         yuvBuffer = msgFrameBuffer.frameBuffer.getImage().asByteBuffer();
         msgFrameBuffer.frameBuffer.setEncoding(Definitions.FrameBuffer.Encoding.YUV);
         msgFrameBuffer.frameBuffer.setFrameHeight(H);
         msgFrameBuffer.frameBuffer.setFrameWidth(W);
 
-        ph = new ZMQPubHandler();
-        ph.createPublishers(Arrays.asList(frameDataTopic, frameBufferTopic));
+        SetCameraParameters();
 
-        loadIntrinsics();
+        ph = new ZMQPubHandler();
+
+        if (utils.SwapCamerasQuickly)
+            ph.createPublishers(Arrays.asList("wideRoadCameraState", "roadCameraState", "roadCameraBuffer", "wideRoadCameraBuffer"));
+        else
+            ph.createPublishers(Arrays.asList(frameDataTopic, frameBufferTopic));
     }
 
     public void loadIntrinsics(){
@@ -196,10 +200,25 @@ public class CameraManager extends SensorInterface {
 
                             image.close();
                             frameID += 1;
+
+                            if (utils.SwapCamerasQuickly) {
+                                // done with this camera, switch to the other
+                                cameraProvider.unbind(analysis);
+                                if (currentActiveCam == wideCamSelected) {
+                                    currentActiveCam = roadCamSelected;
+                                    cameraType = CAMERA_TYPE_ROAD;
+                                } else {
+                                    currentActiveCam = wideCamSelected;
+                                    cameraType = CAMERA_TYPE_WIDE;
+                                }
+                                SetCameraParameters();
+                                cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), currentActiveCam,
+                                        analysis);
+                            }
                         }
                     };
 
-                    if (utils.WideCameraOnly)
+                    if (utils.SingleCameraOnly)
                         bindUseCases(cameraProvider);
                     else {
                         Managers.add(myCamManager);
@@ -248,15 +267,20 @@ public class CameraManager extends SensorInterface {
         builder.setTargetResolution(new Size(W, H));
         Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(frequency, frequency));
-        ImageAnalysis imageAnalysis = builder.build();
+        analysis = builder.build();
 
-        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
+        analysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
 
         // f3 uses wide camera.
-        CameraSelector cameraSelector = getCameraSelector(cameraType == Camera.CAMERA_TYPE_WIDE);
+        wideCamSelected = getCameraSelector(true);
 
-        androidx.camera.core.Camera camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector,
-                imageAnalysis);
+        if (utils.SwapCamerasQuickly) {
+            roadCamSelected = getCameraSelector(false);
+            currentActiveCam = wideCamSelected;
+        }
+
+        androidx.camera.core.Camera camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), wideCamSelected,
+                analysis);
 
         cameraControl = camera.getCameraControl();
 

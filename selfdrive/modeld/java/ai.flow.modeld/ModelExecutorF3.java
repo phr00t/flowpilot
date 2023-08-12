@@ -125,8 +125,8 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public void updateCameraState(){
         frameWideData = sh.recv("wideRoadCameraState").getWideRoadCameraState();
         msgFrameWideBuffer = sh.recv("wideRoadCameraBuffer").getWideRoadCameraBuffer();
-        frameData = utils.WideCameraOnly ? frameWideData : sh.recv("roadCameraState").getRoadCameraState();
-        msgFrameBuffer = utils.WideCameraOnly ? msgFrameWideBuffer : sh.recv("roadCameraBuffer").getRoadCameraBuffer();
+        frameData = utils.SingleCameraOnly ? frameWideData : sh.recv("roadCameraState").getRoadCameraState();
+        msgFrameBuffer = utils.SingleCameraOnly ? msgFrameWideBuffer : sh.recv("roadCameraBuffer").getRoadCameraBuffer();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
         wideImgBuffer = updateImageBuffer(msgFrameWideBuffer, wideImgBuffer);
     }
@@ -161,7 +161,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.WideCameraOnly, false);
+        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.SingleCameraOnly, false);
         INDArray wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, true, true);
 
         updateCameraState();
@@ -233,7 +233,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 for (int i = 0; i < 3; i++) {
                     augmentRot.putScalar(i, rpy.get(i));
                 }
-                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.WideCameraOnly, false);
+                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.SingleCameraOnly, false);
                 wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, true, true);
             }
 

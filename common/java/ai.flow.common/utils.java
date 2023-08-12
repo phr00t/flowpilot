@@ -3,12 +3,10 @@ package ai.flow.common;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.Queue;
 
 public class utils {
 
-    public static boolean WideCameraOnly = true;
+    public static boolean SingleCameraOnly = false, SwapCamerasQuickly = false;
 
     public static void Log(String s) {
         System.out.println("PHR00TLOG: " + s);
