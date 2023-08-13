@@ -465,7 +465,7 @@ public class OnRoadScreen extends ScreenAdapter {
         animationNight = GifDecoder.loadGIFAnimation(Animation.PlayMode.LOOP, Gdx.files.absolute(Path.internal("selfdrive/assets/gifs/night.gif")).read());
 
         sh = new ZMQSubHandler(true);
-        sh.createSubscribers(Arrays.asList(cameraTopic, cameraBufferTopic, deviceStateTopic, calibrationTopic, carStateTopic, controlsStateTopic, modelTopic));
+        sh.createSubscribers(Arrays.asList(cameraTopic, cameraBufferTopic, deviceStateTopic, calibrationTopic, carStateTopic, controlsStateTopic, modelTopic, "roadCameraBuffer", "roadCameraState"));
     }
 
     public Animation<TextureRegion> getCurrentAnimation(){

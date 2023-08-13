@@ -5,6 +5,7 @@ import ai.flow.common.transformations.Camera;
 import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.messages.MsgModelRaw;
+import ai.flow.sensor.camera.CameraManager;
 import messaging.ZMQPubHandler;
 import messaging.ZMQSubHandler;
 import org.capnproto.PrimitiveList;
@@ -16,6 +17,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.INDArrayIndex;
 import org.nd4j.linalg.indexing.NDArrayIndex;
+import org.nd4j.linalg.inverse.InvertMatrix;
 import org.opencv.core.Core;
 
 import java.nio.ByteBuffer;
@@ -109,6 +111,8 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         return intrinsics.get(0)!=0 & intrinsics.get(2)!=0 & intrinsics.get(4)!=0 & intrinsics.get(5)!=0 & intrinsics.get(8)!=0;
     }
 
+    public static INDArray wideToRoad;
+
     public void updateCameraMatrix(PrimitiveList.Float.Reader intrinsics, boolean wide){
         if (!isIntrinsicsValid(intrinsics))
             return;
@@ -120,13 +124,16 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                     fcam_intrinsics.put(i, j, intrinsics.get(i*3 + j));
             }
         }
+        // wait, do we need to adjust the fcam_intrinsics?
+        if (utils.SimulateRoadCamera)
+            fcam_intrinsics = fcam_intrinsics.mmul(wideToRoad);
     }
 
     public void updateCameraState(){
         frameWideData = sh.recv("wideRoadCameraState").getWideRoadCameraState();
         msgFrameWideBuffer = sh.recv("wideRoadCameraBuffer").getWideRoadCameraBuffer();
-        frameData = utils.WideCameraOnly ? frameWideData : sh.recv("roadCameraState").getRoadCameraState();
-        msgFrameBuffer = utils.WideCameraOnly ? msgFrameWideBuffer : sh.recv("roadCameraBuffer").getRoadCameraBuffer();
+        frameData = utils.WideCameraOnly && !utils.SimulateRoadCamera ? frameWideData : sh.recv("roadCameraState").getRoadCameraState();
+        msgFrameBuffer = utils.WideCameraOnly && !utils.SimulateRoadCamera ? msgFrameWideBuffer : sh.recv("roadCameraBuffer").getRoadCameraBuffer();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
         wideImgBuffer = updateImageBuffer(msgFrameWideBuffer, wideImgBuffer);
     }
@@ -161,12 +168,12 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.WideCameraOnly, false);
+        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
         INDArray wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, true, true);
 
         updateCameraState();
         updateCameraMatrix(frameWideData.getIntrinsics(), true);
-        updateCameraMatrix(frameData.getIntrinsics(), false);
+        updateCameraMatrix(utils.SimulateRoadCamera ? frameWideData.getIntrinsics() : frameData.getIntrinsics(), false);
 
         // TODO:Clean this shit.
         ImagePrepare imagePrepare;
@@ -233,7 +240,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 for (int i = 0; i < 3; i++) {
                     augmentRot.putScalar(i, rpy.get(i));
                 }
-                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.WideCameraOnly, false);
+                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
                 wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, true, true);
             }
 

@@ -31,7 +31,7 @@ android {
 
 	defaultConfig {
 		applicationId 'ai.flow.android'
-		minSdkVersion 24
+		minSdkVersion 31
 		targetSdkVersion 30
 		versionCode 1
 
@@ -64,6 +64,7 @@ android {
 
 repositories {
 	google()
+	mavenCentral()
 	flatDir {
 		dirs 'libs'
 	}
@@ -72,6 +73,7 @@ repositories {
 configurations { natives }
 
 dependencies {
+	implementation "io.github.crow-misia.libyuv:libyuv-android:0.28.0"
 	implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
 	implementation project(path: ':definitions')
 	implementation project(path: ':messaging')
