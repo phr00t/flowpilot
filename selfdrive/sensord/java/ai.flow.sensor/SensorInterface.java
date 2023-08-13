@@ -11,6 +11,5 @@ public abstract class SensorInterface {
     public void updateProperty(String property, int value){}
     public void updateProperty(String property, boolean[] value){}
     public void updateProperty(String property, boolean value){}
-    public void record(boolean shouldRecord){}
     public void dispose(){};
 }

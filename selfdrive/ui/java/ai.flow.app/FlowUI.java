@@ -58,20 +58,17 @@ public class FlowUI extends Game {
             @Override
             public void run() {
                 while (!Thread.interrupted()){
-                    isOnRoad = true; //params.existsAndCompare("IsOnroad", true); //debug
+                    isOnRoad = params.existsAndCompare("IsOnroad", true);
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                     if (prevIsOnRoad != isOnRoad) {
-                        String sensorType = sensors.containsKey("wideRoadCamera") ? "wideRoadCamera" : "roadCamera";
                         if (!isOnRoad) {
                             modelExecutor.stop();
-                            sensors.get("roadCamera").record(false);
                         } else {
                             modelExecutor.start();
-                            sensors.get("roadCamera").record(RECORD_VIDEOS);
                         }
                     }
                     prevIsOnRoad = isOnRoad;

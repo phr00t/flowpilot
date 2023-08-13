@@ -748,7 +748,7 @@ public class OnRoadScreen extends ScreenAdapter {
             if (sh.updated(carStateTopic))
                 updateCarState();
 
-            //drawAlert(controlState); //debug
+            drawAlert(controlState);
 
             stageUI.getViewport().apply();
             stageUI.draw();
