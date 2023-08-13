@@ -48,6 +48,7 @@ import io.github.crow_misia.libyuv.FilterMode;
 import io.github.crow_misia.libyuv.Nv21Buffer;
 import messaging.ZMQPubHandler;
 import org.capnproto.PrimitiveList;
+import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.opencv.core.Core;
 
@@ -197,11 +198,16 @@ public class CameraManager extends SensorInterface {
         K.set(8, 1f);
 
         if (utils.SimulateRoadCamera) {
-            // this doesn't need to be scaled, just valid
-            msgFrameRoadData.intrinsics.set(0, intrinsics[0]);
-            msgFrameRoadData.intrinsics.set(2, intrinsics[2]);
-            msgFrameRoadData.intrinsics.set(4, intrinsics[4]);
-            msgFrameRoadData.intrinsics.set(5, intrinsics[5]);
+            INDArray thisIntrinsics = Nd4j.createFromArray(new float[][]{
+                    {intrinsics[0],  0.0f,  intrinsics[2]},
+                    {0.0f,  intrinsics[4],  intrinsics[5]},
+                    {0.0f,  0.0f,  1.0f}
+            });
+            INDArray transformed = ModelExecutorF3.wideToRoad.mmul(thisIntrinsics);
+            msgFrameRoadData.intrinsics.set(0, transformed.getFloat(0));
+            msgFrameRoadData.intrinsics.set(2, transformed.getFloat(2));
+            msgFrameRoadData.intrinsics.set(4, transformed.getFloat(4));
+            msgFrameRoadData.intrinsics.set(5, transformed.getFloat(5));
             msgFrameRoadData.intrinsics.set(8, 1f);
         }
     }

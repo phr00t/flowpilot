@@ -25,12 +25,12 @@ public class Preprocess {
     private static final int[] idxTensor1 = {6, 7, 8, 9, 10, 11};
     public static INDArray sbigmodel_from_calib = Model.sbigmodel_intrinsics.mmul(Camera.view_from_device);
     public static INDArray medmodel_from_calib = Model.medmodel_intrinsics.mmul(Camera.view_from_device);
-    public static INDArray getWrapMatrix(INDArray rpy_calib, INDArray f_intrinsics, INDArray e_intrinsics, boolean wide_cam, boolean big_model) {
+    public static INDArray getWrapMatrix(INDArray rpy_calib, INDArray road_intrinsics, INDArray wide_intrinsics, boolean wide_cam, boolean big_model) {
         INDArray intrinsics;
         if (wide_cam)
-            intrinsics = e_intrinsics;
+            intrinsics = wide_intrinsics;
         else
-            intrinsics = f_intrinsics;
+            intrinsics = road_intrinsics;
 
         INDArray calib_from_model;
         if (big_model)

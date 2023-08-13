@@ -55,8 +55,8 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
     public final ParamsInterface params = ParamsInterface.getInstance();
 
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
-    public static INDArray fcam_intrinsics = Camera.fcam_intrinsics.dup();
-    public static INDArray ecam_intrinsics = Camera.ecam_intrinsics.dup();
+    public static INDArray road_intrinsics = Camera.road_intrinsics.dup();
+    public static INDArray wide_intrinsics = Camera.wide_intrinsics.dup();
     public final ZMQPubHandler ph = new ZMQPubHandler();
     public final ZMQSubHandler sh = new ZMQSubHandler(true);
     public Definitions.LiveCalibrationData.Reader liveCalib;
@@ -89,7 +89,7 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
             return;
         for (int i=0; i<3; i++){
             for (int j=0; j<3; j++){
-                fcam_intrinsics.put(i, j, intrinsics.get(i*3 + j));
+                road_intrinsics.put(i, j, intrinsics.get(i*3 + j));
             }
         }
     }
@@ -123,7 +123,7 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, false, false);
+        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, false, false);
 
         updateCameraState();
         updateCameraMatrix(frameData.getIntrinsics());
@@ -181,7 +181,7 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
                 for (int i = 0; i < 3; i++) {
                     augmentRot.putScalar(i, rpy.get(i));
                 }
-                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, fcam_intrinsics, ecam_intrinsics, false, false);
+                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, false, false);
             }
 
             netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);

@@ -8,7 +8,7 @@ import java.util.Queue;
 
 public class utils {
 
-    public static boolean WideCameraOnly = true, SimulateRoadCamera = true;
+    public static boolean WideCameraOnly = true, SimulateRoadCamera = false;
 
     public static void Log(String s) {
         System.out.println("PHR00TLOG: " + s);
