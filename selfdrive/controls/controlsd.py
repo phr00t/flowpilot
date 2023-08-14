@@ -381,12 +381,12 @@ class Controls:
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
 
-    if not REPLAY:
-      # Check for mismatch between openpilot and car's PCM
-      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
-      self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
-      if self.cruise_mismatch_counter > int(6. / DT_CTRL):
-        self.events.add(EventName.cruiseMismatch)
+    #if not REPLAY:
+    #  # Check for mismatch between openpilot and car's PCM
+    #  cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
+    #  self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
+    #  if self.cruise_mismatch_counter > int(6. / DT_CTRL):
+    #    self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
     #stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
@@ -440,13 +440,13 @@ class Controls:
     # we want to disengage openpilot. However the status from the panda goes through
     # another socket other than the CAN messages and one can arrive earlier than the other.
     # Therefore we allow a mismatch for two samples, then we trigger the disengagement.
-    if not self.enabled:
-      self.mismatch_counter = 0
+    #if not self.enabled:
+    #  self.mismatch_counter = 0
 
     # All pandas not in silent mode must have controlsAllowed when openpilot is enabled
-    if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
-           if ps.safetyModel not in IGNORED_SAFETY_MODES):
-      self.mismatch_counter += 1
+    #if self.enabled and any(not ps.controlsAllowed for ps in self.sm['pandaStates']
+    #       if ps.safetyModel not in IGNORED_SAFETY_MODES):
+    #  self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
