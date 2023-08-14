@@ -99,8 +99,8 @@ class CarState(CarStateBase):
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
     ret.steerFaultTemporary = cp.vl["MDPS12"]["CF_Mdps_ToiUnavail"] != 0 or cp.vl["MDPS12"]["CF_Mdps_ToiFlt"] != 0
 
-    cruiseMainButton = cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"]
-    cruiseUpDownNow = cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"]
+    cruiseMainButton = cp.vl["CLU11"]["CF_Clu_CruiseSwMain"]
+    cruiseUpDownNow = cp.vl["CLU11"]["CF_Clu_CruiseSwState"]
 
     if cruiseUpDownNow == Buttons.SET_DECEL:
       self.openPilotEnabled = True
