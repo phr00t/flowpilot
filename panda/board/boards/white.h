@@ -14,7 +14,7 @@ void white_enable_can_transceiver(uint8_t transceiver, bool enabled) {
       set_gpio_output(GPIOA, 0, !enabled);
       break;
     default:
-      print("Invalid CAN transceiver ("); puth(transceiver); print("): enabling failed\n");
+      puts("Invalid CAN transceiver ("); puth(transceiver); puts("): enabling failed\n");
       break;
   }
 }
@@ -43,6 +43,7 @@ void white_set_led(uint8_t color, bool enabled) {
 }
 
 void white_set_usb_power_mode(uint8_t mode){
+  bool valid_mode = true;
   switch (mode) {
     case USB_POWER_CLIENT:
       // B2,A13: set client mode
@@ -60,8 +61,13 @@ void white_set_usb_power_mode(uint8_t mode){
       set_gpio_output(GPIOA, 13, 0);
       break;
     default:
-      print("Invalid usb power mode\n");
+      valid_mode = false;
+      puts("Invalid usb power mode\n");
       break;
+  }
+
+  if (valid_mode) {
+    usb_power_mode = mode;
   }
 }
 
@@ -77,7 +83,7 @@ void white_set_gps_mode(uint8_t mode) {
       set_gpio_output(GPIOC, 5, 0);
       break;
     default:
-      print("Invalid ESP/GPS mode\n");
+      puts("Invalid ESP/GPS mode\n");
       break;
   }
 }
@@ -136,13 +142,13 @@ void white_set_can_mode(uint8_t mode){
       set_gpio_alternate(GPIOB, 6, GPIO_AF9_CAN2);
       break;
     default:
-      print("Tried to set unsupported CAN mode: "); puth(mode); print("\n");
+      puts("Tried to set unsupported CAN mode: "); puth(mode); puts("\n");
       break;
   }
 }
 
 uint32_t white_read_current(void){
-  return adc_get_raw(ADCCHAN_CURRENT);
+  return adc_get(ADCCHAN_CURRENT);
 }
 
 bool white_check_ignition(void){
@@ -214,7 +220,7 @@ void white_grey_common_init(void) {
   white_set_can_mode(CAN_MODE_NORMAL);
 
   // Init usb power mode
-  uint32_t voltage = adc_get_mV(ADCCHAN_VIN) * VIN_READOUT_DIVIDER;
+  uint32_t voltage = adc_get_voltage();
   // Init in CDP mode only if panda is powered by 12V.
   // Otherwise a PC would not be able to flash a standalone panda
   if (voltage > 8000U) {  // 8V threshold
@@ -237,30 +243,25 @@ const harness_configuration white_harness_config = {
 
 const board board_white = {
   .board_type = "White",
-  .board_tick = unused_board_tick,
   .harness_config = &white_harness_config,
   .has_gps = false,
   .has_hw_gmlan = true,
   .has_obd = false,
   .has_lin = true,
-  .has_spi = false,
-  .has_canfd = false,
   .has_rtc_battery = false,
-  .fan_max_rpm = 0U,
-  .avdd_mV = 3300U,
-  .fan_stall_recovery = false,
-  .fan_enable_cooldown_time = 0U,
   .init = white_init,
   .enable_can_transceiver = white_enable_can_transceiver,
   .enable_can_transceivers = white_enable_can_transceivers,
   .set_led = white_set_led,
+  .set_usb_power_mode = white_set_usb_power_mode,
   .set_gps_mode = white_set_gps_mode,
   .set_can_mode = white_set_can_mode,
+  .usb_power_mode_tick = unused_usb_power_mode_tick,
   .check_ignition = white_check_ignition,
   .read_current = white_read_current,
-  .set_fan_enabled = unused_set_fan_enabled,
+  .set_fan_power = unused_set_fan_power,
   .set_ir_power = unused_set_ir_power,
   .set_phone_power = unused_set_phone_power,
-  .set_siren = unused_set_siren,
-  .read_som_gpio = unused_read_som_gpio
+  .set_clock_source_mode = unused_set_clock_source_mode,
+  .set_siren = unused_set_siren
 };

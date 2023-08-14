@@ -11,7 +11,7 @@
   #include "drivers/usb.h"
 #else
   // no serial either
-  void print(const char *a) {
+  void puts(const char *a) {
     UNUSED(a);
   }
   void puth(unsigned int i) {
@@ -41,25 +41,26 @@ void debug_ring_callback(uart_ring *ring) {
   }
 }
 
-int comms_can_read(uint8_t *data, uint32_t max_len) {
-  UNUSED(data);
-  UNUSED(max_len);
+int usb_cb_ep1_in(void *usbdata, int len) {
+  UNUSED(usbdata);
+  UNUSED(len);
   return 0;
 }
-void comms_can_write(uint8_t *data, uint32_t len) {
-  UNUSED(data);
+void usb_cb_ep2_out(void *usbdata, int len) {
+  UNUSED(usbdata);
   UNUSED(len);
 }
-void comms_endpoint2_write(uint8_t *data, uint32_t len) {
-  UNUSED(data);
+void usb_cb_ep3_out(void *usbdata, int len) {
+  UNUSED(usbdata);
   UNUSED(len);
 }
-void refresh_can_tx_slots_available(void) {}
+void usb_cb_ep3_out_complete(void) {}
+void usb_cb_enumeration_complete(void) {}
 
-int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
+int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
   unsigned int resp_len = 0;
   uart_ring *ur = NULL;
-  switch (req->request) {
+  switch (setup->b.bRequest) {
     // **** 0xc1: get hardware type
     case 0xc1:
       resp[0] = hw_type;
@@ -67,20 +68,20 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xe0: uart read
     case 0xe0:
-      ur = get_ring_by_number(req->param1);
+      ur = get_ring_by_number(setup->b.wValue.w);
       if (!ur) {
         break;
       }
       // read
-      while ((resp_len < MIN(req->length, USBPACKET_MAX_SIZE)) &&
+      while ((resp_len < MIN(setup->b.wLength.w, USBPACKET_MAX_SIZE)) &&
                          getc(ur, (char*)&resp[resp_len])) {
         ++resp_len;
       }
       break;
     default:
-      print("NO HANDLER ");
-      puth(req->request);
-      print("\n");
+      puts("NO HANDLER ");
+      puth(setup->b.bRequest);
+      puts("\n");
       break;
   }
   return resp_len;
@@ -122,7 +123,7 @@ const uint8_t crc_poly = 0xD5U;  // standard crc8
 void CAN1_RX0_IRQ_Handler(void) {
   while ((CAN->RF0R & CAN_RF0R_FMP0) != 0) {
     #ifdef DEBUG
-      print("CAN RX\n");
+      puts("CAN RX\n");
     #endif
     int address = CAN->sFIFOMailBox[0].RIR >> 21;
     if (address == CAN_GAS_INPUT) {
@@ -135,7 +136,7 @@ void CAN1_RX0_IRQ_Handler(void) {
           enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
           NVIC_SystemReset();
         } else {
-          print("Failed entering Softloader or Bootloader\n");
+          puts("Failed entering Softloader or Bootloader\n");
         }
       }
 
@@ -151,9 +152,9 @@ void CAN1_RX0_IRQ_Handler(void) {
       if (crc_checksum(dat, CAN_GAS_SIZE - 1, crc_poly) == dat[5]) {
         if (((current_index + 1U) & COUNTER_CYCLE) == index) {
           #ifdef DEBUG
-            print("setting gas ");
+            puts("setting gas ");
             puth(value_0);
-            print("\n");
+            puts("\n");
           #endif
           if (enable) {
             gas_set_0 = value_0;
@@ -196,11 +197,11 @@ int led_value = 0;
 void TIM3_IRQ_Handler(void) {
   #ifdef DEBUG
     puth(TIM3->CNT);
-    print(" ");
+    puts(" ");
     puth(pdl0);
-    print(" ");
+    puts(" ");
     puth(pdl1);
-    print("\n");
+    puts("\n");
   #endif
 
   // check timer for sending the user pedal and clearing the CAN
@@ -222,7 +223,7 @@ void TIM3_IRQ_Handler(void) {
     // old can packet hasn't sent!
     state = FAULT_SEND;
     #ifdef DEBUG
-      print("CAN MISS\n");
+      puts("CAN MISS\n");
     #endif
   }
 
@@ -244,8 +245,8 @@ void TIM3_IRQ_Handler(void) {
 
 void pedal(void) {
   // read/write
-  pdl0 = adc_get_raw(ADCCHAN_ACCEL0);
-  pdl1 = adc_get_raw(ADCCHAN_ACCEL1);
+  pdl0 = adc_get(ADCCHAN_ACCEL0);
+  pdl1 = adc_get(ADCCHAN_ACCEL1);
 
   // write the pedal to the DAC
   if (state == NO_FAULT) {
@@ -275,6 +276,7 @@ int main(void) {
   // init devices
   clock_init();
   peripherals_init();
+  detect_external_debug_serial();
   detect_board_type();
 
   // init board
@@ -292,7 +294,7 @@ int main(void) {
   // init can
   bool llcan_speed_set = llcan_set_speed(CAN1, 5000, false, false);
   if (!llcan_speed_set) {
-    print("Failed to set llcan speed");
+    puts("Failed to set llcan speed");
   }
 
   bool ret = llcan_init(CAN1);
@@ -302,9 +304,9 @@ int main(void) {
   timer_init(TIM3, 15);
   NVIC_EnableIRQ(TIM3_IRQn);
 
-  watchdog_init(WATCHDOG_50_MS);
+  watchdog_init();
 
-  print("**** INTERRUPTS ON ****\n");
+  puts("**** INTERRUPTS ON ****\n");
   enable_interrupts();
 
   // main pedal loop

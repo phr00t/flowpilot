@@ -39,6 +39,7 @@ int main(void) {
 
   disable_interrupts();
   clock_init();
+  detect_external_debug_serial();
   detect_board_type();
 
   if (enter_bootloader_mode == ENTER_SOFTLOADER_MAGIC) {

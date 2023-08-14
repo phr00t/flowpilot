@@ -10,11 +10,10 @@
 // from the linker script
 #define APP_START_ADDRESS 0x8004000U
 
-#define CORE_FREQ 96U // in MHz
-#define APB1_FREQ (CORE_FREQ/2U)
-#define APB1_TIMER_FREQ (APB1_FREQ*2U)  // APB1 is multiplied by 2 for the timer peripherals
-#define APB2_FREQ (CORE_FREQ/2U)
-#define APB2_TIMER_FREQ (APB2_FREQ*2U)  // APB2 is multiplied by 2 for the timer peripherals
+#define CORE_FREQ 96U // in Mhz
+//APB1 - 48Mhz, APB2 - 96Mhz
+#define APB1_FREQ CORE_FREQ/2U 
+#define APB2_FREQ CORE_FREQ/1U
 
 #define BOOTLOADER_ADDRESS 0x1FFF0004U
 
@@ -22,6 +21,9 @@
 #define CAN_INTERRUPT_RATE 12000U
 
 #define MAX_LED_FADE 8192U
+
+// Threshold voltage (mV) for either of the SBUs to be below before deciding harness is connected
+#define HARNESS_CONNECTED_THRESHOLD 2500U
 
 #define NUM_INTERRUPTS 102U                // There are 102 external interrupt sources (see stm32f413.h)
 
@@ -33,13 +35,10 @@
 #define INTERRUPT_TIMER_IRQ TIM6_DAC_IRQn
 #define INTERRUPT_TIMER TIM6
 
-#define IND_WDG IWDG
-
 #define PROVISION_CHUNK_ADDRESS 0x1FFF79E0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x1FFF79C0U
 
 #include "can_definitions.h"
-#include "comms_definitions.h"
 
 #ifndef BOOTSTUB
   #ifdef PANDA
@@ -62,14 +61,9 @@
 #include "stm32fx/peripherals.h"
 #include "stm32fx/interrupt_handlers.h"
 #include "drivers/timers.h"
+#include "stm32fx/lladc.h"
 #include "stm32fx/board.h"
 #include "stm32fx/clock.h"
-#include "drivers/watchdog.h"
-
-#if defined(PANDA) || defined(BOOTSTUB)
-  #include "drivers/spi.h"
-  #include "stm32fx/llspi.h"
-#endif
 
 #if !defined(BOOTSTUB) && (defined(PANDA) || defined(PEDAL_USB))
   #include "drivers/uart.h"
