@@ -1,41 +1,19 @@
-Dependencies
---------
-
-**Mac**
-
-```
-xcode-select --install
-./get_sdk_mac.sh
-```
-
-**Debian / Ubuntu**
-
-```
-./get_sdk.sh
-```
-
-
 Programming
 ----
 
 **Panda**
 
 ```
-scons -u -j$(nproc)  # Compile
-./flash_h7.sh        # for red panda
-./flash.sh           # for other pandas
+./recover.py      # flash bootstub
+./flash.py        # flash application
 ```
 
 Troubleshooting
 ----
 
-If your panda will not flash and is quickly blinking a single Green LED, use:
-```
-./recover_h7.sh  # for red panda
-./recover.sh     # for other pandas
-```
-
-A [panda paw](https://comma.ai/shop/products/panda-paw) can be used to put panda into DFU mode.
+If your panda will not flash and green LED is on, use `recover.py`.
+If panda is blinking fast with green LED, use `flash.py`.
+Otherwise if LED is off and panda can't be seen with `lsusb` command, use [panda paw](https://comma.ai/shop/products/panda-paw) to go into DFU mode.
 
 
 [dfu-util](http://github.com/dsigma/dfu-util.git) for flashing

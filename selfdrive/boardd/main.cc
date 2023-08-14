@@ -8,15 +8,26 @@
 int main(int argc, char *argv[]) {
   LOGW("starting boardd");
 
-  if (!Hardware::PC()) {
-    int err;
-    err = util::set_realtime_priority(54);
-    assert(err == 0);
-    err = util::set_core_affinity({Hardware::TICI() ? 4 : 3});
-    assert(err == 0);
+  int err;
+  err = util::set_realtime_priority(54);
+  err = util::set_core_affinity({4});
+  
+  std::vector<std::string> usb_devs(argv + 1, argv + argc);
+  bool int_fd = usb_devs.size() != 0; // if no arguements are provided through termux-usb, fds cannot be used. 
+  for (std::string usb_dev : usb_devs){
+    if (usb_dev.length() > 5){ // TODO: is this ok to differentiate between serials and fds ?
+      int_fd = false;
+      break;
+    }
   }
-
-  std::vector<std::string> serials(argv + 1, argv + argc);
-  boardd_main_thread(serials);
+  
+  if (int_fd){
+    int fd;
+    assert((argc > 1) && (sscanf(argv[1], "%d", &fd) == 1));
+    boardd_main_thread(fd);
+  }
+  else{
+    boardd_main_thread(usb_devs);
+  }
   return 0;
 }
