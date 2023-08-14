@@ -26,10 +26,6 @@ def get_expected_signature(panda: Panda) -> bytes:
 def flash_panda(panda_serial: str) -> Panda:
   panda = Panda(panda_serial)
 
-  # debug skip flashing as its broken in flowpilot
-  # use freeon clone to flash panda if needed running OPKR from phr00t's openpilot rep
-  return panda
-
   fw_signature = get_expected_signature(panda)
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
