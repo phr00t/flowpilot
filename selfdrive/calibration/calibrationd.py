@@ -131,12 +131,10 @@ class Calibrator:
                             (self.valid_blocks < INPUTS_NEEDED))
 
         if not straight_and_fast:
-            #debug
             print("Not straight/fast! rot[2](yaw):" + "{:.2f}".format(rot[2]) + ", trans[0](speed):" + "{:.2f}".format(trans[0]))
             return None
 
-        if certain_if_calib:
-            #debug
+        if not certain_if_calib:
             print("Not certain_if_calib!")
             return None
 
