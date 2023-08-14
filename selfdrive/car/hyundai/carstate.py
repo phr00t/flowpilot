@@ -20,8 +20,8 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
-    self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
-    self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
+    self.cruise_buttons = 0
+    self.main_buttons = 0
 
     self.gear_msg_canfd = "GEAR_ALT_2" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS_2 else \
                           "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else \
@@ -159,9 +159,9 @@ class CarState(CarStateBase):
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
-    self.prev_cruise_buttons = self.cruise_buttons[-1]
-    self.cruise_buttons.extend(cruiseUpDownNow)
-    self.main_buttons.extend(cruiseMainButton)
+    self.prev_cruise_buttons = self.cruise_buttons
+    self.cruise_buttons = cruiseUpDownNow
+    self.main_buttons = cruiseMainButton
 
     return ret
 
@@ -229,9 +229,9 @@ class CarState(CarStateBase):
       self.cruise_info = copy.copy(cp_cruise_info.vl["SCC_CONTROL"])
 
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
-    self.prev_cruise_buttons = self.cruise_buttons[-1]
-    self.cruise_buttons.extend(cp.vl_all[cruise_btn_msg]["CRUISE_BUTTONS"])
-    self.main_buttons.extend(cp.vl_all[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"])
+    self.prev_cruise_buttons = self.cruise_buttons
+    self.cruise_buttons = cp.vl[cruise_btn_msg]["CRUISE_BUTTONS"]
+    self.main_buttons = cp.vl[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"]
     self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
