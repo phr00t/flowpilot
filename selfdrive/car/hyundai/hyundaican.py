@@ -7,7 +7,7 @@ hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 def create_opkr_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   cut_steer_temp, lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
-                  left_lane_depart, right_lane_depart, ldws, cnt):
+                  left_lane_depart, right_lane_depart, bus, ldws, cnt):
   values = lkas11
   values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
@@ -64,7 +64,7 @@ def create_opkr_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
   values["CF_Lkas_Chksum"] = checksum
 
-  return packer.make_can_msg("LKAS11", 0, values)
+  return packer.make_can_msg("LKAS11", bus, values)
 
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
@@ -147,6 +147,25 @@ def create_clu11(packer, frame, clu11, button, car_fingerprint):
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars
   bus = 2 if car_fingerprint in CAMERA_SCC_CAR else 0
+  return packer.make_can_msg("CLU11", bus, values)
+
+def create_mdps12(packer, frame, mdps12):
+  values = mdps12
+  values["CF_Mdps_ToiActive"] = 0
+  values["CF_Mdps_ToiUnavail"] = 1
+  values["CF_Mdps_MsgCount2"] = frame % 0x100
+  values["CF_Mdps_Chksum2"] = 0
+
+  dat = packer.make_can_msg("MDPS12", 2, values)[2]
+  checksum = sum(dat) % 256
+  values["CF_Mdps_Chksum2"] = checksum
+
+  return packer.make_can_msg("MDPS12", 2, values)
+
+def create_setspeed(packer, frame, clu11, speed, bus = 0):
+  values = clu11
+  values["CF_Clu_Vanz"] = speed
+  values["CF_Clu_AliveCnt1"] = frame % 0x10
   return packer.make_can_msg("CLU11", bus, values)
 
 def create_cpress(packer, clu11, button):

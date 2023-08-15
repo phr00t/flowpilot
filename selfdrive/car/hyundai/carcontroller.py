@@ -59,6 +59,7 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
     self.lkas11_cnt = 0
+    self.mdpsBus = 1
 
     self.temp_disable_spamming = 0
 
@@ -74,6 +75,8 @@ class CarController:
       apply_steer = 0
 
     self.apply_steer_last = apply_steer
+
+    clu11_speed = CS.out.vEgo * 2.23694 # convert to MS -> MPH
 
     # accel + longitudinal
     accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
@@ -125,7 +128,21 @@ class CarController:
     #                                          left_lane_warning, right_lane_warning))
     can_sends.append(hyundaican.create_opkr_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
                                    torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                   left_lane_warning, right_lane_warning, False, self.lkas11_cnt))
+                                   left_lane_warning, right_lane_warning, 0, False, self.lkas11_cnt))
+
+    enabled_speed = 38
+    if clu11_speed > enabled_speed:
+      enabled_speed = clu11_speed
+
+    if self.mdpsBus: # send lkas11 bus 1 if mdps is bus 1
+      can_sends.append(hyundaican.create_opkr_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+                                   torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                   left_lane_warning, right_lane_warning, 1, False, self.lkas11_cnt))
+      if self.frame % 2: # send clu11 to mdps if it is not on bus 0
+        can_sends.append(hyundaican.create_setspeed(self.packer, self.frame, CS.clu11, enabled_speed, self.mdpsBus))
+
+    if self.mdpsBus: # send mdps12 to LKAS to prevent LKAS error
+      can_sends.append(hyundaican.create_mdps12(self.packer, self.frame, CS.mdps12))
 
     # 20 Hz LFA MFA message
     if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
@@ -133,7 +150,6 @@ class CarController:
 
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
-    clu11_speed = CS.out.vEgo * 2.23694 # convert to MS -> MPH
 
     # perhaps instead of 'stoplinep', we should take info from the long planner which considers all sorts of things
     # may need to fudge the openpilotLongitudinalControl so it parses all the accel stuff out for use here instead of
