@@ -162,7 +162,6 @@ class CarState(CarStateBase):
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.mdps12 = copy.copy(cp.vl["MDPS12"])
-    self.lfahda = copy.copy(cp_cam.vl["LFAHDA_MFC"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = cruiseUpDownNow
@@ -357,15 +356,6 @@ class CarState(CarStateBase):
     else:
       signals.append(("CF_Lvr_Gear", "LVR12"))
       checks.append(("LVR12", 100))
-
-    signals += [
-      ("HDA_USM", "LFAHDA_MFC"),
-      ("HDA_Active", "LFAHDA_MFC"),
-      ("HDA_Icon_State", "LFAHDA_MFC"),
-      ("HDA_LdwSysState", "LFAHDA_MFC"),
-      ("HDA_Icon_Wheel", "LFAHDA_MFC")
-    ]
-    checks += [("LFAHDA_MFC", 20)]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 

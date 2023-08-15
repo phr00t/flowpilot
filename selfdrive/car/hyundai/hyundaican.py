@@ -149,29 +149,6 @@ def create_clu11(packer, frame, clu11, button, car_fingerprint):
   bus = 2 if car_fingerprint in CAMERA_SCC_CAR else 0
   return packer.make_can_msg("CLU11", bus, values)
 
-
-def create_hda_mfc(packer, CS, enabled, left_lane, right_lane):
-  values = CS.lfahda
-
-  ldwSysState = 0
-  if left_lane:
-    ldwSysState += 1
-  if right_lane:
-    ldwSysState += 2
-  # values["HDA_Icon_Wheel"] = 1 if enabled else 0
-  # values["HDA_Icon_State"] = hda_icon_state
-  values["HDA_LdwSysState"] = ldwSysState
-  values["HDA_Icon_Wheel"] = 1 if enabled else 0
-
-  # HDA_Icon_State  2 HDA active, 1 HDA available, 0  HDA not available
-  # HDA_USM 2 = ?
-  # HDA_Active    1 AUTO(icon)==HDA_VSetReq(highway limit speed), 0 HDA(icon)
-
-  # HDA_Icon_State 0 = HDA not available
-  # HDA_Icon_State 1 = HDA available
-  # HDA_Icon_State 2 = HDA active
-  return packer.make_can_msg("LFAHDA_MFC", 0, values)
-
 def create_mdps12(packer, frame, mdps12):
   values = mdps12
   values["CF_Mdps_ToiActive"] = 0
