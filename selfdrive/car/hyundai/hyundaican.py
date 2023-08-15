@@ -25,7 +25,7 @@ def create_opkr_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                          CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022,
                          CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020):
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
-    values["CF_Lkas_LdwsOpt_USM"] = 3
+    values["CF_Lkas_LdwsOpt_USM"] = 2
 
     # FcwOpt_USM 5 = Orange blinking car + lanes
     # FcwOpt_USM 4 = Orange car + lanes
@@ -39,12 +39,15 @@ def create_opkr_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # SysWarning 5 = keep hands on wheel (red)
     # SysWarning 6 = keep hands on wheel (red) + beep
     # Note: the warning is hidden while the blinkers are on
-    values["CF_Lkas_SysWarning"] = 0 # 4 if sys_warning else 0
+    values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
   elif car_fingerprint == CAR.GENESIS_DH:
     values["CF_Lkas_LdwsActivemode"] = 2
   # elif car_fingerprint in (CAR.K5_HEV_JF, CAR.K5_JF, CAR.K7_HEV_YG, CAR.K7_YG):
   #   values["CF_Lkas_LdwsActivemode"] = 0
+
+  if ldws:
+    values["CF_Lkas_LdwsOpt_USM"] = 3
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
