@@ -145,8 +145,11 @@ class CarController:
       can_sends.append(hyundaican.create_mdps12(self.packer, self.frame, CS.mdps12))
 
     # 20 Hz LFA MFA message
-    if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
-      can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))
+    #if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
+    #  can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))
+
+    if frame % 5 == 0:
+      can_sends.append(hyundaican.create_hda_mfc(self.packer, CS, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible))
 
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
