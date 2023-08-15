@@ -134,14 +134,15 @@ static int hyundai_rx_hook(CANPacket_t *to_push) {
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == 1057) {
-      // 2 bits: 13-14 (we dont have ACC on this Kona, so don't base on ACC state)
-      int cruise_engaged = 1; //(GET_BYTES_04(to_push) >> 13) & 0x3U;
+      // 2 bits: 13-14
+      /*int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3U;
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
       }
       if (!cruise_engaged) {
         controls_allowed = 0;
-      }
+      }*/
+      controls_allowed = 1; // don't determine controls based on ACC, which we dont have with a non-ACC Kona
       cruise_engaged_prev = cruise_engaged;
     }
 
