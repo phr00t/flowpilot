@@ -369,12 +369,12 @@ class Controls:
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
 
-    if not REPLAY:
-      # Check for mismatch between openpilot and car's PCM
-      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
-      self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
-      if self.cruise_mismatch_counter > int(6. / DT_CTRL):
-        self.events.add(EventName.cruiseMismatch)
+    #if not REPLAY:
+    #  # Check for mismatch between openpilot and car's PCM
+    #  cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
+    #  self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
+    #  if self.cruise_mismatch_counter > int(6. / DT_CTRL):
+    #    self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
     #stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
