@@ -122,30 +122,13 @@ class CarController:
     if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
       self.angle_limit_counter = 0
 
-    #can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
-    #                                          torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
-    #                                          hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-    #                                          left_lane_warning, right_lane_warning))
-    can_sends.append(hyundaican.create_opkr_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
-                                   torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                   left_lane_warning, right_lane_warning, 0, False, self.lkas11_cnt))
-
-    enabled_speed = 38
-    if clu11_speed > enabled_speed:
-      enabled_speed = clu11_speed
-
-    if self.mdpsBus: # send lkas11 bus 1 if mdps is bus 1
-      can_sends.append(hyundaican.create_opkr_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
-                                   torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                   left_lane_warning, right_lane_warning, 1, False, self.lkas11_cnt))
-      if self.frame % 2: # send clu11 to mdps if it is not on bus 0
-        can_sends.append(hyundaican.create_setspeed(self.packer, self.frame, CS.clu11, enabled_speed, self.mdpsBus))
-
-    if self.mdpsBus: # send mdps12 to LKAS to prevent LKAS error
-      can_sends.append(hyundaican.create_mdps12(self.packer, self.frame, CS.mdps12))
+    can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+                                              torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
+                                              hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                              left_lane_warning, right_lane_warning))
 
     # 20 Hz LFA MFA message
-    if self.frame % 5 == 0: # and self.CP.flags & HyundaiFlags.SEND_LFA.value:
+    if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
       can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))
 
     # phr00t fork start for cruise spamming
