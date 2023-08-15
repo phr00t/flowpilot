@@ -44,6 +44,8 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
+def lerp(a, b, t):
+  return (b * t) + (a * (1.0 - t))
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -122,10 +124,10 @@ class CarController:
     if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
       self.angle_limit_counter = 0
 
-    can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+    can_sends.append(hyundaican.create_opkr_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
                                               torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                               hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                              left_lane_warning, right_lane_warning))
+                                              left_lane_warning, right_lane_warning, 0, False, self.lkas11_cnt))
 
     # 20 Hz LFA MFA message
     if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
@@ -165,4 +167,6 @@ class CarController:
     new_actuators.accel = accel
 
     self.frame += 1
+    self.lkas11_cnt += 1
+
     return new_actuators, can_sends
