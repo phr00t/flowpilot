@@ -458,10 +458,12 @@ class Controls:
       if self.events.any(ET.USER_DISABLE):
         self.state = State.disabled
         self.current_alert_types.append(ET.USER_DISABLE)
+        CS.openPilotEnabled = False
 
       elif self.events.any(ET.IMMEDIATE_DISABLE):
         self.state = State.disabled
         self.current_alert_types.append(ET.IMMEDIATE_DISABLE)
+        CS.openPilotEnabled = False
 
       else:
         # ENABLED
@@ -486,6 +488,7 @@ class Controls:
 
           elif self.soft_disable_timer <= 0:
             self.state = State.disabled
+            CS.openPilotEnabled = False
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
