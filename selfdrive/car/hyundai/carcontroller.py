@@ -59,7 +59,7 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
     self.lkas11_cnt = 0
-    self.mdpsBus = 1
+    self.mdpsBus = 0
 
     self.temp_disable_spamming = 0
 
