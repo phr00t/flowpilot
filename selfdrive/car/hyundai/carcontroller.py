@@ -58,6 +58,7 @@ class CarController:
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
+    self.lkas11_cnt = 0
 
     self.temp_disable_spamming = 0
 
@@ -111,13 +112,20 @@ class CarController:
     torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_FRAMES
     lat_active = CC.latActive and not torque_fault
 
+    if self.frame == 0: # initialize counts from last received count signals
+      self.lkas11_cnt = CS.lkas11["CF_Lkas_MsgCount"] + 1
+    self.lkas11_cnt %= 0x10
+
     if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
       self.angle_limit_counter = 0
 
-    can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
-                                              torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
-                                              hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                              left_lane_warning, right_lane_warning))
+    #can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+    #                                          torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
+    #                                          hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+    #                                          left_lane_warning, right_lane_warning))
+    can_sends.append(hyundaican.create_opkr_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+                                   torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                   left_lane_warning, right_lane_warning, False, self.lkas11_cnt))
 
     # 20 Hz LFA MFA message
     if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
