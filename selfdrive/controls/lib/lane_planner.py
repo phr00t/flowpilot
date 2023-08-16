@@ -8,8 +8,8 @@ from system.swaglog import cloudlog
 
 
 TRAJECTORY_SIZE = 33
-PATH_OFFSET = 0.175
-CAMERA_OFFSET = 0.075
+PATH_OFFSET = 0.225
+CAMERA_OFFSET = 0.05
 
 
 class LanePlanner:
