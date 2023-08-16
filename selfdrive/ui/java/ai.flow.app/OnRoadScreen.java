@@ -43,6 +43,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -52,6 +53,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -236,7 +238,27 @@ public class OnRoadScreen extends ScreenAdapter {
 
     float updateTempTimer;
     NumberFormat formatter = new DecimalFormat("0.0");
-    String tempStr = "--c";
+    String tempStr = "--c", IPstring = "No Internet";
+
+    public void UpdateIP() {
+        try {
+            Enumeration networkInterfaces = NetworkInterface.getNetworkInterfaces();  // gets All networkInterfaces of your device
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface inet = (NetworkInterface) networkInterfaces.nextElement();
+                Enumeration address = inet.getInetAddresses();
+                while (address.hasMoreElements()) {
+                    InetAddress inetAddress = (InetAddress) address.nextElement();
+                    if (inetAddress.isSiteLocalAddress()) {
+                        IPstring = inetAddress.getHostAddress();
+                        return;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Handle Exception
+        }
+        IPstring = "No Internet";
+    }
 
     public void UpdateTemps() {
         java.nio.file.Path cpuPath = Paths.get("/sys/devices/virtual/thermal/thermal_zone0/temp");
@@ -757,12 +779,14 @@ public class OnRoadScreen extends ScreenAdapter {
             if (updateTempTimer <= 0f) {
                 updateTempTimer = 1f;
                 UpdateTemps();
+                UpdateIP();
             }
 
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
             appContext.font.draw(batch, "Clog: " + CDebugLine + "\nPYLog: " + PYDebugLine,20,200);
             appContext.font.draw(batch, tempStr, Gdx.graphics.getWidth() - 200f, 150f);
+            appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 200f, 75f);
             batch.end();
         }
         else{
