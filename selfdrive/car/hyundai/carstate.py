@@ -105,11 +105,6 @@ class CarState(CarStateBase):
     cruiseMainButton = cp.vl["CLU11"]["CF_Clu_CruiseSwMain"]
     cruiseUpDownNow = cp.vl["CLU11"]["CF_Clu_CruiseSwState"]
 
-    if cruiseUpDownNow == Buttons.SET_DECEL:
-      self.openPilotEnabled = True
-    elif cruiseUpDownNow == Buttons.CANCEL:
-      self.openPilotEnabled = False
-
     ret.cruiseState.speed = cp.vl["E_EMS11"]["Cruise_Limit_Target"]
     ret.cruiseState.available = ret.cruiseState.enabled = self.openPilotEnabled
     #ret.cruiseState.standstill = False

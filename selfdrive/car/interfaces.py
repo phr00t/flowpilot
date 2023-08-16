@@ -233,8 +233,7 @@ class CarInterfaceBase(ABC):
   def apply(self, c: car.CarControl, sm, now_nanos: int) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
 
-  def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
-                           enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
+  def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True):
     events = Events()
 
     if cs_out.doorOpen:
@@ -267,14 +266,14 @@ class CarInterfaceBase(ABC):
     if cs_out.steeringPressed:
       events.add(EventName.steerOverride)
 
-    # Handle button presses
+    # Handle button presses and enabling Open Pilot
     for b in cs_out.buttonEvents:
-      # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
-        events.add(EventName.buttonEnable)
-      # Disable on rising and falling edge of cancel for both stock and OP long
+      if b.type == ButtonType.decelCruise:
+        self.CS.openPilotEnabled = True
+        events.add(EventName.pcmEnable)
       if b.type == ButtonType.cancel:
-        events.add(EventName.buttonCancel)
+        self.CS.openPilotEnabled = False
+        events.add(EventName.pcmDisable)
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
@@ -295,14 +294,6 @@ class CarInterfaceBase(ABC):
       self.silent_steer_warning = False
     if cs_out.steerFaultPermanent:
       events.add(EventName.steerUnavailable)
-
-    # we engage when pcm is active (rising edge)
-    # enabling can optionally be blocked by the car interface
-    if pcm_enable:
-      if cs_out.cruiseState.enabled and not self.CS.out.cruiseState.enabled and allow_enable:
-        events.add(EventName.pcmEnable)
-      elif not cs_out.cruiseState.enabled:
-        events.add(EventName.pcmDisable)
 
     return events
 
