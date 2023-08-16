@@ -79,7 +79,7 @@ class LateralPlanner:
     self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
 
     # lanelines calculation
-    #self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
+    self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
 
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
