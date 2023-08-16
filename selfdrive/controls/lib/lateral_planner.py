@@ -79,6 +79,11 @@ class LateralPlanner:
     lane_change_prob = self.l_lane_change_prob + self.r_lane_change_prob
     self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
 
+    # Turn off lanes during lane change
+    if self.DH.desire == log.LateralPlan.Desire.laneChangeRight or self.DH.desire == log.LateralPlan.Desire.laneChangeLeft:
+      self.LP.lll_prob *= self.DH.lane_change_ll_prob
+      self.LP.rll_prob *= self.DH.lane_change_ll_prob
+
     # lanelines calculation
     self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
 
