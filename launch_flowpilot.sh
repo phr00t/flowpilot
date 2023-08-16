@@ -29,8 +29,6 @@ then
     echo "set -g remain-on-exit on" >> ~/.tmux.conf # retain tmux session on ctrl + c
 fi
 
-tmux kill-window -t 0
-
 if pgrep -x "flowinit" > /dev/null
     then
         echo "another instance of flowinit is already running"
