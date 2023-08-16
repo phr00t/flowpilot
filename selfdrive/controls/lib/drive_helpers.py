@@ -65,7 +65,7 @@ class VCruiseHelper:
           interval = 2
         interval_count = round((current_mph - 26) / interval)
         set_to_mph = 26 + interval_count * interval
-      self.v_cruise_kph = set_to_mph * 1.60934  # convert back to mph
+      self.v_cruise_kph = set_to_mph * 1.60934  # convert back to kph
     else:
       self._update_v_cruise_non_pcm(CS, enabled, is_metric)
       self.update_button_timers(CS, enabled)
