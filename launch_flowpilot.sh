@@ -29,15 +29,13 @@ then
     echo "set -g remain-on-exit on" >> ~/.tmux.conf # retain tmux session on ctrl + c
 fi
 
+# make sure we kill any existing terminal sessions
+tmux kill-window -t 0
+tmux kill-window -t 1
+tmux kill-window -t 2
 
-if pgrep -x "flowinit" > /dev/null
-    then
-        echo "another instance of flowinit is already running"
-        exit
-    else
-        # start a tmux pane
-        tmux new-session -d -s "flowpilot" "scons && flowinit"
-        tmux attach -t flowpilot
-fi
+# start a tmux pane
+tmux new-session -d -s "flowpilot" "scons && flowinit"
+tmux attach -t flowpilot
 
 while true; do sleep 1; done
