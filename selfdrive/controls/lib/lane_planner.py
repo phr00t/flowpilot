@@ -8,11 +8,8 @@ from system.swaglog import cloudlog
 
 
 TRAJECTORY_SIZE = 33
-# camera offset is meters from center car to camera
-# model path is in the frame of the camera
-# so a path offset is not needed.
-PATH_OFFSET = 0.00
-CAMERA_OFFSET = -0.06 # TODO: Make this user adjustable.
+PATH_OFFSET = 0.25
+CAMERA_OFFSET = 0.00
 
 
 class LanePlanner:
