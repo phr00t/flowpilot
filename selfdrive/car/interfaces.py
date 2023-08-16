@@ -1,6 +1,7 @@
 import yaml
 import os
 import time
+import datetime
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
@@ -273,6 +274,7 @@ class CarInterfaceBase(ABC):
         events.add(EventName.pcmEnable)
       if b.type == ButtonType.cancel:
         self.CS.openPilotEnabled = False
+        self.CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1, 0)
         events.add(EventName.pcmDisable)
 
     # Handle permanent and temporary steering faults
