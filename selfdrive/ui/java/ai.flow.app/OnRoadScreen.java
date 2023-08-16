@@ -785,8 +785,8 @@ public class OnRoadScreen extends ScreenAdapter {
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
             appContext.font.draw(batch, "Clog: " + CDebugLine + "\nPYLog: " + PYDebugLine,20,200);
-            appContext.font.draw(batch, tempStr, Gdx.graphics.getWidth() - 200f, 150f);
-            appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 200f, 75f);
+            appContext.font.draw(batch, tempStr, Gdx.graphics.getWidth() - 500f, 150f);
+            appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 500f, 75f);
             batch.end();
         }
         else{
