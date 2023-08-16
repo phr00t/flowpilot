@@ -367,7 +367,7 @@ public class CameraManager extends SensorInterface {
         builder.setTargetResolution(ims);
         Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
-                new MeteringRectangle(1, 1, W - 2, H - 2, 500)
+                new MeteringRectangle(1, (int)Math.floor(H * 0.2f), W - 2, (int)Math.floor(H * 0.79f) - 1, 500)
         });
         ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.5f, 1.5f, 1.5f, 1.5f));
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(15, 20));
