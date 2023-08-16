@@ -114,7 +114,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		CameraManager cameraManager, cameraManagerWide = null;
 		SensorManager sensorManager = new SensorManager(appContext, 100);
 		if (utils.WideCameraOnly) {
-			cameraManager = new CameraManager(getApplication().getApplicationContext(), 20, Camera.CAMERA_TYPE_WIDE);
+			cameraManager = new CameraManager(getApplication().getApplicationContext(), Camera.CAMERA_TYPE_WIDE);
 			CameraManager finalCameraManager = cameraManager; // stupid java
 			sensors = new HashMap<String, SensorInterface>() {{
 				put("roadCamera", finalCameraManager);
@@ -122,8 +122,8 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 				put("motionSensors", sensorManager);
 			}};
 		} else {
-			cameraManager = new CameraManager(getApplication().getApplicationContext(), 20, Camera.CAMERA_TYPE_ROAD);
-			cameraManagerWide = new CameraManager(getApplication().getApplicationContext(), 20, Camera.CAMERA_TYPE_WIDE);
+			cameraManager = new CameraManager(getApplication().getApplicationContext(), Camera.CAMERA_TYPE_ROAD);
+			cameraManagerWide = new CameraManager(getApplication().getApplicationContext(), Camera.CAMERA_TYPE_WIDE);
 			CameraManager finalCameraManager = cameraManager; // stupid java
 			CameraManager finalCameraManagerWide = cameraManagerWide;
 			sensors = new HashMap<String, SensorInterface>() {{

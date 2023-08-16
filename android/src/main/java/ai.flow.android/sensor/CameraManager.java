@@ -20,7 +20,10 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.MeteringRectangle;
+import android.hardware.camera2.params.RggbChannelVector;
 import android.icu.number.Scale;
 import android.media.Image;
 import android.media.ImageReader;
@@ -34,6 +37,7 @@ import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.core.*;
+import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.internal.utils.ImageUtil;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -81,7 +85,6 @@ public class CameraManager extends SensorInterface {
     public MsgFrameData msgFrameData, msgFrameRoadData;
     public MsgFrameBuffer msgFrameBuffer, msgFrameRoadBuffer;
     public PrimitiveList.Float.Builder K;
-    public int frequency;
     public int frameID = 0;
     public boolean recording = false;
     public Context context;
@@ -126,13 +129,12 @@ public class CameraManager extends SensorInterface {
             return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
     }
 
-    public CameraManager(Context context, int frequency, int cameraType){
+    public CameraManager(Context context, int cameraType){
         msgFrameData = new MsgFrameData(cameraType);
         K = msgFrameData.intrinsics;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
-        this.frequency = frequency;
         this.cameraType = cameraType;
 
         if (utils.SimulateRoadCamera) {
@@ -329,9 +331,14 @@ public class CameraManager extends SensorInterface {
             CameraManager cm = managers.get(i);
             ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
             builder.setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST);
+            builder.setDefaultResolution(new Size(cm.W, cm.H));
+            builder.setMaxResolution(new Size(cm.W, cm.H));
             builder.setTargetResolution(new Size(cm.W, cm.H));
             Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
-            ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(cm.frequency, cm.frequency));
+            ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
+                    new MeteringRectangle(1, 1, cm.W - 2, cm.H - 2, 500)
+            });
+            ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(15, 20));
             ImageAnalysis imageAnalysis = builder.build();
             imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(cm.context), cm.myAnalyzer);
             ConcurrentCamera.SingleCameraConfig camconfig = new ConcurrentCamera.SingleCameraConfig(
@@ -354,9 +361,17 @@ public class CameraManager extends SensorInterface {
     private void bindUseCases(@NonNull ProcessCameraProvider cameraProvider) {
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
         builder.setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST);
-        builder.setTargetResolution(new Size(W, H));
+        Size ims = new Size(W, H);
+        builder.setDefaultResolution(ims);
+        builder.setMaxResolution(ims);
+        builder.setTargetResolution(ims);
         Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
-        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(frequency, frequency));
+        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
+                new MeteringRectangle(1, 1, W - 2, H - 2, 500)
+        });
+        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.5f, 1.5f, 1.5f, 1.5f));
+        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(15, 20));
+        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_FAST);
         ImageAnalysis imageAnalysis = builder.build();
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
 
