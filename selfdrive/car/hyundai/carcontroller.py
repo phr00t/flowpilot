@@ -162,7 +162,7 @@ class CarController:
 
     #sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CCr>" + "{:.1f}".format(CS.current_cruise_speed) + " StP>" + "{:.2f}".format(stoplinesp) + " DSpd>" + "{:.1f}".format(l0v_distval_mph) + " DSpM>" + "{:.1f}".format(lead_vdiff_mph) + " Conf>" + "{:.2f}".format(overall_confidence))
     sLogger.Send(
-      "vC>" + "{:.2f}".format(vcurv) + " CCr>" + "{:.1f}".format(CS.out.speed) + " l0v>" + "{:.1f}".format(lead_vdiff_mph))
+      "vC>" + "{:.2f}".format(vcurv) + " CCr>" + "{:.1f}".format(CS.out.cruiseState.speed) + " l0v>" + "{:.1f}".format(lead_vdiff_mph))
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
