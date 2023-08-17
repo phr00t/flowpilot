@@ -6,10 +6,10 @@ from common.numpy_fast import interp
 from common.realtime import DT_MDL
 from system.swaglog import cloudlog
 
-
+# positive numbers go right, negative go left
 TRAJECTORY_SIZE = 33
-PATH_OFFSET = 0.275
-CAMERA_OFFSET = 0.00
+PATH_OFFSET = 0.2
+CAMERA_OFFSET = 0.1
 
 
 class LanePlanner:
