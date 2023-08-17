@@ -3,6 +3,7 @@ package ai.flow.android.sensor;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.transformations.Model;
 import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.ModelExecutorF3;
@@ -67,6 +68,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static ai.flow.android.sensor.Utils.fillYUVBuffer;
 import static ai.flow.common.BufferUtils.byteToFloat;
@@ -75,8 +78,9 @@ import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
 public class CameraManager extends SensorInterface {
 
     private ImageAnalysis.Analyzer myAnalyzer, roadAnalyzer = null;
-    public static List<CameraManager> Managers = new ArrayList<>();
+    //public static List<CameraManager> Managers = new ArrayList<>();
     public ProcessCameraProvider cameraProvider;
+    public ExecutorService threadpool;
     public String frameDataTopic, frameBufferTopic, intName;
     public ZMQPubHandler ph;
     public boolean running = false;
@@ -136,6 +140,7 @@ public class CameraManager extends SensorInterface {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
         this.cameraType = cameraType;
+        this.threadpool = Executors.newCachedThreadPool();
 
         if (utils.SimulateRoadCamera) {
             WideToRoad = new Matrix();
@@ -280,6 +285,13 @@ public class CameraManager extends SensorInterface {
                         @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
+
+                            // don't need an image right now, skip this
+                            if (ModelExecutorF3.NeedImage == false) {
+                                image.close();
+                                return;
+                            }
+
                             fillYUVBuffer(image, yuvBuffer);
 
                             ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
@@ -299,8 +311,14 @@ public class CameraManager extends SensorInterface {
 
                             msgFrameData.frameData.setFrameId(frameID);
 
-                            ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
-                            ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
+                            ModelExecutorF3.SetLatestCameraData(msgFrameData.frameData.asReader(),
+                                                                msgFrameBuffer.frameBuffer.asReader());
+
+                            // this isn't critical, so don't hold up image analysis to do
+                            threadpool.submit(() -> {
+                                ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
+                                ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
+                            });
 
                             if (utils.SimulateRoadCamera)
                                 SimulateRoadCamera(image);
@@ -310,13 +328,13 @@ public class CameraManager extends SensorInterface {
                         }
                     };
 
-                    if (utils.WideCameraOnly)
-                        bindUseCases(cameraProvider);
-                    else {
+                    //if (utils.WideCameraOnly)
+                    bindUseCases(cameraProvider);
+                    /*else {
                         Managers.add(myCamManager);
                         if (Managers.size() == 2)
                             bindUseCasesGroup(Managers, cameraProvider);
-                    }
+                    }*/
                 } catch (ExecutionException | InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -324,7 +342,7 @@ public class CameraManager extends SensorInterface {
         }, ContextCompat.getMainExecutor(context));
     }
 
-    @SuppressLint({"RestrictedApi", "UnsafeOptInUsageError"})
+    /*@SuppressLint({"RestrictedApi", "UnsafeOptInUsageError"})
     private static void bindUseCasesGroup(List<CameraManager> managers, ProcessCameraProvider cameraProvider) {
         List<ConcurrentCamera.SingleCameraConfig> configs = new ArrayList<>();
         for (int i=0; i<managers.size(); i++) {
@@ -338,7 +356,7 @@ public class CameraManager extends SensorInterface {
             ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
                     new MeteringRectangle(1, 1, cm.W - 2, cm.H - 2, 500)
             });
-            ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(15, 20));
+            ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(21, 40));
             ImageAnalysis imageAnalysis = builder.build();
             imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(cm.context), cm.myAnalyzer);
             ConcurrentCamera.SingleCameraConfig camconfig = new ConcurrentCamera.SingleCameraConfig(
@@ -355,7 +373,7 @@ public class CameraManager extends SensorInterface {
             CameraControl cc = cams.get(i).getCameraControl();
             cc.cancelFocusAndMetering();
         }
-    }
+    }*/
 
     @SuppressLint({"RestrictedApi", "UnsafeOptInUsageError"})
     private void bindUseCases(@NonNull ProcessCameraProvider cameraProvider) {
@@ -367,10 +385,10 @@ public class CameraManager extends SensorInterface {
         builder.setTargetResolution(ims);
         Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
-                new MeteringRectangle(1, (int)Math.floor(H * 0.2f), W - 2, (int)Math.floor(H * 0.79f) - 1, 500)
+                new MeteringRectangle(1, (int)Math.floor(H * 0.3f), W - 2, (int)Math.floor(H * 0.69f) - 1, 500)
         });
-        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.5f, 1.5f, 1.5f, 1.5f));
-        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(15, 20));
+        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.75f, 1.75f, 1.75f, 1.75f));
+        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(25, 35));
         ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_FAST);
         ImageAnalysis imageAnalysis = builder.build();
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);

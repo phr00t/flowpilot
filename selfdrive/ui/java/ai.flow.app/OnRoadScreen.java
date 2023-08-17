@@ -8,6 +8,7 @@ import ai.flow.common.transformations.Camera;
 import ai.flow.definitions.CarDefinitions.CarControl.HUDControl.AudibleAlert;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.CommonModelF3;
+import ai.flow.modeld.ModelExecutorF3;
 import ai.flow.modeld.ParsedOutputs;
 import ai.flow.modeld.Preprocess;
 import ai.flow.modeld.messages.MsgModelDataV2;
@@ -785,7 +786,7 @@ public class OnRoadScreen extends ScreenAdapter {
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
             appContext.font.draw(batch, "Clog: " + CDebugLine + "\nPYLog: " + PYDebugLine,20,200);
-            appContext.font.draw(batch, tempStr, Gdx.graphics.getWidth() - 500f, 150f);
+            appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 500f, 150f);
             appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 500f, 75f);
             batch.end();
         }

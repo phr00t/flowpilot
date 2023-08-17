@@ -4,7 +4,9 @@ import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
 import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
+import ai.flow.modeld.messages.MsgFrameData;
 import ai.flow.modeld.messages.MsgModelRaw;
+import ai.flow.sensor.messages.MsgFrameBuffer;
 import messaging.ZMQPubHandler;
 import messaging.ZMQSubHandler;
 import org.capnproto.PrimitiveList;
@@ -35,6 +37,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public final String threadName = "modeld";
     public boolean initialized = false;
     public long timePerIt = 0;
+    public static long AvgIterationTime = 0;
     public long iterationNum = 1;
 
     public static int[] imgTensorShape = {1, 12, 128, 256};
@@ -88,10 +91,11 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
 
     int desire;
     public ModelRunner modelRunner;
-    Definitions.FrameData.Reader frameData;
-    Definitions.FrameData.Reader frameWideData;
-    Definitions.FrameBuffer.Reader msgFrameBuffer;
-    Definitions.FrameBuffer.Reader msgFrameWideBuffer;
+    public static volatile boolean NeedImage;
+    static Definitions.FrameData.Reader frameData;
+    static Definitions.FrameData.Reader frameWideData;
+    static Definitions.FrameBuffer.Reader msgFrameBuffer;
+    static Definitions.FrameBuffer.Reader msgFrameWideBuffer;
     ByteBuffer imgBuffer;
     ByteBuffer wideImgBuffer;
     boolean snpe;
@@ -128,11 +132,18 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         }
     }
 
+    public static void SetLatestCameraData(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf) {
+        frameWideData = frameData = wideData;
+        msgFrameWideBuffer = msgFrameBuffer = wideBuf;
+        NeedImage = false;
+    }
+
     public void updateCameraState(){
-        frameWideData = sh.recv("wideRoadCameraState").getWideRoadCameraState();
-        msgFrameWideBuffer = sh.recv("wideRoadCameraBuffer").getWideRoadCameraBuffer();
-        frameData = utils.WideCameraOnly && !utils.SimulateRoadCamera ? frameWideData : sh.recv("roadCameraState").getRoadCameraState();
-        msgFrameBuffer = utils.WideCameraOnly && !utils.SimulateRoadCamera ? msgFrameWideBuffer : sh.recv("roadCameraBuffer").getRoadCameraBuffer();
+        NeedImage = true;
+        while (NeedImage) {
+            Thread.yield();
+        }
+        start = System.currentTimeMillis();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
         wideImgBuffer = updateImageBuffer(msgFrameWideBuffer, wideImgBuffer);
     }
@@ -214,9 +225,6 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 continue;
             }
 
-            updateCameraState();
-            start = System.currentTimeMillis();
-
             if (sh.updated("lateralPlan")){
                 desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
                 if (desire >= 0 && desire < CommonModelF2.DESIRE_LEN)
@@ -243,6 +251,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
             }
 
+            updateCameraState();
             netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
             netInputWideBuffer = imageWidePrepare.prepare(wideImgBuffer, wrapMatrixWide);
 
@@ -253,7 +262,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 netInputWideBuffer = netInputWideBuffer.permute(0, 2, 3, 1).dup();
                 }
             }
-            
+
             inputMap.put("input_imgs", netInputBuffer);
             inputMap.put("big_input_imgs", netInputWideBuffer);
             modelRunner.run(inputMap, outputMap);
@@ -269,10 +278,11 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
             serializeAndPublish();
 
             end = System.currentTimeMillis();
-            // compute runtime stats.
-            // skip 1st 10 reading to let it warm up.
+            // compute runtime stats every 10 runs
             if (iterationNum > 10) {
-                timePerIt += end - start;
+                AvgIterationTime = timePerIt / iterationNum;
+                iterationNum = 0;
+                timePerIt = 0;
                 totalFrameDrops += (frameData.getFrameId() - lastFrameID) - 1;
                 totalWideFrameDrops += (frameWideData.getFrameId() - lastWideFrameID) - 1;
             } else {
@@ -285,6 +295,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
 
             lastFrameID = frameData.getFrameId();
             lastWideFrameID = frameWideData.getFrameId();
+            timePerIt += end - start;
             iterationNum++;
         }
 
