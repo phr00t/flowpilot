@@ -157,12 +157,14 @@ class CarController:
     radarState = sm['radarState']
     l0prob = radarState.leadOne.modelProb
     l0d = radarState.leadOne.dRel
-    l0v = radarState.leadOne.vRel
-    lead_vdiff_mph = l0v * 2.23694
+    l0vd = radarState.leadOne.vRel
+    l0v = radarState.leadOne.vLead
+    lead_vdiff_mph = l0vd * 2.23694
+    lead_mph = l0v * 2.23694
 
     #sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CCr>" + "{:.1f}".format(CS.current_cruise_speed) + " StP>" + "{:.2f}".format(stoplinesp) + " DSpd>" + "{:.1f}".format(l0v_distval_mph) + " DSpM>" + "{:.1f}".format(lead_vdiff_mph) + " Conf>" + "{:.2f}".format(overall_confidence))
     sLogger.Send(
-      "vC>" + "{:.2f}".format(vcurv) + " CCr>" + "{:.1f}".format(CS.out.cruiseState.speed) + " l0v>" + "{:.1f}".format(lead_vdiff_mph) + " l0d>" + "{:.1f}".format(l0d))
+      "vC>" + "{:.2f}".format(vcurv) + " CCr>" + "{:.1f}".format(CS.out.cruiseState.speed) + " l0v>" + "{:.1f}".format(lead_mph) + " l0d>" + "{:.1f}".format(l0d))
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
