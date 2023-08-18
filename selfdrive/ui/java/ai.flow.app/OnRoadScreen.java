@@ -115,7 +115,7 @@ public class OnRoadScreen extends ScreenAdapter {
     String carStateTopic = "carState";
     String controlsStateTopic = "controlsState";
     String deviceStateTopic = "deviceState";
-    String CDebugLine = "Empty", PYDebugLine = "Empty";
+    String Line1 = "Empty", Line2 = "Empty";
 
     Label velocityLabel, velocityUnitLabel, alertText1, alertText2, maxCruiseSpeedLabel, dateLabel, vesrionLabel;
     Table velocityTable, maxCruiseTable, alertTable, infoTable, offRoadTable, rootTable, offRoadRootTable;
@@ -157,10 +157,10 @@ public class OnRoadScreen extends ScreenAdapter {
                     DatagramPacket p = new DatagramPacket(buf, buf.length);
                     s.receive(p);
                     String debugLine = new String(buf, 0, p.getLength());
-                    if (debugLine.startsWith("C"))
-                        CDebugLine = debugLine;
+                    if (debugLine.startsWith("0"))
+                        Line1 = debugLine;
                     else
-                        PYDebugLine = debugLine;
+                        Line2 = debugLine;
                 }
             } catch (Exception e) {}
         });
@@ -396,7 +396,9 @@ public class OnRoadScreen extends ScreenAdapter {
         stageAlert = new Stage(new ScreenViewport());
 
         velocityLabel = new Label("", appContext.skin, "default-font-bold-large", "white");
+        velocityLabel.setColor(0.5f, 1f, 0.5f, 1f);
         velocityUnitLabel = new Label("", appContext.skin, "default-font", "white");
+        velocityUnitLabel.setColor(0.5f, 1f, 0.5f, 1f);
         isMetric = params.existsAndCompare("IsMetric", true);
 
         if (params.exists("EndToEndToggle"))
@@ -670,7 +672,7 @@ public class OnRoadScreen extends ScreenAdapter {
         appContext.shapeRenderer.setProjectionMatrix(cameraAlertBox.combined);
         appContext.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         colorBorder = statusColors.get(status);
-        appContext.shapeRenderer.setColor(colorBorder[0] / 255f, colorBorder[1] / 255f, colorBorder[2] / 255f, 0.9f);
+        appContext.shapeRenderer.setColor(colorBorder[0] / 255f, colorBorder[1] / 255f, colorBorder[2] / 255f, 0.4f);
 
         if (alertText1.getText().toString().equals("") & alertText1.getText().toString().equals(""))
             appContext.shapeRenderer.rectLine(0, 0, uiWidth-borderShift ,0, borderWidth);
@@ -785,7 +787,7 @@ public class OnRoadScreen extends ScreenAdapter {
 
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
-            appContext.font.draw(batch, "Clog: " + CDebugLine + "\nPYLog: " + PYDebugLine,20,200);
+            appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,20,200);
             appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 500f, 150f);
             appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 500f, 75f);
             batch.end();
