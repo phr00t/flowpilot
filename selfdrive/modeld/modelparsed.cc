@@ -21,9 +21,7 @@ int main(int argc, char **argv) {
   uint32_t last_frame_id = 0;
 
   while (!do_exit) {
-    // wait...
-    sched_yield();
-
+    // this receive should block
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
       if (errno == EINTR) {
