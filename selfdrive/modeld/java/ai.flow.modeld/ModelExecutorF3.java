@@ -165,13 +165,13 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         inputShapeMap.put("input_imgs", imgTensorShape);
         inputShapeMap.put("big_input_imgs", imgTensorShape);
         inputShapeMap.put("features_buffer", featureTensorShape);
-        inputShapeMap.put("desire_pulse", desireTensorShape);
+        inputShapeMap.put("desire", desireTensorShape);
         inputShapeMap.put("traffic_convention", trafficTensorShape);
         inputShapeMap.put("nav_features", navFeaturesTensorShape);
         outputShapeMap.put("outputs", outputTensorShape);
 
         inputMap.put("features_buffer", featuresNDArr);
-        inputMap.put("desire_pulse", desireNDArr);
+        inputMap.put("desire", desireNDArr);
         inputMap.put("traffic_convention", trafficNDArr);
         outputMap.put("outputs", netOutputs);
 
