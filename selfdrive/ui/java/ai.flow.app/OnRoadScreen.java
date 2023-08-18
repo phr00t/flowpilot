@@ -158,9 +158,9 @@ public class OnRoadScreen extends ScreenAdapter {
                     s.receive(p);
                     String debugLine = new String(buf, 0, p.getLength());
                     if (debugLine.startsWith("0"))
-                        Line1 = debugLine;
+                        Line1 = debugLine.replace('\n', ' ');
                     else
-                        Line2 = debugLine;
+                        Line2 = debugLine.replace('\n', ' ');
                 }
             } catch (Exception e) {}
         });
