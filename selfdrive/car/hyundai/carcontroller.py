@@ -159,9 +159,10 @@ class CarController:
     l0d = radarState.leadOne.dRel
 
     # lead velocity seems to be scaled oddly, let's correct that scale now
-    divisor = 0.273
-    if CS.out.vEgo < 45:
-      divisor = 1.163 * math.sin(1.145 - 0.04968 * CS.out.vEgo) + 1.304
+    #divisor = 0.273
+    #if CS.out.vEgo < 45:
+    #  divisor = 1.163 * math.sin(1.145 - 0.04968 * CS.out.vEgo) + 1.304
+    divisor = 1.2
 
     #l0vd = radarState.leadOne.vRel
     l0vo = radarState.leadOne.vLead
