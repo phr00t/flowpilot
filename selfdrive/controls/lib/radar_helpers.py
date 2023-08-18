@@ -1,6 +1,6 @@
 from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
-
+import statistics
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
@@ -59,6 +59,8 @@ class Track():
 class Cluster():
   def __init__(self):
     self.tracks = set()
+    self.vLeads = []
+    self.Dists = []
 
   def add(self, t):
     # add the first track
@@ -131,12 +133,29 @@ class Cluster():
     }
 
   def get_RadarState_from_vision(self, lead_msg, v_ego):
+    # this data is very noisy, let's smooth it out
+    finalv = 0.0
+    finald = 0.0
+
+    if lead_msg.prob < 0.5:
+      self.Dists.clear()
+      self.vLeads.clear()
+    else:
+      self.Dists.append(lead_msg.x[0])
+      self.vLeads.append(lead_msg.v[0])
+      if len(self.Dists) > 5:
+        self.Dists.pop(0)
+      if len(self.vLeads) > 5:
+        self.vLeads.pop(0)
+      finald = statistics.fmean(self.Dists)
+      finalv = statistics.fmean(self.vLeads)
+
     return {
-      "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
+      "dRel": float(finald - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
-      "vRel": float(lead_msg.v[0] - v_ego),
-      "vLead": float(lead_msg.v[0]),
-      "vLeadK": float(lead_msg.v[0]),
+      "vRel": float(finalv - v_ego),
+      "vLead": float(finalv),
+      "vLeadK": float(finalv),
       "aLeadK": float(0),
       "aLeadTau": _LEAD_ACCEL_TAU,
       "fcw": False,
