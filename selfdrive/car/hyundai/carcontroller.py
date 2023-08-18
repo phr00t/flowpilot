@@ -157,14 +157,25 @@ class CarController:
     radarState = sm['radarState']
     l0prob = radarState.leadOne.modelProb
     l0d = radarState.leadOne.dRel
-    l0vd = radarState.leadOne.vRel
-    l0v = radarState.leadOne.vLead
-    lead_vdiff_mph = l0vd * 2.23694
-    lead_mph = l0v * 2.23694
+
+    # lead velocity seems to be scaled oddly, let's correct that scale now
+    divisor = 0.273
+    if CS.out.vEgo < 45:
+      divisor = 1.163 * math.sin(1.145 - 0.04968 * CS.out.vEgo) + 1.304
+
+    #l0vd = radarState.leadOne.vRel
+    l0vo = radarState.leadOne.vLead
+    l0v = l0vo / divisor
+    #lead_vdiff_mph = l0vd * 2.23694
+    lead_mph_scaled = l0v * 2.23694
+    lead_mph_original = l0vo * 2.23694
+    lead_scaled_diff = lead_mph_scaled - clu11_speed
 
     #sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CCr>" + "{:.1f}".format(CS.current_cruise_speed) + " StP>" + "{:.2f}".format(stoplinesp) + " DSpd>" + "{:.1f}".format(l0v_distval_mph) + " DSpM>" + "{:.1f}".format(lead_vdiff_mph) + " Conf>" + "{:.2f}".format(overall_confidence))
     sLogger.Send(
-      "vC>" + "{:.2f}".format(vcurv) + " CCr>" + "{:.1f}".format(CS.out.cruiseState.speed) + " l0v>" + "{:.1f}".format(lead_mph) + " l0d>" + "{:.1f}".format(l0d))
+      "vC>" + "{:.2f}".format(vcurv) + " l0vs>" + "{:.1f}".format(lead_mph_scaled) +
+      " l0v>" + "{:.1f}".format(lead_mph_original) + " l0d>" + "{:.1f}".format(l0d) +
+      " lsd>" + "{:.1f}".format(lead_scaled_diff))
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
