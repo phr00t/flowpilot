@@ -227,8 +227,8 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
 
             if (sh.updated("lateralPlan")){
                 desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
-                if (desire >= 0 && desire < CommonModelF3.DESIRE_LEN)
-                    desireIn[desire] = 1.0f;
+                for (int i=0; i<CommonModelF3.DESIRE_LEN; i++)
+                    desireIn[i] = i == desire ? 1f : 0f;
             }
 
             INDArray dfs1 = desireNDArr.get(desireFeatureSlice1);
