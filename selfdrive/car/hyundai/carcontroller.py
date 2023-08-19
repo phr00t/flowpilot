@@ -176,7 +176,7 @@ class CarController:
     sLogger.Send(
       "vC>" + "{:.2f}".format(vcurv) + " l0vs>" + "{:.1f}".format(lead_mph_scaled) +
       " l0v>" + "{:.1f}".format(lead_mph_original) + " l0d>" + "{:.1f}".format(l0d) +
-      " lsd>" + "{:.1f}".format(lead_scaled_diff))
+      " lsd>" + "{:.1f}".format(lead_scaled_diff) + " a>" + "{:.1f}".format(accel))
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
