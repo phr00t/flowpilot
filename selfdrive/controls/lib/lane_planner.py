@@ -8,8 +8,8 @@ from system.swaglog import cloudlog
 
 # positive numbers go right, negative go left
 TRAJECTORY_SIZE = 33
-PATH_OFFSET = 0.0
-CAMERA_OFFSET = 0.35
+PATH_OFFSET = 0.2
+CAMERA_OFFSET = 0.2
 
 class LanePlanner:
   def __init__(self, wide_camera=False):
