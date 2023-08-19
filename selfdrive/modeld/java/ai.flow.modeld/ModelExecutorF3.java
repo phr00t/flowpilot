@@ -101,13 +101,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         return intrinsics.get(0)!=0 & intrinsics.get(2)!=0 & intrinsics.get(4)!=0 & intrinsics.get(5)!=0 & intrinsics.get(8)!=0;
     }
 
-    public static INDArray wideToRoad;
-
     public void updateCameraMatrix(PrimitiveList.Float.Reader intrinsics, boolean wide){
-        if (utils.SimulateRoadCamera && !wide) {
-            road_intrinsics = wideToRoad.mmul(wide_intrinsics); //.mmul(wideToRoad);
-            return;
-        }
         if (!isIntrinsicsValid(intrinsics))
             return;
         for (int i=0; i<3; i++){
@@ -171,7 +165,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         updateCameraMatrix(frameWideData.getIntrinsics(), true);
         updateCameraMatrix(frameData.getIntrinsics(), false);
 
-        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
+        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
         INDArray wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
 
         // TODO:Clean this shit.
@@ -239,7 +233,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 for (int i = 0; i < 3; i++) {
                     augmentRot.putScalar(i, rpy.get(i));
                 }
-                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
+                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
                 wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
             }
 

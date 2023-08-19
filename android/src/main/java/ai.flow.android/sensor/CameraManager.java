@@ -142,28 +142,6 @@ public class CameraManager extends SensorInterface {
         this.cameraType = cameraType;
         this.threadpool = Executors.newCachedThreadPool();
 
-        if (utils.SimulateRoadCamera) {
-            WideToRoad = new Matrix();
-            WideToRoad.setScale(1f + ScaleAmount, 1f + ScaleAmount);
-            WideToRoad.postTranslate(-W * 0.5f * ScaleAmount, -H * 0.5f * ScaleAmount);
-            nv21buf = Nv21Buffer.Factory.allocate(W, H);
-            nv21buf_small = Nv21Buffer.Factory.allocate(Math.round(W / (1f + ScaleAmount)), Math.round(H / (1f + ScaleAmount)));
-            abgrbuf = AbgrBuffer.Factory.allocate(nv21buf_small.getWidth(), nv21buf_small.getHeight());
-            float[] rawvals = new float[9];
-            WideToRoad.getValues(rawvals);
-            ModelExecutorF3.wideToRoad = Nd4j.createFromArray(new float[][]{
-                    {rawvals[0],  0.0f,  rawvals[2]},
-                    {0.0f,  rawvals[4],  rawvals[5]},
-                    {0.0f,  0.0f,  1.0f}
-            });
-            msgFrameRoadData = new MsgFrameData(CAMERA_TYPE_ROAD);
-            msgFrameRoadBuffer = new MsgFrameBuffer(W * H * 3/2, CAMERA_TYPE_ROAD);
-            yuvRoadBuffer = msgFrameRoadBuffer.frameBuffer.getImage().asByteBuffer();
-            msgFrameRoadBuffer.frameBuffer.setEncoding(Definitions.FrameBuffer.Encoding.YUV);
-            msgFrameRoadBuffer.frameBuffer.setFrameHeight(H);
-            msgFrameRoadBuffer.frameBuffer.setFrameWidth(W);
-        }
-
         if (cameraType == Camera.CAMERA_TYPE_WIDE){
             this.frameDataTopic = "wideRoadCameraState";
             this.frameBufferTopic = "wideRoadCameraBuffer";
@@ -182,10 +160,7 @@ public class CameraManager extends SensorInterface {
 
         ph = new ZMQPubHandler();
 
-        if (utils.SimulateRoadCamera)
-            ph.createPublishers(Arrays.asList("wideRoadCameraState", "roadCameraState", "roadCameraBuffer", "wideRoadCameraBuffer"));
-        else
-            ph.createPublishers(Arrays.asList(frameDataTopic, frameBufferTopic));
+        ph.createPublishers(Arrays.asList(frameDataTopic, frameBufferTopic));
 
         loadIntrinsics();
     }
@@ -203,20 +178,6 @@ public class CameraManager extends SensorInterface {
         K.set(4,intrinsics[4]);
         K.set(5, intrinsics[5]);
         K.set(8, 1f);
-
-        if (utils.SimulateRoadCamera) {
-            INDArray thisIntrinsics = Nd4j.createFromArray(new float[][]{
-                    {intrinsics[0],  0.0f,  intrinsics[2]},
-                    {0.0f,  intrinsics[4],  intrinsics[5]},
-                    {0.0f,  0.0f,  1.0f}
-            });
-            INDArray transformed = ModelExecutorF3.wideToRoad.mmul(thisIntrinsics);
-            msgFrameRoadData.intrinsics.set(0, transformed.getFloat(0));
-            msgFrameRoadData.intrinsics.set(2, transformed.getFloat(2));
-            msgFrameRoadData.intrinsics.set(4, transformed.getFloat(4));
-            msgFrameRoadData.intrinsics.set(5, transformed.getFloat(5));
-            msgFrameRoadData.intrinsics.set(8, 1f);
-        }
     }
 
     public void setLifeCycleFragment(Fragment lifeCycleFragment){
@@ -320,9 +281,6 @@ public class CameraManager extends SensorInterface {
                                 ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
                                 ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
                             });
-
-                            if (utils.SimulateRoadCamera)
-                                SimulateRoadCamera(image);
 
                             image.close();
                             frameID += 1;
