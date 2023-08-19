@@ -43,8 +43,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public static int[] imgTensorShape = {1, 12, 128, 256};
     public static final int[] desireTensorShape = {1, CommonModelF3.DESIRE_LEN, CommonModelF3.HISTORY_BUFFER_LEN+1};
     public static final int[] trafficTensorShape = {1, CommonModelF3.TRAFFIC_CONVENTION_LEN};
-    public static final int[] stateTensorShape = {1, CommonModelF3.FEATURE_LEN, CommonModelF3.HISTORY_BUFFER_LEN};
-    public static final int[] featureTensorShape = {1, CommonModelF3.FEATURE_LEN, 99};
+    public static final int[] featureTensorShape = {1, CommonModelF3.FEATURE_LEN, CommonModelF3.HISTORY_BUFFER_LEN};
     public static final int[] outputTensorShape = {1, CommonModelF3.NET_OUTPUT_SIZE};
     public static final int[] navFeaturesTensorShape = {1, CommonModelF3.NAV_FEATURE_LEN};
     public static final int[] navInstructionsTensorShape = {1, 150};
@@ -54,7 +53,6 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public final INDArray desireNDArr = Nd4j.zeros(desireTensorShape);
     public final INDArray trafficNDArr = Nd4j.zeros(trafficTensorShape);
     public final INDArray featuresNDArr = Nd4j.zeros(featureTensorShape);
-    public final INDArray stateNDArr = Nd4j.zeros(stateTensorShape);
     public final float[] netOutputs = new float[(int)numElements(outputTensorShape)];
     public final INDArray augmentRot = Nd4j.zeros(3);
     public final INDArray augmentTrans = Nd4j.zeros(3);
@@ -65,13 +63,6 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
 
     public final ParamsInterface params = ParamsInterface.getInstance();
 
-    public final INDArrayIndex[] stateFeatureSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.DESIRE_LEN-1)};
-    public final INDArrayIndex[] stateFeatureSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.DESIRE_LEN)};
-    public final INDArrayIndex[] desireFeatureSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.DESIRE_LEN-1)};
-    public final INDArrayIndex[] desireFeatureSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.DESIRE_LEN)};
-
-    public final INDArrayIndex[] gatherFeatureSlices = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.FEATURE_LEN)};
-    public final INDArrayIndex[] gatherFeatureSlices0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all()};
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
     public static INDArray road_intrinsics = Camera.road_intrinsics.dup(); // telephoto
     public static INDArray wide_intrinsics = Camera.wide_intrinsics.dup(); // wide
@@ -233,8 +224,12 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                     desireIn[i] = i == desire ? 1f : 0f;
             }
 
-            INDArray dfs1 = desireNDArr.get(desireFeatureSlice1);
-            desireNDArr.put(desireFeatureSlice0, dfs1);
+            //std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
+            for (int h = 0; h < CommonModelF3.HISTORY_BUFFER_LEN; h++) {
+                for (int d = 0; d < CommonModelF3.DESIRE_LEN; d++) {
+                    desireNDArr.putScalar(0, d, h, desireNDArr.getFloat(0, d, h+1));
+                }
+            }
             for (int i=1; i<CommonModelF3.DESIRE_LEN; i++){
                 if (desireIn[i] - prevDesire[i] > 0.99f)
                     desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, desireIn[i]);
@@ -269,11 +264,16 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
             inputMap.put("big_input_imgs", netInputWideBuffer);
             modelRunner.run(inputMap, outputMap);
 
-            stateNDArr.put(stateFeatureSlice0, stateNDArr.get(stateFeatureSlice1));
+            // featureTensorShape, 1, FEATURE_LEN, HISTORY_LEN
+            //    std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
+            for (int h = 0; h < CommonModelF3.HISTORY_BUFFER_LEN-1; h++) {
+                for (int f = 0; f < CommonModelF3.FEATURE_LEN; f++) {
+                    featuresNDArr.putScalar(0, f, h, featuresNDArr.getFloat(0, f, h+1));
+                }
+            }
+            //    std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
             for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
-                stateNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
-            INDArray gfs = stateNDArr.get(gatherFeatureSlices);
-            featuresNDArr.put(gatherFeatureSlices0, gfs);
+                featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
 
             // publish outputs
             timestamp = System.currentTimeMillis();
