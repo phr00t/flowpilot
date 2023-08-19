@@ -47,6 +47,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public static final int[] featureTensorShape = {1, CommonModelF3.FEATURE_LEN, 99};
     public static final int[] outputTensorShape = {1, CommonModelF3.NET_OUTPUT_SIZE};
     public static final int[] navFeaturesTensorShape = {1, CommonModelF3.NAV_FEATURE_LEN};
+    public static final int[] navInstructionsTensorShape = {1, 150};
 
     public static final Map<String, int[]> inputShapeMap = new HashMap<>();
     public static final Map<String, int[]> outputShapeMap = new HashMap<>();
@@ -168,6 +169,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         inputShapeMap.put("desire", desireTensorShape);
         inputShapeMap.put("traffic_convention", trafficTensorShape);
         inputShapeMap.put("nav_features", navFeaturesTensorShape);
+        inputShapeMap.put("nav_instructions", navInstructionsTensorShape);
         outputShapeMap.put("outputs", outputTensorShape);
 
         inputMap.put("features_buffer", featuresNDArr);
