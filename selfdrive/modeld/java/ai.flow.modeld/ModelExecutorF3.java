@@ -127,14 +127,14 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public static void SetLatestCameraData(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf) {
         frameWideData = frameData = wideData;
         msgFrameWideBuffer = msgFrameBuffer = wideBuf;
-        //NeedImage = false;
+        NeedImage = false;
     }
 
     public void updateCameraState(){
-        /*NeedImage = true;
+        NeedImage = true;
         while (NeedImage) {
             Thread.yield();
-        }*/
+        }
         start = System.currentTimeMillis();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
         wideImgBuffer = updateImageBuffer(msgFrameWideBuffer, wideImgBuffer);
