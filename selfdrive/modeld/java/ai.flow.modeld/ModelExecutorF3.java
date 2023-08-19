@@ -312,7 +312,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     }
 
     public void serializeAndPublish(){
-        msgModelRaw.fill(netOutputs, System.currentTimeMillis(), lastFrameID, -1, getFrameDropPercent(), AvgIterationTime);
+        msgModelRaw.fill(netOutputs, System.currentTimeMillis(), lastFrameID, -1, 0f, AvgIterationTime);
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
     }
 
