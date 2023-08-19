@@ -384,12 +384,14 @@ public class CameraManager extends SensorInterface {
         builder.setMaxResolution(ims);
         builder.setTargetResolution(ims);
         Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
+        // try to box just the road area for metering
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
-                new MeteringRectangle(1, (int)Math.floor(H * 0.3f), W - 2, (int)Math.floor(H * 0.69f) - 1, 500)
+                new MeteringRectangle((int)Math.floor(W * 0.05f), (int)Math.floor(H * 0.25f),
+                                      (int)Math.floor(W * 0.9f),  (int)Math.floor(H * 0.70f), 500)
         });
-        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.75f, 1.75f, 1.75f, 1.75f));
+        //ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.75f, 1.75f, 1.75f, 1.75f));
+        //ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_FAST);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
-        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_FAST);
         ImageAnalysis imageAnalysis = builder.build();
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
 
