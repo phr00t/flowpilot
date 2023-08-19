@@ -34,7 +34,7 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
-NOSENSOR = "NOSENSOR" in os.environ
+NOSENSOR = True #"NOSENSOR" in os.environ
 IGNORE_PROCESSES = {"loggerd", "logmessaged", "gradled", "uploader", "deleter", "proclogd"} # TODO
 
 ThermalStatus = log.DeviceState.ThermalStatus
