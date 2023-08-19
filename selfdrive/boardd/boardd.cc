@@ -654,7 +654,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda);
-    if (!white_panda_support) threads.emplace_back(pigeon_thread, peripheral_panda);
+    //if (!white_panda_support) threads.emplace_back(pigeon_thread, peripheral_panda);
 
     threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, pandas);
