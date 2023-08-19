@@ -287,11 +287,11 @@ public class CameraManager extends SensorInterface {
                         public void analyze(@NonNull ImageProxy image) {
 
                             // don't need an image right now, skip this
-                            if (ModelExecutorF3.NeedImage == false) {
+                            /*if (ModelExecutorF3.NeedImage == false) {
                                 image.close();
                                 frameID += 1;
                                 return;
-                            }
+                            }*/
 
                             fillYUVBuffer(image, yuvBuffer);
 

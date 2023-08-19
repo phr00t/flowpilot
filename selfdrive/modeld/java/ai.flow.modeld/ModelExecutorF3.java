@@ -127,10 +127,10 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     }
 
     public void updateCameraState(){
-        NeedImage = true;
         while (NeedImage) {
             Thread.yield();
         }
+        NeedImage = true;
         start = System.currentTimeMillis();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
         wideImgBuffer = updateImageBuffer(msgFrameWideBuffer, wideImgBuffer);
