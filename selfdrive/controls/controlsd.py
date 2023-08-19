@@ -80,7 +80,7 @@ class Controls:
     
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'testJoystick', 'driverMonitoringState', 'radarState'] if SIMULATION else []
+      ignore = ['driverCameraState', 'testJoystick', 'driverMonitoringState', 'radarState'] if SIMULATION else ['driverCameraState', 'testJoystick', 'driverMonitoringState']
 
       if NOSENSOR:
         ignore += ['liveParameters', 'liveTorqueParameters', 'liveLocationKalman']
