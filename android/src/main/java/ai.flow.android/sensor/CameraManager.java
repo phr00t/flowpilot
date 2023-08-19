@@ -289,6 +289,7 @@ public class CameraManager extends SensorInterface {
                             // don't need an image right now, skip this
                             if (ModelExecutorF3.NeedImage == false) {
                                 image.close();
+                                frameID += 1;
                                 return;
                             }
 

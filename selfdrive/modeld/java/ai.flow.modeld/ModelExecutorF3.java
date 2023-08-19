@@ -71,15 +71,11 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public MsgModelRaw msgModelRaw = new MsgModelRaw();
     public Definitions.LiveCalibrationData.Reader liveCalib;
 
-    public long start, end, timestamp;
+    public long start, end;
     public int lastFrameID = -1;
-    public int lastWideFrameID = -1;
-    public int firstWideFrameID = -1;
     public int firstFrameID = -1;
-    public int totalWideFrameDrops = 0;
     public int totalFrameDrops = 0;
     public int frameDrops = 0;
-    public int frameDropsWide = 0;
 
     int desire;
     public ModelRunner modelRunner;
@@ -203,7 +199,6 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                     msgFrameWideBuffer.getUOffset(), msgFrameWideBuffer.getVOffset(), msgFrameWideBuffer.getStride());
         }
 
-        lastWideFrameID = frameWideData.getFrameId();
         lastFrameID = frameData.getFrameId();
 
         initialized = true;
@@ -276,27 +271,21 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
 
             // publish outputs
-            timestamp = System.currentTimeMillis();
             serializeAndPublish();
 
             end = System.currentTimeMillis();
             // compute runtime stats every 10 runs
+            frameDrops = (frameData.getFrameId() - lastFrameID) - 1;
             if (iterationNum > 10) {
                 AvgIterationTime = timePerIt / iterationNum;
                 iterationNum = 0;
                 timePerIt = 0;
-                totalFrameDrops += (frameData.getFrameId() - lastFrameID) - 1;
-                totalWideFrameDrops += (frameWideData.getFrameId() - lastWideFrameID) - 1;
+                totalFrameDrops += frameDrops;
             } else {
                 firstFrameID = lastFrameID;
-                firstWideFrameID = lastWideFrameID;
             }
 
-            frameDrops = (frameData.getFrameId() - lastFrameID) - 1;
-            frameDropsWide = (frameWideData.getFrameId() - lastWideFrameID) - 1;
-
             lastFrameID = frameData.getFrameId();
-            lastWideFrameID = frameWideData.getFrameId();
             timePerIt += end - start;
             iterationNum++;
         }
@@ -323,8 +312,8 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     }
 
     public void serializeAndPublish(){
-        msgModelRaw.fill(netOutputs, timestamp, lastFrameID, -1, getFrameDropPercent(), getIterationRate());
-        ph.publishBuffer("modelRaw", msgModelRaw.serialize((frameDropsWide < 1) && (frameDrops < 1)));
+        msgModelRaw.fill(netOutputs, System.currentTimeMillis(), lastFrameID, -1, getFrameDropPercent(), AvgIterationTime);
+        ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
     }
 
     public long getIterationRate() {
