@@ -98,7 +98,7 @@ class LanePlanner:
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
                 " lX" + "{:.1f}".format(self.lll_y[0]) + " rX" + "{:.1f}".format(self.rll_y[0]) +
-                " leX" + "{:.1f}".format(self.lle_y[0]) + " reX" + "{:1.f}".format(self.rle_y[0]) +
+                " leX" + "{:.1f}".format(self.lle_y[0]) + " reX" + "{:.1f}".format(self.rle_y[0]) +
                 " ls" + "{:.2f}".format(self.lll_std) + " rs" + "{:.1f}".format(self.rll_std) +
                 " w" + "{:.1f}".format(self.lane_width))
 
