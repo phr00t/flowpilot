@@ -117,7 +117,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public static void SetLatestCameraData(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf) {
         frameWideData = frameData = wideData;
         msgFrameWideBuffer = msgFrameBuffer = wideBuf;
-        NeedImage = false;
+        NeedImage = wideData == null || wideBuf == null;
     }
 
     public void updateCameraState(){
@@ -133,6 +133,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public void run(){
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+        NeedImage = true;
 
         snpe = params.getBool("UseSNPE");
         if (snpe)
