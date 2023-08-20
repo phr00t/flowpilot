@@ -337,7 +337,7 @@ public class CameraManager extends SensorInterface {
                 new MeteringRectangle((int)Math.floor(W * 0.05f), (int)Math.floor(H * 0.25f),
                                       (int)Math.floor(W * 0.9f),  (int)Math.floor(H * 0.70f), 500)
         });
-        //ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.5f, 1.5f, 1.5f, 1.75f));
+        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.25f, 1.25f, 1.25f, 1.25f));
         ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_FAST);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
