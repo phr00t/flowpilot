@@ -39,6 +39,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     public long timePerIt = 0;
     public static long AvgIterationTime = 0;
     public long iterationNum = 1;
+    public static long cameraImageTimestamp;
 
     public static int[] imgTensorShape = {1, 12, 128, 256};
     public static final int[] desireTensorShape = {1, CommonModelF3.DESIRE_LEN, CommonModelF3.HISTORY_BUFFER_LEN+1};
@@ -114,9 +115,10 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         }
     }
 
-    public static void SetLatestCameraData(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf) {
+    public static void SetLatestCameraData(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf, long timestamp) {
         frameWideData = frameData = wideData;
         msgFrameWideBuffer = msgFrameBuffer = wideBuf;
+        cameraImageTimestamp = timestamp;
         NeedImage = wideData == null || wideBuf == null;
     }
 
@@ -142,8 +144,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         INDArray netInputBuffer, netInputWideBuffer;
 
         ph.createPublishers(Arrays.asList("modelRaw"));
-        sh.createSubscribers(Arrays.asList("roadCameraState", "wideRoadCameraState", "roadCameraBuffer",
-                                           "wideRoadCameraBuffer", "pulseDesire", "liveCalibration", "lateralPlan"));
+        sh.createSubscribers(Arrays.asList("pulseDesire", "liveCalibration", "lateralPlan"));
 
         inputShapeMap.put("input_imgs", imgTensorShape);
         inputShapeMap.put("big_input_imgs", imgTensorShape);
@@ -306,7 +307,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
 
     public void serializeAndPublish(){
         end = System.currentTimeMillis();
-        msgModelRaw.fill(netOutputs, System.currentTimeMillis(), lastFrameID, 0, 0f, end - start);
+        msgModelRaw.fill(netOutputs, cameraImageTimestamp, lastFrameID, 0, 0f, end - start);
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
     }
 

@@ -80,7 +80,6 @@ public class CameraManager extends SensorInterface {
     private ImageAnalysis.Analyzer myAnalyzer, roadAnalyzer = null;
     //public static List<CameraManager> Managers = new ArrayList<>();
     public ProcessCameraProvider cameraProvider;
-    public ExecutorService threadpool;
     public String frameDataTopic, frameBufferTopic, intName;
     public ZMQPubHandler ph;
     public boolean running = false;
@@ -140,7 +139,6 @@ public class CameraManager extends SensorInterface {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
         this.cameraType = cameraType;
-        this.threadpool = Executors.newCachedThreadPool();
 
         if (cameraType == Camera.CAMERA_TYPE_WIDE){
             this.frameDataTopic = "wideRoadCameraState";
@@ -246,13 +244,7 @@ public class CameraManager extends SensorInterface {
                         @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
-
-                            // don't need an image right now, skip this
-                            /*if (ModelExecutorF3.NeedImage == false) {
-                                image.close();
-                                frameID += 1;
-                                return;
-                            }*/
+                            long time = System.currentTimeMillis();
 
                             fillYUVBuffer(image, yuvBuffer);
 
@@ -274,13 +266,11 @@ public class CameraManager extends SensorInterface {
                             msgFrameData.frameData.setFrameId(frameID);
 
                             ModelExecutorF3.SetLatestCameraData(msgFrameData.frameData.asReader(),
-                                                                msgFrameBuffer.frameBuffer.asReader());
+                                                                msgFrameBuffer.frameBuffer.asReader(),
+                                                                time);
 
-                            // this isn't critical, so don't hold up image analysis to do
-                            threadpool.submit(() -> {
-                                ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
-                                ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
-                            });
+                            ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
+                            ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
 
                             image.close();
                             frameID += 1;
@@ -350,6 +340,7 @@ public class CameraManager extends SensorInterface {
         });
         ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.75f, 1.75f, 1.75f, 1.75f));
         ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_FAST);
+        ext.setCaptureRequestOption(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
         ImageAnalysis imageAnalysis = builder.build();
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
