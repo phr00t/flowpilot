@@ -84,7 +84,7 @@ class LateralPlanner:
 
     # calculate lane marking probabilities for purposes of switching from lane/laneless models
     lane_visibility = (self.LP.lll_prob + self.LP.rll_prob) * 0.5
-    self.use_lanelines = self.DH.lane_change_state != LaneChangeState.off or lane_visibility > 0.35
+    self.use_lanelines = self.DH.lane_change_state != log.LateralPlan.LaneChangeState.off or lane_visibility > 0.35
 
     # debug
     sLogger.Send("0lane_vis: " + str(lane_visibility))
