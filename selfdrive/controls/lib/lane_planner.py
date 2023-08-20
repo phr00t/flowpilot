@@ -55,8 +55,8 @@ class LanePlanner:
       self.ll_x = lane_lines[1].x
       self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
       self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
-      self.lll_prob = md.laneLineProbs[1]
-      self.rll_prob = md.laneLineProbs[2]
+      self.lll_prob = 1.0 #md.laneLineProbs[1]
+      self.rll_prob = 1.0 #md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
       self.rll_std = md.laneLineStds[2]
 
@@ -70,10 +70,7 @@ class LanePlanner:
     # will be in a few seconds
     path_xyz[:, 1] += self.path_offset
     l_prob, r_prob = self.lll_prob, self.rll_prob
-
-    use_right_lane_y = lerp(self.rle_y, self.rll_y, self.rll_prob)
-
-    width_pts = use_right_lane_y - self.lll_y
+    width_pts = self.rll_y - self.lll_y
     prob_mods = []
     for t_check in (0.0, 1.5, 3.0):
       width_at_t = interp(t_check * (v_ego + 7), self.ll_x, width_pts)
@@ -83,14 +80,15 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
-    l_prob *= l_std_mod
-    r_prob *= r_std_mod
+    # i noticed the x values are still pretty good even with high stds, lets skip this
+    #l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
+    #r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
+    #l_prob *= l_std_mod
+    #r_prob *= r_std_mod
 
     # Find current lanewidth
     self.lane_width_certainty.update(l_prob * r_prob)
-    current_lane_width = abs(use_right_lane_y[0] - self.lll_y[0])
+    current_lane_width = abs(self.rll_y - self.lll_y[0])
     self.lane_width_estimate.update(current_lane_width)
     speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
     self.lane_width = lerp(speed_lane_width, self.lane_width_estimate.x, self.lane_width_certainty.x)
@@ -99,15 +97,12 @@ class LanePlanner:
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
                 " lX" + "{:.1f}".format(self.lll_y[0]) + " rX" + "{:.1f}".format(self.rll_y[0]) +
                 " leX" + "{:.1f}".format(self.lle_y[0]) + " reX" + "{:.1f}".format(self.rle_y[0]) +
-                " ls" + "{:.2f}".format(self.lll_std) + " rs" + "{:.1f}".format(self.rll_std) +
+                " ls" + "{:.2f}".format(self.lll_std) + " rs" + "{:.2f}".format(self.rll_std) +
                 " w" + "{:.1f}".format(self.lane_width))
 
     clipped_lane_width = min(4.0, self.lane_width)
     path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
-    path_from_right_lane = use_right_lane_y - clipped_lane_width / 2.0
-
-    # always assume there left lanes to avoid drifting into the middle of the road
-    l_prob = 1.0
+    path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
 
     self.d_prob = l_prob + r_prob - l_prob * r_prob
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
