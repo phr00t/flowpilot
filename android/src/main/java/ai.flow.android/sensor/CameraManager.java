@@ -244,8 +244,7 @@ public class CameraManager extends SensorInterface {
                         @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
-                            long time = System.currentTimeMillis();
-
+                            long time = image.getImageInfo().getTimestamp();
                             fillYUVBuffer(image, yuvBuffer);
 
                             ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
