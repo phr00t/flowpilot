@@ -55,8 +55,8 @@ class LanePlanner:
       self.ll_x = lane_lines[1].x
       self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
       self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
-      self.lll_prob = 1.0 #md.laneLineProbs[1]
-      self.rll_prob = 1.0 #md.laneLineProbs[2]
+      self.lll_prob = md.laneLineProbs[1]
+      self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
       self.rll_std = md.laneLineStds[2]
 
@@ -80,11 +80,10 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    # i noticed the x values are still pretty good even with high stds, lets skip this
-    #l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
-    #r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
-    #l_prob *= l_std_mod
-    #r_prob *= r_std_mod
+    l_std_mod = interp(self.lll_std, [.2, .5], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.2, .5], [1.0, 0.0])
+    l_prob *= l_std_mod
+    r_prob *= r_std_mod
 
     # Find current lanewidth
     self.lane_width_certainty.update(l_prob * r_prob)
@@ -101,8 +100,18 @@ class LanePlanner:
                 " w" + "{:.1f}".format(self.lane_width))
 
     clipped_lane_width = min(4.0, self.lane_width)
-    path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
-    path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
+
+    # if we are unsure where the left lane is, estimate it based on lane width
+    # with an anchor to our right. This keeps us from going into the middle of the road or worse
+    right_anchor_y = lerp(self.rle_y, self.rll_y, r_prob)
+    left_lane_y = lerp(right_anchor_y - clipped_lane_width, self.lll_y, l_prob)
+
+    path_from_left_lane = left_lane_y + clipped_lane_width / 2.0
+    path_from_right_lane = right_anchor_y - clipped_lane_width / 2.0
+
+    # now saturate probabilities so we always use these, as the model alone will make us wander badly
+    l_prob = 1.0
+    r_prob = 1.0
 
     self.d_prob = l_prob + r_prob - l_prob * r_prob
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
