@@ -53,7 +53,6 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -134,7 +133,7 @@ public class OnRoadScreen extends ScreenAdapter {
     INDArray K = Camera.wide_intrinsics.dup();
     boolean cameraMatrixUpdated = false;
     boolean isMetric;
-    boolean laneLess;
+    boolean use_lane_lines;
     ByteBuffer imgBuffer;
     NV12Renderer nv12Renderer;
     Definitions.FrameBuffer.Reader msgframeBuffer;
@@ -402,11 +401,6 @@ public class OnRoadScreen extends ScreenAdapter {
         velocityUnitLabel.setColor(0.5f, 1f, 0.5f, 1f);
         isMetric = params.existsAndCompare("IsMetric", true);
 
-        if (params.exists("EndToEndToggle"))
-            laneLess = params.getBool("EndToEndToggle");
-        else
-            laneLess = false;
-
         alertText1 = new Label("Flowpilot Unavailable", appContext.skin, "default-font-bold-med", "white");
         alertText2 = new Label("Waiting for controls to start", appContext.skin, "default-font", "white");
 
@@ -580,11 +574,12 @@ public class OnRoadScreen extends ScreenAdapter {
 
     public void updateModelOutputs(){
         Definitions.Event.Reader event = sh.recv(modelTopic);
-        MsgModelDataV2.fillParsed(parsed, event.getModelV2(), !laneLess);
-
-        // use lateral plan path, not model path
         Definitions.LateralPlan.Reader latPlan = sh.recv("lateralPlan").getLateralPlan();
         PrimitiveList.Float.Reader pathpoints = latPlan.getDPathPoints();
+        use_lane_lines = latPlan.getUseLaneLines();
+        MsgModelDataV2.fillParsed(parsed, event.getModelV2(), use_lane_lines);
+
+        // use lateral plan path, not model path
 
         try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "DrawUI")) {
             INDArray RtPath;
@@ -598,12 +593,14 @@ public class OnRoadScreen extends ScreenAdapter {
                 parsed.roadEdges.get(1).get(0)[i] = Math.max(parsed.roadEdges.get(1).get(0)[i], minZ);
             }
             path = Draw.getLaneCameraFrame(parsed.position, K, RtPath, 0.9f);
-            lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), K, Rt, 0.07f);
-            lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), K, Rt, 0.05f);
-            lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), K, Rt, 0.05f);
-            lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), K, Rt, 0.07f);
-            edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), K, Rt, 0.1f);
-            edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), K, Rt, 0.1f);
+            if (use_lane_lines) {
+                lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), K, Rt, 0.07f);
+                lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), K, Rt, 0.05f);
+                lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), K, Rt, 0.05f);
+                lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), K, Rt, 0.07f);
+                edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), K, Rt, 0.1f);
+                edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), K, Rt, 0.1f);
+            }
 
             lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), K, Rt, leadDrawScale);
             //lead2s = Draw.getTriangleCameraFrame(parsed.leads.get(1), K, Rt, leadDrawScale);
@@ -718,7 +715,7 @@ public class OnRoadScreen extends ScreenAdapter {
         Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
         Gdx.gl.glBlendFunc(Gdx.gl.GL_SRC_ALPHA, Gdx.gl.GL_ONE_MINUS_SRC_ALPHA);
         drawStrip(path, colorPath, 0.7f, defaultDrawLength, drawResolution, 0);
-        if (!laneLess) {
+        if (use_lane_lines) {
             drawStrip(lane0, colorLanes, parsed.laneLineProbs[0], defaultDrawLength, drawResolution, 2);
             drawStrip(lane1, colorLanes, parsed.laneLineProbs[1], defaultDrawLength, drawResolution, 2);
             drawStrip(lane2, colorLanes, parsed.laneLineProbs[2], defaultDrawLength, drawResolution, 2);

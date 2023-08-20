@@ -9,6 +9,7 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED, get_speed
 from selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from cereal import log
+from common.logger import sLogger
 
 TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.04
@@ -45,6 +46,7 @@ class LateralPlanner:
     self.v_ego = 0.0
     self.l_lane_change_prob = 0.0
     self.r_lane_change_prob = 0.0
+    self.use_lanelines = True
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
@@ -80,8 +82,16 @@ class LateralPlanner:
       self.LP.lll_prob *= self.DH.lane_change_ll_prob
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
-    # lanelines calculation
-    self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
+    # calculate lane marking probabilities for purposes of switching from lane/laneless models
+    lane_visibility = (self.LP.lll_prob + self.LP.rll_prob) * 0.5
+    self.use_lanelines = self.DH.lane_change_state != LaneChangeState.off or lane_visibility > 0.35
+
+    # debug
+    sLogger.Send("0lane_vis: " + str(lane_visibility))
+
+    # lanelines calculation?
+    if self.use_lanelines:
+      self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
 
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
@@ -140,7 +150,7 @@ class LateralPlanner:
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
 
     lateralPlan.desire = self.DH.desire
-    lateralPlan.useLaneLines = True
+    lateralPlan.useLaneLines = self.use_lanelines
     lateralPlan.laneChangeState = self.DH.lane_change_state
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
 
