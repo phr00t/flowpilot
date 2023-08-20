@@ -46,7 +46,6 @@ class LateralPlanner:
     self.v_ego = 0.0
     self.l_lane_change_prob = 0.0
     self.r_lane_change_prob = 0.0
-    self.use_lanelines = True
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
@@ -75,20 +74,15 @@ class LateralPlanner:
 
     # Lane change logic
     lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
-    self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, not self.use_lanelines)
+    self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
 
     # Turn off lanes during lane change
     if self.DH.desire == log.LateralPlan.Desire.laneChangeRight or self.DH.desire == log.LateralPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.DH.lane_change_ll_prob
       self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
-    # calculate lane marking probabilities for purposes of switching from lane/laneless models
-    lane_visibility = (self.LP.lll_prob + self.LP.rll_prob) * 0.5
-    self.use_lanelines = self.DH.lane_change_state != log.LateralPlan.LaneChangeState.off or lane_visibility > 0.275
-
     # lanelines calculation?
-    if self.use_lanelines:
-      self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
+    self.path_xyz = self.LP.get_d_path(self.v_ego, self.t_idxs, self.path_xyz)
 
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
@@ -147,7 +141,7 @@ class LateralPlanner:
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
 
     lateralPlan.desire = self.DH.desire
-    lateralPlan.useLaneLines = self.use_lanelines
+    lateralPlan.useLaneLines = True
     lateralPlan.laneChangeState = self.DH.lane_change_state
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
 
