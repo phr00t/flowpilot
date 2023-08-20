@@ -84,8 +84,10 @@ class LanePlanner:
     path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
     path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
 
-    # always assume there is a left lane, so we hug right based on lane width
+    # always assume there are lanes, so we use the estimated lane width
+    # the laneless model just makes us drift into the middle of the road
     l_prob = 1.0
+    r_prob = 1.0
 
     self.d_prob = l_prob + r_prob - l_prob * r_prob
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
