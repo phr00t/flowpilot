@@ -103,7 +103,7 @@ class DesireHelper:
     self.prev_one_blinker = one_blinker
 
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
-    if self.desire == LaneChangeState.off and keep_right:
+    if self.desire == log.LateralPlan.Desire.none and keep_right:
       self.desire = log.LateralPlan.Desire.keepRight
 
     # Send keep pulse once per second during LaneChangeStart.preLaneChange
