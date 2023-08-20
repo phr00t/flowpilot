@@ -577,9 +577,7 @@ public class OnRoadScreen extends ScreenAdapter {
         Definitions.LateralPlan.Reader latPlan = sh.recv("lateralPlan").getLateralPlan();
         PrimitiveList.Float.Reader pathpoints = latPlan.getDPathPoints();
         use_lane_lines = latPlan.getUseLaneLines();
-        MsgModelDataV2.fillParsed(parsed, event.getModelV2(), use_lane_lines);
-
-        // use lateral plan path, not model path
+        MsgModelDataV2.fillParsed(parsed, event.getModelV2(), true);
 
         try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "DrawUI")) {
             INDArray RtPath;
@@ -593,6 +591,7 @@ public class OnRoadScreen extends ScreenAdapter {
                 parsed.roadEdges.get(1).get(0)[i] = Math.max(parsed.roadEdges.get(1).get(0)[i], minZ);
             }
             path = Draw.getLaneCameraFrame(parsed.position, K, RtPath, 0.9f);
+
             if (use_lane_lines) {
                 lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), K, Rt, 0.07f);
                 lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), K, Rt, 0.05f);
