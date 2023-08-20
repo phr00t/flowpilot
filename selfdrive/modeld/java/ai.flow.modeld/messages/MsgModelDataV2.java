@@ -3,6 +3,7 @@ package ai.flow.modeld.messages;
 import ai.flow.definitions.Definitions;
 import ai.flow.definitions.MessageBase;
 import ai.flow.modeld.CommonModelF2;
+import ai.flow.modeld.CommonModelF3;
 import ai.flow.modeld.ParsedOutputs;
 import org.capnproto.PrimitiveList;
 import org.capnproto.StructList;
@@ -328,7 +329,7 @@ public class MsgModelDataV2 extends MessageBase {
     }
 
     public static void fillParsed(ParsedOutputs parsed, Definitions.ModelDataV2.Reader msg, boolean full) { // TODO Avoid this
-        for (int i = 0; i < CommonModelF2.TRAJECTORY_SIZE; i++) {
+        for (int i = 0; i < CommonModelF3.TRAJECTORY_SIZE; i++) {
             parsed.position.get(0)[i] = msg.getPosition().getX().get(i);
             parsed.position.get(1)[i] = msg.getPosition().getY().get(i);
             parsed.position.get(2)[i] = msg.getPosition().getZ().get(i);
@@ -422,10 +423,10 @@ public class MsgModelDataV2 extends MessageBase {
                 parsed.roadEdgeStds[i] = msg.getRoadEdgeStds().get(i);
         }
 
-        for (int i = 0; i < CommonModelF2.DESIRE_LEN; i++)
+        for (int i = 0; i < CommonModelF3.DESIRE_LEN; i++)
             parsed.metaData.desireState[i] = msg.getMeta().getDesireState().get(i);
 
-        for (int i = 0; i < 4 * CommonModelF2.DESIRE_LEN; i++)
+        for (int i = 0; i < 4 * CommonModelF3.DESIRE_LEN; i++)
             parsed.metaData.desirePrediction[i] = msg.getMeta().getDesirePrediction().get(i);
         
         for (int i = 0; i < 5; i++)
