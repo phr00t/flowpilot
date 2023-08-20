@@ -267,8 +267,6 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
 
             // publish outputs
             serializeAndPublish();
-
-            end = System.currentTimeMillis();
             // compute runtime stats every 10 runs
             frameDrops = (frameData.getFrameId() - lastFrameID) - 1;
             if (iterationNum > 10) {
@@ -307,7 +305,8 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     }
 
     public void serializeAndPublish(){
-        msgModelRaw.fill(netOutputs, System.currentTimeMillis(), lastFrameID, -1, 0f, AvgIterationTime);
+        end = System.currentTimeMillis();
+        msgModelRaw.fill(netOutputs, System.currentTimeMillis(), lastFrameID, 0, 0f, end - start);
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
     }
 
