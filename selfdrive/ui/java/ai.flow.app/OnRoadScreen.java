@@ -53,6 +53,7 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -485,7 +486,7 @@ public class OnRoadScreen extends ScreenAdapter {
         animationNight = GifDecoder.loadGIFAnimation(Animation.PlayMode.LOOP, Gdx.files.absolute(Path.internal("selfdrive/assets/gifs/night.gif")).read());
 
         sh = new ZMQSubHandler(true);
-        sh.createSubscribers(Arrays.asList(cameraTopic, cameraBufferTopic, deviceStateTopic, calibrationTopic, carStateTopic, controlsStateTopic, modelTopic, "roadCameraBuffer", "roadCameraState"));
+        sh.createSubscribers(Arrays.asList("lateralPlan", cameraTopic, cameraBufferTopic, deviceStateTopic, calibrationTopic, carStateTopic, controlsStateTopic, modelTopic, "roadCameraBuffer", "roadCameraState"));
     }
 
     public Animation<TextureRegion> getCurrentAnimation(){
@@ -581,17 +582,29 @@ public class OnRoadScreen extends ScreenAdapter {
         Definitions.Event.Reader event = sh.recv(modelTopic);
         MsgModelDataV2.fillParsed(parsed, event.getModelV2(), !laneLess);
 
+        // use lateral plan path, not model path
+        Definitions.LateralPlan.Reader latPlan = sh.recv("lateralPlan").getLateralPlan();
+        PrimitiveList.Float.Reader pathpoints = latPlan.getDPathPoints();
+        ArrayList<float[]> usePath = new ArrayList<>();
+        int pathlen = pathpoints.size() / CommonModelF3.TRAJECTORY_SIZE;
+        for (int i=0; i<pathlen; i++) {
+            float[] pts = new float[CommonModelF3.TRAJECTORY_SIZE];
+            for (int j=0; j<CommonModelF3.TRAJECTORY_SIZE; j++)
+                pts[j] = pathpoints.get(i * pathlen + j);
+            usePath.add(pts);
+        }
+
         try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "DrawUI")) {
             INDArray RtPath;
             INDArray Rt;
             Rt = Preprocess.eulerAnglesToRotationMatrix(-augmentRot.getFloat(0, 1), -augmentRot.getFloat(0, 2), -augmentRot.getFloat(0, 0), 0.0, false);
             RtPath = Preprocess.eulerAnglesToRotationMatrix(-augmentRot.getFloat(0, 1), -augmentRot.getFloat(0, 2), -augmentRot.getFloat(0, 0), 1.28, false);
             for (int i = 0; i< CommonModelF3.TRAJECTORY_SIZE; i++) {
-                parsed.position.get(0)[i] = Math.max(parsed.position.get(0)[i], minZ);
+                usePath.get(0)[i] = Math.max(usePath.get(0)[i], minZ);
                 parsed.roadEdges.get(0).get(0)[i] = Math.max(parsed.roadEdges.get(0).get(0)[i], minZ);
                 parsed.roadEdges.get(1).get(0)[i] = Math.max(parsed.roadEdges.get(1).get(0)[i], minZ);
             }
-            path = Draw.getLaneCameraFrame(parsed.position, K, RtPath, 0.9f);
+            path = Draw.getLaneCameraFrame(usePath, K, RtPath, 0.9f);
             lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), K, Rt, 0.07f);
             lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), K, Rt, 0.05f);
             lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), K, Rt, 0.05f);
