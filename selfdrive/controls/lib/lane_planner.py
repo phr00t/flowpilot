@@ -58,8 +58,8 @@ class LanePlanner:
       self.lle_std = md.roadEdgeStds[0]
       self.rle_std = md.roadEdgeStds[1]
       # get more reliable edge in fuzzy, high std scenarios
-      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std * 0.9
-      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std * 0.9
+      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std * 0.8
+      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std * 0.8
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -120,20 +120,20 @@ class LanePlanner:
       self.rle_y_dists.clear()
     elif lane_path_prob > 0.4 or CS.steeringPressed:
       # add edge distances, unless its super messy, then clear as we lost it completely
-      if self.rle_std > 1.5:
+      if self.rle_std > 2.5:
         self.rle_y_dists.clear()
       else:
         self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
       # do the same for left
-      if self.lle_std > 1.5:
+      if self.lle_std > 2.5:
         self.lle_y_dists.clear()
       else:
         self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
 
       # only store the last few seconds
-      if len(self.lle_y_dists) > 75:
+      if len(self.lle_y_dists) > 120:
         self.lle_y_dists.pop(0)
-      if len(self.rle_y_dists) > 75:
+      if len(self.rle_y_dists) > 120:
         self.rle_y_dists.pop(0)
 
     # get average distances
