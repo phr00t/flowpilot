@@ -113,7 +113,7 @@ class LanePlanner:
 
     # which edge are we closest to? pick a path from it
     left_edge_dist = clamp(statistics.fmean(self.lle_y_dists), -4.0, -1.2)
-    right_edge_dist = clamp(statistics.fmean(self.rle_y_dists), 4.0,  1.2)
+    right_edge_dist = clamp(statistics.fmean(self.rle_y_dists), 1.2,  4.0)
     path_from_edge = self.lle_y - left_edge_dist if abs(left_edge_dist) < abs(right_edge_dist) else self.rle_y - right_edge_dist
 
     # ok, which path will we use?
