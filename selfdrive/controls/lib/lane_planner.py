@@ -90,8 +90,8 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.2, .4], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.2, .4], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
@@ -117,10 +117,8 @@ class LanePlanner:
       self.lle_y_dists.clear()
       self.rle_y_dists.clear()
     elif lane_path_prob > 0.4 or CS.steeringPressed:
-      if self.rle_std < 0.8:
-        self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
-      if self.lle_std < 0.8:
-        self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
+      self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
+      self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
 
       # keep it to a few entries
       if len(self.lle_y_dists) > 15:
@@ -128,15 +126,14 @@ class LanePlanner:
       if len(self.rle_y_dists) > 15:
         self.rle_y_dists.pop(0)
 
-    # which edge are we closest to? pick a path from it
+    # which edge are we most confident in? pick a path from it
     left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -4.0
     right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else 4.0
-    path_from_edge = self.lle_y - left_edge_dist if abs(left_edge_dist) < abs(right_edge_dist) else self.rle_y - right_edge_dist
-    valid_edge_path = left_edge_dist > -4.0 or right_edge_dist < 4.0
+    path_from_edge = self.lle_y - left_edge_dist if self.lle_std < self.rle_std and left_edge_dist > -4.0 else self.rle_y - right_edge_dist if self.rle_std < self.lle_std and right_edge_dist < 4.0 else None
 
     # ok, which path will we use?
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    final_path_y = lerp(path_from_edge if valid_edge_path else path_xyz[:, 1], lane_path_y, lane_path_prob)
+    final_path_y = lerp(path_from_edge if path_from_edge else path_xyz[:, 1], lane_path_y, lane_path_prob)
 
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
