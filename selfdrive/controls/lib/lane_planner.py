@@ -117,10 +117,10 @@ class LanePlanner:
       self.lle_y_dists.clear()
       self.rle_y_dists.clear()
     elif lane_path_prob > 0.4 or CS.steeringPressed:
-      # only add confident edge distances
-      if self.lle_std < 0.3:
+      # only add kinda confident edge distances
+      if self.lle_std < 0.4:
         self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
-      if self.rle_std < 0.3:
+      if self.rle_std < 0.4:
         self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
 
       # keep it to a few entries
@@ -145,7 +145,8 @@ class LanePlanner:
                 " leX" + "{:.1f}".format(self.lle_y[0]) + " reX" + "{:.1f}".format(self.rle_y[0]) +
                 " ls" + "{:.2f}".format(self.lll_std) + " rs" + "{:.2f}".format(self.rll_std) +
                 " w" + "{:.1f}".format(self.lane_width) + " ld" + "{:.1f}".format(left_edge_dist) +
-                " rd" + "{:.1f}".format(right_edge_dist))
+                " rd" + "{:.1f}".format(right_edge_dist) + " es" + "{:.1f}".format(self.lle_std) +
+                " fs" + "{:.1f}".format(self.rle_std))
 
     # check for infinite or lane change situation
     safe_idxs = np.isfinite(self.ll_t)
