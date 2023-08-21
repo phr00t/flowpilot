@@ -35,6 +35,8 @@ class LanePlanner:
 
     self.lle_y = np.zeros((TRAJECTORY_SIZE,))
     self.rle_y = np.zeros((TRAJECTORY_SIZE,))
+    self.lle_std = 0.
+    self.rle_std = 0.
     self.lle_y_dists = []
     self.rle_y_dists = []
 
@@ -54,6 +56,8 @@ class LanePlanner:
     if len(edges[0].t) == TRAJECTORY_SIZE:
       self.lle_y = np.array(edges[0].y) + self.camera_offset
       self.rle_y = np.array(edges[1].y) + self.camera_offset
+      self.lle_std = md.roadEdgeStds[0]
+      self.rle_std = md.roadEdgeStds[1]
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -108,11 +112,21 @@ class LanePlanner:
     # track how far on average we are from the road edge
     # store the last few readings for averaging
     # only if we see lanelines OR steering
-    if lane_path_prob > 0.3 or CS.steeringPressed:
-      self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.5))
-      self.rle_y_dists.append(clamp(self.rle_y[0],  1.5,  4.0))
-      if len(self.lle_y_dists) > 10:
+    # clear if we are changing lanes
+    if self.lane_change_amount < 1.0:
+      self.lle_y_dists.clear()
+      self.rle_y_dists.clear()
+    elif lane_path_prob > 0.4 or CS.steeringPressed:
+      # only add confident edge distances
+      if self.lle_std < 0.25:
+        self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
+      if self.rle_std < 0.25:
+        self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
+
+      # keep it to 20 entries
+      if len(self.lle_y_dists) > 20:
         self.lle_y_dists.pop(0)
+      if len(self.rle_y_dists) > 20:
         self.rle_y_dists.pop(0)
 
     # which edge are we closest to? pick a path from it
