@@ -54,10 +54,11 @@ class LanePlanner:
     edges = md.roadEdges
 
     if len(edges[0].t) == TRAJECTORY_SIZE:
-      self.lle_y = np.array(edges[0].y) + self.camera_offset
-      self.rle_y = np.array(edges[1].y) + self.camera_offset
       self.lle_std = md.roadEdgeStds[0]
       self.rle_std = md.roadEdgeStds[1]
+      # consider the edge tighter in fuzzy scenarios (80% of std)
+      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std * 0.8
+      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std * 0.8
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -90,8 +91,8 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.2, .4], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.2, .4], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
@@ -121,9 +122,9 @@ class LanePlanner:
       self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
 
       # keep it to a few entries
-      if len(self.lle_y_dists) > 15:
+      if len(self.lle_y_dists) > 25:
         self.lle_y_dists.pop(0)
-      if len(self.rle_y_dists) > 15:
+      if len(self.rle_y_dists) > 25:
         self.rle_y_dists.pop(0)
 
     # which edge are we most confident in? pick a path from it
