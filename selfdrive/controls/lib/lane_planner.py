@@ -135,8 +135,8 @@ class LanePlanner:
         self.rle_y_dists.pop(0)
 
     # which edge are we most confident in? pick a path from it
-    left_edge_dist = statistics.fmean(self.lle_y_dists) + self.lle_std * 0.8 if len(self.lle_y_dists) > 5 else -4.0
-    right_edge_dist = statistics.fmean(self.rle_y_dists) - self.rle_std * 0.8 if len(self.rle_y_dists) > 5 else 4.0
+    left_edge_dist = statistics.fmean(self.lle_y_dists) + self.lle_std * 0.9 if len(self.lle_y_dists) > 5 else -4.0
+    right_edge_dist = statistics.fmean(self.rle_y_dists) - self.rle_std * 0.9 if len(self.rle_y_dists) > 5 else 4.0
     path_from_edge = self.lle_y - left_edge_dist if self.lle_std < self.rle_std and left_edge_dist > -4.0 else self.rle_y - right_edge_dist if self.rle_std < self.lle_std and right_edge_dist < 4.0 else None
 
     # ok, which path will we use?
