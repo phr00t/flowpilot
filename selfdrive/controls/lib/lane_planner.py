@@ -123,20 +123,21 @@ class LanePlanner:
       if self.rle_std < 0.3:
         self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
 
-      # keep it to 20 entries
-      if len(self.lle_y_dists) > 20:
+      # keep it to a few entries
+      if len(self.lle_y_dists) > 10:
         self.lle_y_dists.pop(0)
-      if len(self.rle_y_dists) > 20:
+      if len(self.rle_y_dists) > 10:
         self.rle_y_dists.pop(0)
 
     # which edge are we closest to? pick a path from it
     left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -4.0
     right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else 4.0
     path_from_edge = self.lle_y - left_edge_dist if abs(left_edge_dist) < abs(right_edge_dist) else self.rle_y - right_edge_dist
+    valid_edge_path = left_edge_dist > -4.0 or right_edge_dist < 4.0
 
     # ok, which path will we use?
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    final_path_y = lerp(path_from_edge, lane_path_y, lane_path_prob)
+    final_path_y = lerp(path_from_edge if valid_edge_path else path_xyz[:, 1], lane_path_y, lane_path_prob)
 
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
@@ -146,11 +147,10 @@ class LanePlanner:
                 " w" + "{:.1f}".format(self.lane_width) + " ld" + "{:.1f}".format(left_edge_dist) +
                 " rd" + "{:.1f}".format(right_edge_dist))
 
-    # only switch to laneless if we can't see any edges or lanes
-    if left_edge_dist > -4.0 or right_edge_dist < 4.0 or lane_path_prob > 0.3:
-      safe_idxs = np.isfinite(self.ll_t)
-      if safe_idxs[0]:
-        lane_path_y_interp = np.interp(path_t, self.ll_t[safe_idxs], final_path_y[safe_idxs])
-        path_xyz[:, 1] = self.lane_change_amount * lane_path_y_interp + (1.0 - self.lane_change_amount) * path_xyz[:, 1]
+    # check for infinite or lane change situation
+    safe_idxs = np.isfinite(self.ll_t)
+    if safe_idxs[0]:
+      lane_path_y_interp = np.interp(path_t, self.ll_t[safe_idxs], final_path_y[safe_idxs])
+      path_xyz[:, 1] = self.lane_change_amount * lane_path_y_interp + (1.0 - self.lane_change_amount) * path_xyz[:, 1]
 
     return path_xyz
