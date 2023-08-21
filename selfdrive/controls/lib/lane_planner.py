@@ -1,5 +1,6 @@
 # hard-forked from https://github.com/commaai/openpilot/tree/05b37552f3a38f914af41f44ccc7c633ad152a15/selfdrive/controls/lib/lane_planner.py
 import numpy as np
+import statistics
 from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp
@@ -9,11 +10,14 @@ from common.logger import sLogger
 
 # positive numbers go right, negative go left
 TRAJECTORY_SIZE = 33
-PATH_OFFSET = 0.225
-CAMERA_OFFSET = 0.225
+PATH_OFFSET = 0.2
+CAMERA_OFFSET = 0.2
 
 def lerp(a, b, t):
   return (b * t) + (a * (1.0 - t))
+
+def clamp(num, min_value, max_value):
+  return max(min(num, max_value), min_value)
 
 class LanePlanner:
   def __init__(self, wide_camera=False):
@@ -31,6 +35,8 @@ class LanePlanner:
 
     self.lle_y = np.zeros((TRAJECTORY_SIZE,))
     self.rle_y = np.zeros((TRAJECTORY_SIZE,))
+    self.lle_y_dists = []
+    self.rle_y_dists = []
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -48,6 +54,13 @@ class LanePlanner:
     if len(edges[0].t) == TRAJECTORY_SIZE:
       self.lle_y = np.array(edges[0].y) + self.camera_offset
       self.rle_y = np.array(edges[1].y) + self.camera_offset
+      # track how far on average we are from the road edge
+      # store the last few readings for averaging
+      self.lle_y_dists.append(self.lle_y[0])
+      self.rle_y_dists.append(self.rle_y[0])
+      if len(self.lle_y_dists) > 10:
+        self.lle_y_dists.pop(0)
+        self.rle_y_dists.pop(0)
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -80,8 +93,8 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.2, .5], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.2, .5], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
@@ -92,33 +105,35 @@ class LanePlanner:
     speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
     self.lane_width = lerp(speed_lane_width, self.lane_width_estimate.x, self.lane_width_certainty.x)
 
+    clipped_lane_width = min(4.0, self.lane_width)
+
+    # lane paths
+    path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
+    path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
+
+    # which edge are we closest to? pick a path from it
+    left_edge_dist = clamp(statistics.fmean(self.lle_y_dists), -4.0, -1.2)
+    right_edge_dist = clamp(statistics.fmean(self.rle_y_dists), 4.0,  1.2)
+    path_from_edge = self.lle_y - left_edge_dist if abs(left_edge_dist) < abs(right_edge_dist) else self.rle_y - right_edge_dist
+
+    # ok, which path will we use?
+    lane_path_prob = max(l_prob, r_prob)
+    lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
+    final_path_y = lerp(path_from_edge, lane_path_y, lane_path_prob)
+
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
                 " lX" + "{:.1f}".format(self.lll_y[0]) + " rX" + "{:.1f}".format(self.rll_y[0]) +
                 " leX" + "{:.1f}".format(self.lle_y[0]) + " reX" + "{:.1f}".format(self.rle_y[0]) +
                 " ls" + "{:.2f}".format(self.lll_std) + " rs" + "{:.2f}".format(self.rll_std) +
-                " w" + "{:.1f}".format(self.lane_width))
+                " w" + "{:.1f}".format(self.lane_width) + " ld" + "{:.1f}".format(left_edge_dist) +
+                " rd" + "{:.1f}".format(right_edge_dist))
 
-    clipped_lane_width = min(4.0, self.lane_width)
+    # only switch to laneless if we can't see any edges or lanes
+    if left_edge_dist > -4.0 or right_edge_dist < 4.0 or lane_path_prob > 0.3:
+      self.d_prob = 1.0
+      safe_idxs = np.isfinite(self.ll_t)
+      if safe_idxs[0]:
+        path_xyz[:,1] = np.interp(path_t, self.ll_t[safe_idxs], final_path_y[safe_idxs])
 
-    # if we are unsure where the left lane is, estimate it based on lane width
-    # with an anchor to our right. This keeps us from going into the middle of the road or worse
-    right_anchor_y = lerp(self.rle_y, self.rll_y, r_prob)
-    left_lane_y = lerp(right_anchor_y - clipped_lane_width, self.lll_y, l_prob)
-
-    path_from_left_lane = left_lane_y + clipped_lane_width / 2.0
-    path_from_right_lane = right_anchor_y - clipped_lane_width / 2.0
-
-    # now saturate probabilities so we always use these, as the model alone will make us wander badly
-    l_prob = 1.0
-    r_prob = 1.0
-
-    self.d_prob = l_prob + r_prob - l_prob * r_prob
-    lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    safe_idxs = np.isfinite(self.ll_t)
-    if safe_idxs[0]:
-      lane_path_y_interp = np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs])
-      path_xyz[:,1] = self.d_prob * lane_path_y_interp + (1.0 - self.d_prob) * path_xyz[:,1]
-    else:
-      cloudlog.warning("Lateral mpc - NaNs in laneline times, ignoring")
     return path_xyz
