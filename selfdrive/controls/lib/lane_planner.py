@@ -133,7 +133,7 @@ class LanePlanner:
 
     # ok, which path will we use?
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    final_path_y = lerp(path_from_edge if path_from_edge else path_xyz[:, 1], lane_path_y, lane_path_prob)
+    final_path_y = lerp(path_from_edge if path_from_edge is not None else path_xyz[:, 1], lane_path_y, lane_path_prob)
 
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
