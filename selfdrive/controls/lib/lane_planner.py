@@ -39,6 +39,7 @@ class LanePlanner:
     self.rle_std = 0.
     self.lle_y_dists = []
     self.rle_y_dists = []
+    self.on_right_side = True
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -91,8 +92,8 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.4, .8], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.4, .8], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
@@ -118,16 +119,16 @@ class LanePlanner:
       self.lle_y_dists.clear()
       self.rle_y_dists.clear()
     elif lane_path_prob > 0.4 or CS.steeringPressed:
-      # only add edges that are kinda visible
-      if self.rle_std < 1.0:
+      # add edge distances, unless its super messy, then clear as we lost it completely
+      if self.rle_std > 1.5:
+        self.rle_y_dists.clear()
+      else:
         self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
-      elif self.rle_std > 1.5:
-        self.rle_y_dists.clear() # so messy, just clear
-      # do same for left edge
-      if self.lle_std < 1.0:
-        self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
-      elif self.lle_std > 1.5:
+      # do the same for left
+      if self.lle_std > 1.5:
         self.lle_y_dists.clear()
+      else:
+        self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
 
       # only store the last few seconds
       if len(self.lle_y_dists) > 75:
@@ -135,16 +136,22 @@ class LanePlanner:
       if len(self.rle_y_dists) > 75:
         self.rle_y_dists.pop(0)
 
-    # which edge are we most confident in? pick a path from it
-    left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 10 else -4.0
-    right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 10 else 4.0
-    use_distance_from_edge_to_pick = abs(self.rle_std - self.lle_std) < 0.25 # if stds are similar, use distance from edge
-    use_right_edge = abs(self.rle_y[0]) < abs(self.lle_y[0]) if use_distance_from_edge_to_pick else self.rle_std < self.lle_std
-    path_from_edge = self.lle_y - left_edge_dist if not use_right_edge and left_edge_dist > -4.0 else self.rle_y - right_edge_dist if use_right_edge and right_edge_dist < 4.0 else None
+    # get average distances
+    left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -4.0
+    right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else 4.0
+
+    # see if we are swapping to the left edge or right edge
+    #                         further from right than left          we've gone more than a lane width away      we have valid edge dist
+    if self.on_right_side and abs(self.rle_y[0]) > abs(self.lle_y[0]) and abs(self.rle_y[0]) > self.lane_width and left_edge_dist > -4.0:
+      self.on_right_side = False
+    elif not self.on_right_side and abs(self.rle_y[0]) < abs(self.lle_y[0]) and abs(self.lle_y[0]) > self.lane_width and right_edge_dist < 4.0:
+      self.on_right_side = True
+
+    path_from_edge = self.lle_y - left_edge_dist if not self.on_right_side else self.rle_y - right_edge_dist
 
     # ok, which path will we use?
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    final_path_y = lerp(path_from_edge if path_from_edge is not None else path_xyz[:, 1], lane_path_y, lane_path_prob)
+    final_path_y = lerp(path_from_edge, lane_path_y, lane_path_prob)
 
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
@@ -153,7 +160,7 @@ class LanePlanner:
                 " ls" + "{:.2f}".format(self.lll_std) + " rs" + "{:.2f}".format(self.rll_std) +
                 " w" + "{:.1f}".format(self.lane_width) + " ld" + "{:.1f}".format(left_edge_dist) +
                 " rd" + "{:.1f}".format(right_edge_dist) + " es" + "{:.1f}".format(self.lle_std) +
-                " fs" + "{:.1f}".format(self.rle_std))
+                " fs" + "{:.1f}".format(self.rle_std) + " s" + str(self.on_right_side))
 
     # check for infinite or lane change situation
     safe_idxs = np.isfinite(self.ll_t)
