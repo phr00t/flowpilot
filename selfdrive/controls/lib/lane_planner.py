@@ -10,8 +10,8 @@ from common.logger import sLogger
 
 # positive numbers go right, negative go left
 TRAJECTORY_SIZE = 33
-PATH_OFFSET = 0.2
-CAMERA_OFFSET = 0.2
+PATH_OFFSET = 0.225
+CAMERA_OFFSET = 0.225
 
 def lerp(a, b, t):
   return (b * t) + (a * (1.0 - t))
