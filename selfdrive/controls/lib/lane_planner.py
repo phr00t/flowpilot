@@ -31,7 +31,7 @@ class LanePlanner:
 
     self.lll_prob = 0.
     self.rll_prob = 0.
-    self.lane_change_amount = 0.
+    self.lane_change_amount = 1.0
 
     self.lle_y = np.zeros((TRAJECTORY_SIZE,))
     self.rle_y = np.zeros((TRAJECTORY_SIZE,))
