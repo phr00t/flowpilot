@@ -56,8 +56,9 @@ class LanePlanner:
     if len(edges[0].t) == TRAJECTORY_SIZE:
       self.lle_std = md.roadEdgeStds[0]
       self.rle_std = md.roadEdgeStds[1]
-      self.lle_y = np.array(edges[0].y) + self.camera_offset
-      self.rle_y = np.array(edges[1].y) + self.camera_offset
+      # get more reliable edge in fuzzy, high std scenarios
+      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std * 0.9
+      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std * 0.9
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -135,9 +136,11 @@ class LanePlanner:
         self.rle_y_dists.pop(0)
 
     # which edge are we most confident in? pick a path from it
-    left_edge_dist = statistics.fmean(self.lle_y_dists) + self.lle_std * 0.9 if len(self.lle_y_dists) > 5 else -4.0
-    right_edge_dist = statistics.fmean(self.rle_y_dists) - self.rle_std * 0.9 if len(self.rle_y_dists) > 5 else 4.0
-    path_from_edge = self.lle_y - left_edge_dist if self.lle_std < self.rle_std and left_edge_dist > -4.0 else self.rle_y - right_edge_dist if self.rle_std < self.lle_std and right_edge_dist < 4.0 else None
+    left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 10 else -4.0
+    right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 10 else 4.0
+    use_distance_from_edge_to_pick = abs(self.rle_std - self.lle_std) < 0.25 # if stds are similar, use distance from edge
+    use_right_edge = abs(self.rle_y[0]) < abs(self.lle_y[0]) if use_distance_from_edge_to_pick else self.rle_std < self.lle_std
+    path_from_edge = self.lle_y - left_edge_dist if not use_right_edge and left_edge_dist > -4.0 else self.rle_y - right_edge_dist if use_right_edge and right_edge_dist < 4.0 else None
 
     # ok, which path will we use?
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
