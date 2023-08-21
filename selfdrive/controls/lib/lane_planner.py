@@ -118,9 +118,9 @@ class LanePlanner:
       self.rle_y_dists.clear()
     elif lane_path_prob > 0.4 or CS.steeringPressed:
       # only add confident edge distances
-      if self.lle_std < 0.25:
+      if self.lle_std < 0.3:
         self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
-      if self.rle_std < 0.25:
+      if self.rle_std < 0.3:
         self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
 
       # keep it to 20 entries
