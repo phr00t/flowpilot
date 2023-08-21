@@ -14,6 +14,11 @@ PATH_OFFSET = 0.225
 CAMERA_OFFSET = 0.225
 
 def lerp(a, b, t):
+  if t >= 1.0:
+    return b
+  if t <= 0.0:
+    return a
+
   return (b * t) + (a * (1.0 - t))
 
 def clamp(num, min_value, max_value):
@@ -39,7 +44,6 @@ class LanePlanner:
     self.rle_std = 0.
     self.lle_y_dists = []
     self.rle_y_dists = []
-    self.on_right_side = True
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -118,7 +122,7 @@ class LanePlanner:
     if self.lane_change_amount < 1.0:
       self.lle_y_dists.clear()
       self.rle_y_dists.clear()
-    elif lane_path_prob > 0.4 or CS.steeringPressed:
+    elif lane_path_prob > 0.5 or CS.steeringPressed:
       # add edge distances, unless its super messy, then clear as we lost it completely
       if self.rle_std > 2.5:
         self.rle_y_dists.clear()
@@ -136,22 +140,18 @@ class LanePlanner:
       if len(self.rle_y_dists) > 120:
         self.rle_y_dists.pop(0)
 
-    # get average distances
+    # get average distances from edges
     left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -4.0
     right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else 4.0
 
-    # see if we are swapping to the left edge or right edge
-    #                         further from right than left          we've gone more than a lane width away      we have valid edge dist
-    if self.on_right_side and abs(self.rle_y[0]) > abs(self.lle_y[0]) and abs(self.rle_y[0]) > self.lane_width and left_edge_dist > -4.0:
-      self.on_right_side = False
-    elif not self.on_right_side and abs(self.rle_y[0]) < abs(self.lle_y[0]) and abs(self.lle_y[0]) > self.lane_width and right_edge_dist < 4.0:
-      self.on_right_side = True
-
-    path_from_edge = self.lle_y - left_edge_dist if not self.on_right_side else self.rle_y - right_edge_dist
+    # see where the puts us on the road
+    road_width = right_edge_dist - left_edge_dist
+    how_much_left = right_edge_dist / road_width
+    path_from_edge = lerp(self.rle_y, self.lle_y, how_much_left)
 
     # ok, which path will we use?
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    final_path_y = lerp(path_from_edge, lane_path_y, lane_path_prob)
+    final_path_y = lerp(path_from_edge, lane_path_y, lane_path_prob * 2.0)
 
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
@@ -160,7 +160,7 @@ class LanePlanner:
                 " ls" + "{:.2f}".format(self.lll_std) + " rs" + "{:.2f}".format(self.rll_std) +
                 " w" + "{:.1f}".format(self.lane_width) + " ld" + "{:.1f}".format(left_edge_dist) +
                 " rd" + "{:.1f}".format(right_edge_dist) + " es" + "{:.1f}".format(self.lle_std) +
-                " fs" + "{:.1f}".format(self.rle_std) + " s" + str(self.on_right_side))
+                " fs" + "{:.1f}".format(self.rle_std) + " ?" + str(how_much_left))
 
     # check for infinite or lane change situation
     safe_idxs = np.isfinite(self.ll_t)
