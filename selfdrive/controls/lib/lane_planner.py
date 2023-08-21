@@ -56,9 +56,8 @@ class LanePlanner:
     if len(edges[0].t) == TRAJECTORY_SIZE:
       self.lle_std = md.roadEdgeStds[0]
       self.rle_std = md.roadEdgeStds[1]
-      # consider the edge tighter in fuzzy scenarios (80% of std)
-      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std * 0.8
-      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std * 0.8
+      self.lle_y = np.array(edges[0].y) + self.camera_offset
+      self.rle_y = np.array(edges[1].y) + self.camera_offset
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -118,18 +117,26 @@ class LanePlanner:
       self.lle_y_dists.clear()
       self.rle_y_dists.clear()
     elif lane_path_prob > 0.4 or CS.steeringPressed:
-      self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
-      self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
+      # only add edges that are kinda visible
+      if self.rle_std < 1.0:
+        self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
+      elif self.rle_std > 1.5:
+        self.rle_y_dists.clear() # so messy, just clear
+      # do same for left edge
+      if self.lle_std < 1.0:
+        self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
+      elif self.lle_std > 1.5:
+        self.lle_y_dists.clear()
 
-      # keep it to a few entries
-      if len(self.lle_y_dists) > 25:
+      # only store the last few seconds
+      if len(self.lle_y_dists) > 50:
         self.lle_y_dists.pop(0)
-      if len(self.rle_y_dists) > 25:
+      if len(self.rle_y_dists) > 50:
         self.rle_y_dists.pop(0)
 
     # which edge are we most confident in? pick a path from it
-    left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -4.0
-    right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else 4.0
+    left_edge_dist = statistics.fmean(self.lle_y_dists) + self.lle_std * 0.8 if len(self.lle_y_dists) > 0 else -4.0
+    right_edge_dist = statistics.fmean(self.rle_y_dists) - self.rle_std * 0.8 if len(self.rle_y_dists) > 0 else 4.0
     path_from_edge = self.lle_y - left_edge_dist if self.lle_std < self.rle_std and left_edge_dist > -4.0 else self.rle_y - right_edge_dist if self.rle_std < self.lle_std and right_edge_dist < 4.0 else None
 
     # ok, which path will we use?
