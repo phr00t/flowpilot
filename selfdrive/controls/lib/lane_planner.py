@@ -123,9 +123,9 @@ class LanePlanner:
         self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
 
       # keep it to a few entries
-      if len(self.lle_y_dists) > 10:
+      if len(self.lle_y_dists) > 15:
         self.lle_y_dists.pop(0)
-      if len(self.rle_y_dists) > 10:
+      if len(self.rle_y_dists) > 15:
         self.rle_y_dists.pop(0)
 
     # which edge are we closest to? pick a path from it
