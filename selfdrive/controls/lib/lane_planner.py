@@ -167,7 +167,7 @@ class LanePlanner:
     elif not self.on_right_side and self.rle_std_avg < self.lle_std_avg and abs(right_edge_dist) < abs(left_edge_dist) and right_edge_dist < MAX_EDGE_DISTANCE:
       self.on_right_side = True
 
-    path_from_edges = None if left_edge_dist <= -MAX_EDGE_DISTANCE and right_edge_dist >= MAX_EDGE_DISTANCE or min(self.rle_std_avg, self.lle_std_avg) > 1.5 else self.lle_y - left_edge_dist if not self.on_right_side else self.rll_y - right_edge_dist
+    path_from_edges = None if left_edge_dist <= -MAX_EDGE_DISTANCE and right_edge_dist >= MAX_EDGE_DISTANCE or min(self.rle_std_avg, self.lle_std_avg) > 1.5 else self.lle_y - left_edge_dist if not self.on_right_side else self.rle_y - right_edge_dist
 
     # ok, mix all this together based on lane probability
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
