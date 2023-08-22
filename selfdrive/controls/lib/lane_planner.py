@@ -70,7 +70,7 @@ class LanePlanner:
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
     path_xyz[:, 1] += self.path_offset
-    l_prob, r_prob = (self.lll_prob + 1.) * 0.5, (self.rll_prob + 1.) * 0.5
+    l_prob, r_prob = self.lll_prob, self.rll_prob
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
     for t_check in (0.0, 1.5, 3.0):
@@ -81,8 +81,8 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.2, .4], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.2, .4], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
