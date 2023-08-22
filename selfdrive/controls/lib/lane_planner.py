@@ -16,7 +16,7 @@ CAMERA_OFFSET = 0.225
 # <0.5 to be on the right side of the road
 DEFAULT_LANE_CENTERING = 0.4
 MAX_EDGE_DISTANCE = 9
-MIN_EDGE_DISTANCE = 1.9
+MIN_EDGE_DISTANCE = 1.75
 
 def lerp(a, b, t):
   if t >= 1.0:
@@ -67,8 +67,9 @@ class LanePlanner:
     if len(edges[0].t) == TRAJECTORY_SIZE:
       self.lle_std = md.roadEdgeStds[0]
       self.rle_std = md.roadEdgeStds[1]
-      self.lle_y = np.array(edges[0].y) + self.camera_offset
-      self.rle_y = np.array(edges[1].y) + self.camera_offset
+      # get more reliable edge in fuzzy, high std scenarios
+      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std * 0.7
+      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std * 0.7
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -89,7 +90,7 @@ class LanePlanner:
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
-    # also set probabilities on this and ignore model lane probabilities, which are very irradic
+    # also slightly consider model lane probabilities
     path_xyz[:, 1] += self.path_offset
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
@@ -97,8 +98,8 @@ class LanePlanner:
       width_at_t = interp(t_check * (v_ego + 7), self.ll_x, width_pts)
       prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
     mod = min(prob_mods)
-    l_prob = mod
-    r_prob = mod
+    l_prob = (mod + mod + self.lll_prob) / 3.0
+    r_prob = (mod + mod + self.rll_prob) / 3.0
 
     # Reduce reliance on uncertain lanelines, but have a wide range
     l_std_mod = interp(self.lll_std, [.4, 1.0], [1.0, 0.0])
@@ -123,13 +124,13 @@ class LanePlanner:
     # track how far on average we are from the road edges
     # store the last few readings for averaging
     # only if we see lanelines OR steering OR lane changing
-    if lane_path_prob > 0.5 or CS.steeringPressed or self.final_lane_plan_factor < 1.0:
+    if lane_path_prob > 0.666 or CS.steeringPressed or self.final_lane_plan_factor < 1.0:
       # add clamped edge distances if we have some confidence in it
-      if self.rle_std < 1.25:
+      if self.rle_std < 1:
         self.rle_y_dists.append(clamp(self.rle_y[0],  MIN_EDGE_DISTANCE,  MAX_EDGE_DISTANCE))
       else:
         self.rle_y_dists.append(self.road_width * DEFAULT_LANE_CENTERING)
-      if self.lle_std < 1.25:
+      if self.lle_std < 1:
         self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -MIN_EDGE_DISTANCE))
       else:
         self.lle_y_dists.append(self.road_width * -(1.0 - DEFAULT_LANE_CENTERING))
