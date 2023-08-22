@@ -23,8 +23,10 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.ColorSpaceTransform;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.RggbChannelVector;
+import android.hardware.camera2.params.TonemapCurve;
 import android.icu.number.Scale;
 import android.media.Image;
 import android.media.ImageReader;
@@ -298,8 +300,17 @@ public class CameraManager extends SensorInterface {
                 new MeteringRectangle((int)Math.floor(W * 0.05f), (int)Math.floor(H * 0.25f),
                                       (int)Math.floor(W * 0.9f),  (int)Math.floor(H * 0.70f), 500)
         });
-        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_GAINS, new RggbChannelVector(1.5f, 1.5f, 1.5f, 1.5f));
-        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CameraMetadata.COLOR_CORRECTION_MODE_FAST);
+        float[] gammaCurve = new float[] {
+            0.0000f, 0.0000f, 0.0667f, 0.2864f, 0.1333f, 0.4007f, 0.2000f, 0.4845f,
+            0.2667f, 0.5532f, 0.3333f, 0.6125f, 0.4000f, 0.6652f, 0.4667f, 0.7130f,
+            0.5333f, 0.7569f, 0.6000f, 0.7977f, 0.6667f, 0.8360f, 0.7333f, 0.8721f,
+            0.8000f, 0.9063f, 0.8667f, 0.9389f, 0.9333f, 0.9701f, 1.0000f, 1.0000f
+        };
+        for (int i=3; i<gammaCurve.length; i+=2)
+            gammaCurve[i] = (gammaCurve[i] + 1f) * 0.5f;
+        TonemapCurve curve = new TonemapCurve(gammaCurve, gammaCurve, gammaCurve);
+        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_MODE, CameraMetadata.TONEMAP_MODE_CONTRAST_CURVE);
+        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
         ImageAnalysis imageAnalysis = builder.build();
