@@ -101,8 +101,8 @@ class LanePlanner:
     r_prob = mod
 
     # Reduce reliance on uncertain lanelines, but have a wide range
-    l_std_mod = interp(self.lll_std, [.2, 1.0], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.2, 1.0], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.5, 1.0], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.5, 1.0], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
