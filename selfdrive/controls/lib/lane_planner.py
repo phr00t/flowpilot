@@ -12,7 +12,11 @@ from common.logger import sLogger
 TRAJECTORY_SIZE = 33
 PATH_OFFSET = 0.225
 CAMERA_OFFSET = 0.225
+
+# <0.5 to be on the right side of the road
+DEFAULT_LANE_CENTERING = 0.4
 MAX_EDGE_DISTANCE = 9
+MIN_EDGE_DISTANCE = 1.9
 
 def lerp(a, b, t):
   if t >= 1.0:
@@ -45,6 +49,7 @@ class LanePlanner:
     self.rle_std = 0.
     self.lle_y_dists = []
     self.rle_y_dists = []
+    self.road_width = 8.0
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -62,9 +67,8 @@ class LanePlanner:
     if len(edges[0].t) == TRAJECTORY_SIZE:
       self.lle_std = md.roadEdgeStds[0]
       self.rle_std = md.roadEdgeStds[1]
-      # get more reliable edge in fuzzy, high std scenarios
-      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std * 0.8
-      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std * 0.8
+      self.lle_y = np.array(edges[0].y) + self.camera_offset
+      self.rle_y = np.array(edges[1].y) + self.camera_offset
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -85,25 +89,20 @@ class LanePlanner:
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
+    # also set probabilities on this and ignore model lane probabilities, which are very irradic
     path_xyz[:, 1] += self.path_offset
-
-    # the model seems to cut out lanelines at unexpected times...
-    # let's base laneline probs on things like standard deviation and distance more
-    l_prob = (1.0 + self.lll_prob) * 0.5
-    r_prob = (1.0 + self.rll_prob) * 0.5
-
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
     for t_check in (0.0, 1.5, 3.0):
       width_at_t = interp(t_check * (v_ego + 7), self.ll_x, width_pts)
       prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
     mod = min(prob_mods)
-    l_prob *= mod
-    r_prob *= mod
+    l_prob = mod
+    r_prob = mod
 
-    # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.4, .8], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.4, .8], [1.0, 0.0])
+    # Reduce reliance on uncertain lanelines, but have a wide range
+    l_std_mod = interp(self.lll_std, [.2, 1.0], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.2, 1.0], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
@@ -125,9 +124,15 @@ class LanePlanner:
     # store the last few readings for averaging
     # only if we see lanelines OR steering OR lane changing
     if lane_path_prob > 0.5 or CS.steeringPressed or self.final_lane_plan_factor < 1.0:
-      # add clamped edge distances
-      self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  MAX_EDGE_DISTANCE))
-      self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -1.6))
+      # add clamped edge distances if we have some confidence in it
+      if self.rle_std < 1.25:
+        self.rle_y_dists.append(clamp(self.rle_y[0],  MIN_EDGE_DISTANCE,  MAX_EDGE_DISTANCE))
+      else:
+        self.rle_y_dists.append(self.road_width * DEFAULT_LANE_CENTERING)
+      if self.lle_std < 1.25:
+        self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -MIN_EDGE_DISTANCE))
+      else:
+        self.lle_y_dists.append(self.road_width * -(1.0 - DEFAULT_LANE_CENTERING))
 
       # only store the last few seconds
       if len(self.lle_y_dists) > 120:
@@ -143,8 +148,8 @@ class LanePlanner:
     how_much_left = -1.0
     if left_edge_dist > -MAX_EDGE_DISTANCE and right_edge_dist < MAX_EDGE_DISTANCE:
       # see where the puts us on the road
-      road_width = right_edge_dist - left_edge_dist
-      how_much_left = right_edge_dist / road_width
+      self.road_width = right_edge_dist - left_edge_dist
+      how_much_left = right_edge_dist / self.road_width
       path_from_edges = lerp(self.rle_y, self.lle_y, how_much_left)
 
     # ok, mix all this together based on lane probability
