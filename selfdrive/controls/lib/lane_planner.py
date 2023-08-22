@@ -140,6 +140,7 @@ class LanePlanner:
     right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else MAX_EDGE_DISTANCE
 
     path_from_edges = None
+    how_much_left = -1.0
     if left_edge_dist > -MAX_EDGE_DISTANCE and right_edge_dist < MAX_EDGE_DISTANCE:
       # see where the puts us on the road
       road_width = right_edge_dist - left_edge_dist
