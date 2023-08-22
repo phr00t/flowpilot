@@ -125,7 +125,6 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
         while (NeedImage) {
             Thread.yield();
         }
-        NeedImage = true;
         start = System.currentTimeMillis();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
         wideImgBuffer = updateImageBuffer(msgFrameWideBuffer, wideImgBuffer);
@@ -237,6 +236,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
                 wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
             }
 
+            NeedImage = true;
             updateCameraState();
             netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
             netInputWideBuffer = imageWidePrepare.prepare(wideImgBuffer, wrapMatrixWide);
