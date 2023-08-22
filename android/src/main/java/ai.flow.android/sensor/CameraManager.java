@@ -307,7 +307,7 @@ public class CameraManager extends SensorInterface {
             0.8000f, 0.9063f, 0.8667f, 0.9389f, 0.9333f, 0.9701f, 1.0000f, 1.0000f
         };
         for (int i=3; i<gammaCurve.length; i+=2)
-            gammaCurve[i] = (gammaCurve[i] + 1f) * 0.5f;
+            gammaCurve[i] = (gammaCurve[i] + gammaCurve[i] + 1f) / 3f;
         TonemapCurve curve = new TonemapCurve(gammaCurve, gammaCurve, gammaCurve);
         ext.setCaptureRequestOption(CaptureRequest.TONEMAP_MODE, CameraMetadata.TONEMAP_MODE_CONTRAST_CURVE);
         ext.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);
