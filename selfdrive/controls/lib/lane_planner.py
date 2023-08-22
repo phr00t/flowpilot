@@ -15,7 +15,7 @@ CAMERA_OFFSET = 0.225
 
 # <0.5 to be on the right side of the road
 DEFAULT_LANE_CENTERING = 0.375
-MAX_EDGE_DISTANCE = 9
+MAX_EDGE_DISTANCE = 10
 MIN_EDGE_DISTANCE = 1.75
 
 def lerp(a, b, t):
@@ -157,15 +157,17 @@ class LanePlanner:
     # get average distances from edges
     left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -MAX_EDGE_DISTANCE
     right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else MAX_EDGE_DISTANCE
-    self.road_width = right_edge_dist - left_edge_dist
+
+    if left_edge_dist > -MAX_EDGE_DISTANCE and right_edge_dist < MAX_EDGE_DISTANCE:
+      self.road_width = right_edge_dist - left_edge_dist
 
     # which edge are we going to follow?
-    if self.on_right_side and self.rle_std_avg > self.lle_std_avg and right_edge_dist > left_edge_dist and left_edge_dist > -MAX_EDGE_DISTANCE:
+    if self.on_right_side and self.rle_std_avg > self.lle_std_avg and abs(right_edge_dist) > abs(left_edge_dist) and left_edge_dist > -MAX_EDGE_DISTANCE:
       self.on_right_side = False
-    elif not self.on_right_side and self.rle_std_avg < self.lle_std_avg and right_edge_dist < left_edge_dist and right_edge_dist < MAX_EDGE_DISTANCE:
+    elif not self.on_right_side and self.rle_std_avg < self.lle_std_avg and abs(right_edge_dist) < abs(left_edge_dist) and right_edge_dist < MAX_EDGE_DISTANCE:
       self.on_right_side = True
 
-    path_from_edges = None if left_edge_dist <= -MAX_EDGE_DISTANCE and right_edge_dist >= MAX_EDGE_DISTANCE else self.lle_y - left_edge_dist if not self.on_right_side else self.rll_y - right_edge_dist
+    path_from_edges = None if left_edge_dist <= -MAX_EDGE_DISTANCE and right_edge_dist >= MAX_EDGE_DISTANCE or min(self.rle_std_avg, self.lle_std_avg) > 1.5 else self.lle_y - left_edge_dist if not self.on_right_side else self.rll_y - right_edge_dist
 
     # ok, mix all this together based on lane probability
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
