@@ -12,6 +12,7 @@ from common.logger import sLogger
 TRAJECTORY_SIZE = 33
 PATH_OFFSET = 0.225
 CAMERA_OFFSET = 0.225
+MAX_EDGE_DISTANCE = 9
 
 def lerp(a, b, t):
   if t >= 1.0:
@@ -36,7 +37,7 @@ class LanePlanner:
 
     self.lll_prob = 0.
     self.rll_prob = 0.
-    self.lane_change_amount = 1.0
+    self.final_lane_plan_factor = 1.0
 
     self.lle_y = np.zeros((TRAJECTORY_SIZE,))
     self.rle_y = np.zeros((TRAJECTORY_SIZE,))
@@ -85,7 +86,12 @@ class LanePlanner:
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
     path_xyz[:, 1] += self.path_offset
-    l_prob, r_prob = self.lll_prob, self.rll_prob
+
+    # the model seems to cut out lanelines at unexpected times...
+    # let's base laneline probs on things like standard deviation and distance more
+    l_prob = (1.0 + self.lll_prob) * 0.5
+    r_prob = (1.0 + self.rll_prob) * 0.5
+
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
     for t_check in (0.0, 1.5, 3.0):
@@ -115,24 +121,13 @@ class LanePlanner:
     path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
     path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
 
-    # track how far on average we are from the road edge
+    # track how far on average we are from the road edges
     # store the last few readings for averaging
-    # only if we see lanelines OR steering
-    # clear if we are changing lanes
-    if self.lane_change_amount < 1.0:
-      self.lle_y_dists.clear()
-      self.rle_y_dists.clear()
-    elif lane_path_prob > 0.5 or CS.steeringPressed:
-      # add edge distances, unless its super messy, then clear as we lost it completely
-      if self.rle_std > 2.5:
-        self.rle_y_dists.clear()
-      else:
-        self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  4.0))
-      # do the same for left
-      if self.lle_std > 2.5:
-        self.lle_y_dists.clear()
-      else:
-        self.lle_y_dists.append(clamp(self.lle_y[0], -4.0, -1.6))
+    # only if we see lanelines OR steering OR lane changing
+    if lane_path_prob > 0.5 or CS.steeringPressed or self.final_lane_plan_factor < 1.0:
+      # add clamped edge distances
+      self.rle_y_dists.append(clamp(self.rle_y[0],  1.6,  MAX_EDGE_DISTANCE))
+      self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -1.6))
 
       # only store the last few seconds
       if len(self.lle_y_dists) > 120:
@@ -141,17 +136,23 @@ class LanePlanner:
         self.rle_y_dists.pop(0)
 
     # get average distances from edges
-    left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -4.0
-    right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else 4.0
+    left_edge_dist = statistics.fmean(self.lle_y_dists) if len(self.lle_y_dists) > 0 else -MAX_EDGE_DISTANCE
+    right_edge_dist = statistics.fmean(self.rle_y_dists) if len(self.rle_y_dists) > 0 else MAX_EDGE_DISTANCE
 
-    # see where the puts us on the road
-    road_width = right_edge_dist - left_edge_dist
-    how_much_left = right_edge_dist / road_width
-    path_from_edge = lerp(self.rle_y, self.lle_y, how_much_left)
+    path_from_edges = None
+    if left_edge_dist > -MAX_EDGE_DISTANCE and right_edge_dist < MAX_EDGE_DISTANCE:
+      # see where the puts us on the road
+      road_width = right_edge_dist - left_edge_dist
+      how_much_left = right_edge_dist / road_width
+      path_from_edges = lerp(self.rle_y, self.lle_y, how_much_left)
 
-    # ok, which path will we use?
+    # ok, mix all this together based on lane probability
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    final_path_y = lerp(path_from_edge, lane_path_y, lane_path_prob * 2.0)
+    final_path_y = lerp(path_from_edges, lane_path_y, lane_path_prob * 2.0) if path_from_edges is not None else lane_path_y
+
+    # if we have no edge path, we rely on the reliability of the lane paths
+    if path_from_edges is None:
+      self.final_lane_plan_factor *= clamp(lane_path_prob * 2.0, 0.0, 1.0)
 
     #debug
     sLogger.Send("0lP" + "{:.2f}".format(l_prob) + " rP" + "{:.2f}".format(r_prob) +
@@ -166,6 +167,6 @@ class LanePlanner:
     safe_idxs = np.isfinite(self.ll_t)
     if safe_idxs[0]:
       lane_path_y_interp = np.interp(path_t, self.ll_t[safe_idxs], final_path_y[safe_idxs])
-      path_xyz[:, 1] = self.lane_change_amount * lane_path_y_interp + (1.0 - self.lane_change_amount) * path_xyz[:, 1]
+      path_xyz[:, 1] = self.final_lane_plan_factor * lane_path_y_interp + (1.0 - self.final_lane_plan_factor) * path_xyz[:, 1]
 
     return path_xyz
