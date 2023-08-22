@@ -14,7 +14,7 @@ PATH_OFFSET = 0.225
 CAMERA_OFFSET = 0.225
 
 # <0.5 to be on the right side of the road
-DEFAULT_LANE_CENTERING = 0.4
+DEFAULT_LANE_CENTERING = 0.375
 MAX_EDGE_DISTANCE = 9
 MIN_EDGE_DISTANCE = 1.75
 
@@ -126,11 +126,11 @@ class LanePlanner:
     # only if we see lanelines OR steering OR lane changing
     if lane_path_prob > 0.5 or CS.steeringPressed or self.final_lane_plan_factor < 1.0:
       # add clamped edge distances if we have some confidence in it
-      if self.rle_std < 1:
+      if self.rle_std < 0.5:
         self.rle_y_dists.append(clamp(self.rle_y[0],  MIN_EDGE_DISTANCE,  MAX_EDGE_DISTANCE))
       else:
         self.rle_y_dists.append(self.road_width * DEFAULT_LANE_CENTERING)
-      if self.lle_std < 1:
+      if self.lle_std < 0.5:
         self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -MIN_EDGE_DISTANCE))
       else:
         self.lle_y_dists.append(self.road_width * -(1.0 - DEFAULT_LANE_CENTERING))
