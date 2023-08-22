@@ -19,13 +19,23 @@ export FINGERPRINT="HYUNDAI KONA ELECTRIC 2019"
 ## android specific ##
 export USE_SNPE="1" # only works for snapdragon devices.
 
+
+if ! command -v tmux &> /dev/null
+then
+    echo "tmux could not be found, installing.."
+    sudo apt-get update
+    sudo apt-get install tmux
+    echo "set -g mouse on" >> ~/.tmux.conf # enable mouse scrolling in tmux
+    echo "set -g remain-on-exit on" >> ~/.tmux.conf # retain tmux session on ctrl + c
+fi
+
 if pgrep -x "flowinit" > /dev/null
     then
         echo "another instance of flowinit is already running"
         exit
     else
         # start a tmux pane
-        tmux new-session -d -s "flowpilot" "flowinit"
+        tmux new-session -d -s "flowpilot" "scons && flowinit"
         tmux attach -t flowpilot
 fi
 
