@@ -81,10 +81,10 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
     int desire;
     public ModelRunner modelRunner;
     public static volatile boolean NeedImage;
-    static Definitions.FrameData.Reader frameData;
-    static Definitions.FrameData.Reader frameWideData;
-    static Definitions.FrameBuffer.Reader msgFrameBuffer;
-    static Definitions.FrameBuffer.Reader msgFrameWideBuffer;
+    public static Definitions.FrameData.Reader frameData;
+    public static Definitions.FrameData.Reader frameWideData;
+    public static Definitions.FrameBuffer.Reader msgFrameBuffer;
+    public static Definitions.FrameBuffer.Reader msgFrameWideBuffer;
     ByteBuffer imgBuffer;
     ByteBuffer wideImgBuffer;
     boolean snpe;
@@ -307,7 +307,7 @@ public class ModelExecutorF3 extends ModelExecutor implements Runnable{
 
     public void serializeAndPublish(){
         end = System.currentTimeMillis();
-        msgModelRaw.fill(netOutputs, cameraImageTimestamp, lastFrameID, 0, 0f, end - start);
+        msgModelRaw.fill(netOutputs, cameraImageTimestamp, lastFrameID, -1, 0f, end - start);
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
     }
 

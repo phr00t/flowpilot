@@ -36,6 +36,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
+import androidx.camera.camera2.interop.Camera2CameraControl;
 import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.core.*;
 import androidx.camera.core.impl.UseCaseConfigFactory;
@@ -68,8 +69,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static ai.flow.android.sensor.Utils.fillYUVBuffer;
 import static ai.flow.common.BufferUtils.byteToFloat;
@@ -82,6 +85,7 @@ public class CameraManager extends SensorInterface {
     public ProcessCameraProvider cameraProvider;
     public String frameDataTopic, frameBufferTopic, intName;
     public ZMQPubHandler ph;
+    ExecutorService threadpool;
     public boolean running = false;
     public int W = Camera.frameSize[0];
     public int H = Camera.frameSize[1];
@@ -139,6 +143,7 @@ public class CameraManager extends SensorInterface {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
         this.cameraType = cameraType;
+        this.threadpool = Executors.newSingleThreadExecutor();
 
         if (cameraType == Camera.CAMERA_TYPE_WIDE){
             this.frameDataTopic = "wideRoadCameraState";
@@ -182,52 +187,6 @@ public class CameraManager extends SensorInterface {
         this.lifeCycleFragment = lifeCycleFragment;
     }
 
-    public static android.graphics.Matrix WideToRoad;
-    Nv21Buffer nv21buf, nv21buf_small;
-    AbgrBuffer abgrbuf;
-    Rect cropRect;
-
-    private final float ScaleAmount = 0.425f;
-
-    public void SimulateRoadCamera(ImageProxy image) {
-        int cropW = Math.round(W / (1f + ScaleAmount));
-        int cropH = Math.round(H / (1f + ScaleAmount));
-        int Woffset = (W - cropW) / 2;
-        int Hoffset = (H - cropH) / 2;
-        Rect r = new Rect(Woffset, Hoffset, Woffset + cropW, Hoffset + cropH);
-        try {
-            Bitmap b = image.toBitmap();
-            Bitmap cropped = Bitmap.createBitmap(b, Woffset, Hoffset, cropW, cropH);
-            cropped.copyPixelsToBuffer(abgrbuf.asBuffer());
-            abgrbuf.convertTo(nv21buf_small);
-            nv21buf_small.scale(nv21buf, FilterMode.NONE);
-            yuvRoadBuffer.rewind();
-            yuvRoadBuffer.put(nv21buf.asBuffer());
-
-            msgFrameRoadBuffer.frameBuffer.setYWidth(W);
-            msgFrameRoadBuffer.frameBuffer.setYHeight(H);
-            msgFrameRoadBuffer.frameBuffer.setYPixelStride(msgFrameBuffer.frameBuffer.getYPixelStride());
-            msgFrameRoadBuffer.frameBuffer.setUvWidth(W / 2);
-            msgFrameRoadBuffer.frameBuffer.setUvHeight(H / 2);
-            msgFrameRoadBuffer.frameBuffer.setUvPixelStride(image.getPlanes()[1].getPixelStride());
-            msgFrameRoadBuffer.frameBuffer.setUOffset(W * H);
-            if (image.getPlanes()[1].getPixelStride() == 2)
-                msgFrameRoadBuffer.frameBuffer.setVOffset(W * H + 1);
-            else
-                msgFrameRoadBuffer.frameBuffer.setVOffset(W * H + W * H / 4);
-            msgFrameRoadBuffer.frameBuffer.setStride(msgFrameBuffer.frameBuffer.getStride());
-
-            msgFrameRoadData.frameData.setFrameId(frameID);
-
-            ph.publishBuffer("roadCameraState", msgFrameRoadData.serialize(true));
-            ph.publishBuffer("roadCameraBuffer", msgFrameRoadBuffer.serialize(true));
-
-            image.close();
-        } catch (Exception e) {
-            System.out.println(e.toString());
-        }
-    }
-
     public void start() {
         if (running)
             return;
@@ -244,7 +203,6 @@ public class CameraManager extends SensorInterface {
                         @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
-                            long time = image.getImageInfo().getTimestamp();
                             fillYUVBuffer(image, yuvBuffer);
 
                             ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
@@ -266,10 +224,13 @@ public class CameraManager extends SensorInterface {
 
                             ModelExecutorF3.SetLatestCameraData(msgFrameData.frameData.asReader(),
                                                                 msgFrameBuffer.frameBuffer.asReader(),
-                                                                time);
+                                                                image.getImageInfo().getTimestamp());
 
-                            ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
-                            ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
+                            // do this later, don't hold up the image analyzer
+                            threadpool.submit(() -> {
+                                ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
+                                ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
+                            });
 
                             image.close();
                             frameID += 1;

@@ -529,8 +529,14 @@ public class OnRoadScreen extends ScreenAdapter {
     }
 
     public void updateCamera() {
-        msgframeBuffer = sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
-        msgframeData = sh.recv(cameraTopic).getWideRoadCameraState();
+        // wait for our first picture if needed...
+        while (ModelExecutorF3.msgFrameWideBuffer == null || ModelExecutorF3.frameWideData == null) {
+            try {
+                Thread.sleep(1);
+            } catch (Exception e) { }
+        }
+        msgframeBuffer = ModelExecutorF3.msgFrameWideBuffer; // sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
+        msgframeData = ModelExecutorF3.frameWideData; // sh.recv(cameraTopic).getWideRoadCameraState();
         imgBuffer = updateImageBuffer(msgframeBuffer, imgBuffer);
 
         updateCameraMatrix(msgframeData);
@@ -753,9 +759,7 @@ public class OnRoadScreen extends ScreenAdapter {
             stageFill.act(delta);
             stageFill.draw();
 
-            if (sh.updated(cameraTopic)) {
-                updateCamera();
-            }
+            updateCamera();
 
             if (msgframeBuffer != null)
                 renderImage(msgframeBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB);
