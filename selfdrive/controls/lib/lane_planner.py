@@ -160,9 +160,10 @@ class LanePlanner:
       self.road_width = right_edge_dist - left_edge_dist
 
     # which edge are we going to follow?
-    if self.on_right_side and self.rle_std_avg > self.lle_std_avg and abs(right_edge_dist) > abs(left_edge_dist) and left_edge_dist > -MAX_EDGE_DISTANCE:
+    right_is_closer = abs(right_edge_dist - self.rle_y[0]) < abs(left_edge_dist - self.lle_y[0])
+    if self.on_right_side and self.rle_std_avg > self.lle_std_avg and not right_is_closer and left_edge_dist > -MAX_EDGE_DISTANCE:
       self.on_right_side = False
-    elif not self.on_right_side and self.rle_std_avg < self.lle_std_avg and abs(right_edge_dist) < abs(left_edge_dist) and right_edge_dist < MAX_EDGE_DISTANCE:
+    elif not self.on_right_side and self.rle_std_avg < self.lle_std_avg and right_is_closer and right_edge_dist < MAX_EDGE_DISTANCE:
       self.on_right_side = True
 
     path_from_edges = None if left_edge_dist <= -MAX_EDGE_DISTANCE and right_edge_dist >= MAX_EDGE_DISTANCE or min(self.rle_std_avg, self.lle_std_avg) > 1.5 else self.lle_y - left_edge_dist if not self.on_right_side else self.rle_y - right_edge_dist
