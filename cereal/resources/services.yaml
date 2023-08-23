@@ -109,6 +109,12 @@ services:
         expectedFreq: 100
         decimation: 100
 
+    gpsLocationExternal:
+        keepLast: true
+        log: true
+        expectedFreq: 10
+        decimation: 10
+
     peripheralState:
         keepLast: true
         log: true
@@ -144,12 +150,6 @@ services:
         log: true
         expectedFreq: 20
         decimation: 5
-    
-    liveTorqueParameters:
-        keepLast: true
-        log: true
-        expectedFreq: 4
-        decimation: 2
     
     liveLocationKalman:
         keepLast: true
@@ -211,18 +211,6 @@ services:
         keepLast: true
         log: false
         expectedFreq: 20
-
-    gpsLocation:
-        keepLast: true
-        log: true
-        expectedFreq: 10
-        decimation: 10
-
-    gpsLocationExternal:
-        keepLast: true
-        log: true
-        expectedFreq: 10
-        decimation: 10
     
     testJoystick:
         keepLast: true
@@ -252,4 +240,16 @@ services:
         log: true
         expectedFreq: 100
         decimation: 100
+
+    liveTorqueParameters:
+        keepLast: true
+        log: true
+        expectedFreq: 4
+        decimation: 2
+
+    gpsLocation:
+        keepLast: true
+        log: true
+        expectedFreq: 10
+        decimation: 10
     

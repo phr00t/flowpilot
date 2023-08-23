@@ -130,6 +130,8 @@ struct CameraOdometry {
   rotStd @3 :List(Float32); # std rad/s in device frame
   wideFromDeviceEuler @6 :List(Float32);
   wideFromDeviceEulerStd @7 :List(Float32);
+  roadTransformTrans @8 :List(Float32);
+  roadTransformTransStd @9 :List(Float32);
 }
 
 struct Sentinel {
@@ -199,9 +201,13 @@ struct ModelDataV2 {
   leadsV3 @18 :List(LeadDataV3);
 
   meta @12 :MetaData;
+  confidence @23: ConfidenceClass;
 
   # Model perceived motion
   temporalPose @21 :Pose;
+
+  navEnabled @22 :Bool;
+  locationMonoTime @24 :UInt64;
 
   # All SI units and in device frame
   struct XYZTData {
@@ -255,6 +261,12 @@ struct ModelDataV2 {
     brakeDisengageProbDEPRECATED @2 :Float32;
     gasDisengageProbDEPRECATED @3 :Float32;
     steerOverrideProbDEPRECATED @4 :Float32;
+  }
+
+  enum ConfidenceClass {
+    red @0;
+    yellow @1;
+    green @2;
   }
 
   struct DisengagePredictions {

@@ -1,10 +1,6 @@
 using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "./include/java.capnp";
-$Java.package("ai.flow.definitions");
-$Java.outerClassname("CarDefinitions");
-
 @0x8e2af1e708af8b8d;
 
 # ******* events causing controls state machine transition *******
