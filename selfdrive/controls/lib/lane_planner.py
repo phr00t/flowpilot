@@ -16,7 +16,7 @@ CAMERA_OFFSET = 0.225
 # <0.5 to be on the right side of the road
 DEFAULT_LANE_CENTERING = 0.375
 MAX_EDGE_DISTANCE = 10
-MIN_EDGE_DISTANCE = 1.75
+MIN_EDGE_DISTANCE = 1.8
 
 def lerp(a, b, t):
   if t >= 1.0:
@@ -81,8 +81,8 @@ class LanePlanner:
       self.lle_std_avg = statistics.fmean(self.lle_stds)
       self.rle_std_avg = statistics.fmean(self.rle_stds)
       # get more reliable edge in fuzzy, high std scenarios
-      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std_avg * 0.5
-      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std_avg * 0.5
+      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std_avg * 0.9
+      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std_avg * 0.9
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -105,12 +105,12 @@ class LanePlanner:
     path_xyz[:, 1] += self.path_offset
 
     # model lane probability boost
-    l_prob = clamp(self.lll_prob * 3.0, 0.0, 1.0)
-    r_prob = clamp(self.rll_prob * 3.0, 0.0, 1.0)
+    l_prob = clamp(self.lll_prob * 4.0, 0.0, 1.0)
+    r_prob = clamp(self.rll_prob * 4.0, 0.0, 1.0)
 
     # Reduce reliance on uncertain lanelines, but have a wide range
-    l_prob *= interp(self.lll_std, [.2, .6], [1.0, 0.0])
-    r_prob *= interp(self.rll_std, [.2, .6], [1.0, 0.0])
+    l_prob *= interp(self.lll_std, [.3, .8], [1.0, 0.0])
+    r_prob *= interp(self.rll_std, [.3, .8], [1.0, 0.0])
 
     # Find current lanewidth
     self.lane_width_certainty.update(l_prob * r_prob)
@@ -137,11 +137,11 @@ class LanePlanner:
       self.rle_stds.clear()
     elif lane_path_prob > 0.5 or CS.steeringPressed:
       # add clamped edge distances if we have some confidence in it
-      if self.rle_std_avg < 1.0:
+      if self.rle_std_avg < 0.8:
         self.rle_y_dists.append(clamp(self.rle_y[0],  MIN_EDGE_DISTANCE,  MAX_EDGE_DISTANCE))
       else:
         self.rle_y_dists.append(self.road_width * DEFAULT_LANE_CENTERING)
-      if self.lle_std_avg < 1.0:
+      if self.lle_std_avg < 0.8:
         self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -MIN_EDGE_DISTANCE))
       else:
         self.lle_y_dists.append(self.road_width * -(1.0 - DEFAULT_LANE_CENTERING))
