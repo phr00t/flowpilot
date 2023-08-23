@@ -79,9 +79,8 @@ class LateralPlanner:
 
     # Turn off lanes during lane change
     if self.DH.desire == log.LateralPlan.Desire.laneChangeRight or self.DH.desire == log.LateralPlan.Desire.laneChangeLeft:
-      self.LP.final_lane_plan_factor = self.DH.lane_change_ll_prob
-    else:
-      self.LP.final_lane_plan_factor = 1.0
+      self.LP.lll_prob *= self.DH.lane_change_ll_prob
+      self.LP.rll_prob *= self.DH.lane_change_ll_prob
 
     # lanelines calculation?
     self.path_xyz = self.LP.get_d_path(CS, self.v_ego, self.t_idxs, self.path_xyz)
@@ -121,7 +120,7 @@ class LateralPlanner:
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
 
-    if self.lat_mpc.cost > 1e6 or mpc_nans:
+    if self.lat_mpc.cost > 20000. or mpc_nans:
       self.solution_invalid_cnt += 1
     else:
       self.solution_invalid_cnt = 0
@@ -133,7 +132,7 @@ class LateralPlanner:
 
     lateralPlan = plan_send.lateralPlan
     lateralPlan.modelMonoTime = sm.logMonoTime['modelV2']
-    lateralPlan.dPathPoints = self.lat_mpc.x_sol[:, 1].tolist()
+    lateralPlan.dPathPoints = self.y_pts.tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
 
     lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
