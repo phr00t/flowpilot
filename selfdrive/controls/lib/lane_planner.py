@@ -81,8 +81,8 @@ class LanePlanner:
       self.lle_std_avg = statistics.fmean(self.lle_stds)
       self.rle_std_avg = statistics.fmean(self.rle_stds)
       # get more reliable edge in fuzzy, high std scenarios
-      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std_avg * 0.75
-      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std_avg * 0.75
+      self.lle_y = np.array(edges[0].y) + self.camera_offset + self.lle_std_avg * 0.5
+      self.rle_y = np.array(edges[1].y) + self.camera_offset - self.rle_std_avg * 0.5
 
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
@@ -115,8 +115,8 @@ class LanePlanner:
     r_prob = (mod + self.rll_prob) / 2.0
 
     # Reduce reliance on uncertain lanelines, but have a wide range
-    l_std_mod = interp(self.lll_std, [.2, .5], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.2, .5], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.15, .75], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.15, .75], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
@@ -139,11 +139,11 @@ class LanePlanner:
     # only if we see lanelines OR steering OR lane changing
     if lane_path_prob > 0.5 or CS.steeringPressed or self.final_lane_plan_factor < 1.0:
       # add clamped edge distances if we have some confidence in it
-      if self.rle_std_avg < 0.75:
+      if self.rle_std_avg < 1.0:
         self.rle_y_dists.append(clamp(self.rle_y[0],  MIN_EDGE_DISTANCE,  MAX_EDGE_DISTANCE))
       else:
         self.rle_y_dists.append(self.road_width * DEFAULT_LANE_CENTERING)
-      if self.lle_std_avg < 0.75:
+      if self.lle_std_avg < 1.0:
         self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -MIN_EDGE_DISTANCE))
       else:
         self.lle_y_dists.append(self.road_width * -(1.0 - DEFAULT_LANE_CENTERING))
