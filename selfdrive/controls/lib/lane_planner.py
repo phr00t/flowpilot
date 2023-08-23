@@ -101,24 +101,16 @@ class LanePlanner:
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
-    # Reduce reliance on lanelines that are too far apart or
-    # will be in a few seconds
-    # also consider model lane probabilities
+    # set path offset
     path_xyz[:, 1] += self.path_offset
-    width_pts = self.rll_y - self.lll_y
-    prob_mods = []
-    for t_check in (0.0, 1.5, 3.0):
-      width_at_t = interp(t_check * (v_ego + 7), self.ll_x, width_pts)
-      prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
-    mod = min(prob_mods)
-    l_prob = (mod + self.lll_prob) / 2.0
-    r_prob = (mod + self.rll_prob) / 2.0
+
+    # model lane probability boost
+    l_prob = clamp(self.lll_prob * 3.0, 0.0, 1.0)
+    r_prob = clamp(self.rll_prob * 3.0, 0.0, 1.0)
 
     # Reduce reliance on uncertain lanelines, but have a wide range
-    l_std_mod = interp(self.lll_std, [.15, .75], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.15, .75], [1.0, 0.0])
-    l_prob *= l_std_mod
-    r_prob *= r_std_mod
+    l_prob *= interp(self.lll_std, [.2, .6], [1.0, 0.0])
+    r_prob *= interp(self.rll_std, [.2, .6], [1.0, 0.0])
 
     # Find current lanewidth
     self.lane_width_certainty.update(l_prob * r_prob)
@@ -136,8 +128,14 @@ class LanePlanner:
 
     # track how far on average we are from the road edges
     # store the last few readings for averaging
-    # only if we see lanelines OR steering OR lane changing
-    if lane_path_prob > 0.5 or CS.steeringPressed or self.final_lane_plan_factor < 1.0:
+    # only if we see lanelines OR steering
+    # clear distances if we are changing lanes
+    if self.final_lane_plan_factor < 1.0:
+      self.rle_y_dists.clear()
+      self.lle_y_dists.clear()
+      self.lle_stds.clear()
+      self.rle_stds.clear()
+    elif lane_path_prob > 0.5 or CS.steeringPressed:
       # add clamped edge distances if we have some confidence in it
       if self.rle_std_avg < 1.0:
         self.rle_y_dists.append(clamp(self.rle_y[0],  MIN_EDGE_DISTANCE,  MAX_EDGE_DISTANCE))
