@@ -53,7 +53,7 @@ class LanePlanner:
     self.lle_std_avg = 0.
     self.lle_y_dists = []
     self.rle_y_dists = []
-    self.road_width = 8.0
+    self.road_width = 7.0
     self.on_right_side = True
 
     self.lll_std = 0.
@@ -75,7 +75,7 @@ class LanePlanner:
       # average out edge deviations
       self.lle_stds.append(self.lle_std)
       self.rle_stds.append(self.rle_std)
-      if len(self.lle_stds) > 10:
+      if len(self.lle_stds) > 5:
         self.lle_stds.pop(0)
         self.rle_stds.pop(0)
       self.lle_std_avg = statistics.fmean(self.lle_stds)
@@ -137,11 +137,11 @@ class LanePlanner:
       self.rle_stds.clear()
     elif lane_path_prob > 0.5 or CS.steeringPressed:
       # add clamped edge distances if we have some confidence in it
-      if self.rle_std_avg < 0.8:
+      if self.rle_std_avg < 1.0:
         self.rle_y_dists.append(clamp(self.rle_y[0],  MIN_EDGE_DISTANCE,  MAX_EDGE_DISTANCE))
       else:
         self.rle_y_dists.append(self.road_width * DEFAULT_LANE_CENTERING)
-      if self.lle_std_avg < 0.8:
+      if self.lle_std_avg < 1.0:
         self.lle_y_dists.append(clamp(self.lle_y[0], -MAX_EDGE_DISTANCE, -MIN_EDGE_DISTANCE))
       else:
         self.lle_y_dists.append(self.road_width * -(1.0 - DEFAULT_LANE_CENTERING))
