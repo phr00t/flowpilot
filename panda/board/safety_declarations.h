@@ -5,7 +5,7 @@
 #define GET_FLAG(value, mask) (((__typeof__(mask))(value) & (mask)) == (mask))
 
 const int MAX_WRONG_COUNTERS = 5;
-const uint8_t MAX_MISSED_MSGS = 10U;
+const uint8_t MAX_MISSED_MSGS = 13U;
 
 // sample struct that keeps 6 samples in memory
 struct sample_t {
