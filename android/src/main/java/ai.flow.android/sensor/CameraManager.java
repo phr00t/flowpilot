@@ -273,17 +273,21 @@ public class CameraManager extends SensorInterface {
                 new MeteringRectangle((int)Math.floor(W * 0.05f), (int)Math.floor(H * 0.25f),
                                       (int)Math.floor(W * 0.9f),  (int)Math.floor(H * 0.70f), 500)
         });
-        /*float[] lowerContrastCurve = new float[] {
-                0f,   1f/8f,
-                1/8f, 4f/8f,
-                1f,   7f/8f,
+        float[] gammaCurve = new float[] {
+                0.0000f, 0.0000f, 0.0667f, 0.2864f, 0.1333f, 0.4007f, 0.2000f, 0.4845f,
+                0.2667f, 0.5532f, 0.3333f, 0.6125f, 0.4000f, 0.6652f, 0.4667f, 0.7130f,
+                0.5333f, 0.7569f, 0.6000f, 0.7977f, 0.6667f, 0.8360f, 0.7333f, 0.8721f,
+                0.8000f, 0.9063f, 0.8667f, 0.9389f, 0.9333f, 0.9701f, 1.0000f, 1.0000f
         };
-        TonemapCurve curve = new TonemapCurve(lowerContrastCurve, lowerContrastCurve, lowerContrastCurve);
+        TonemapCurve curve = new TonemapCurve(gammaCurve, gammaCurve, gammaCurve);
         ext.setCaptureRequestOption(CaptureRequest.TONEMAP_MODE, CameraMetadata.TONEMAP_MODE_CONTRAST_CURVE);
-        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);*/
+        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_FAST);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
+        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+        ext.setCaptureRequestOption(CaptureRequest.LENS_FOCUS_DISTANCE, 0f);
         ImageAnalysis imageAnalysis = builder.build();
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
 
@@ -294,9 +298,6 @@ public class CameraManager extends SensorInterface {
                 imageAnalysis);
 
         cameraControl = camera.getCameraControl();
-
-        // disable autofocus
-        cameraControl.cancelFocusAndMetering();
     }
 
     @Override
