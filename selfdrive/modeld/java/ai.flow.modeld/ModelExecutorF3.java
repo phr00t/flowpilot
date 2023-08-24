@@ -14,6 +14,8 @@ import org.nd4j.linalg.api.memory.enums.AllocationPolicy;
 import org.nd4j.linalg.api.memory.enums.LearningPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.INDArrayIndex;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.opencv.core.Core;
 
 import java.nio.ByteBuffer;
@@ -33,6 +35,11 @@ public class ModelExecutorF3 extends ModelExecutor {
     public long timePerIt = 0;
     public static long AvgIterationTime = 0;
     public long iterationNum = 1;
+
+    public final INDArrayIndex[] featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), };
+    public final INDArrayIndex[] featureRotateSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN) };
+    public final INDArrayIndex[] desireFeatureSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN) };
+    public final INDArrayIndex[] desireFeatureSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN+1) };
 
     public static int[] imgTensorShape = {1, 12, 128, 256};
     public static final int[] desireTensorShape = {1, CommonModelF3.DESIRE_LEN, CommonModelF3.HISTORY_BUFFER_LEN+1};
@@ -127,11 +134,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         }
 
         //std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
-        for (int h = 0; h < CommonModelF3.HISTORY_BUFFER_LEN; h++) {
-            for (int d = 0; d < CommonModelF3.DESIRE_LEN; d++) {
-                desireNDArr.putScalar(0, d, h, desireNDArr.getFloat(0, d, h+1));
-            }
-        }
+        desireNDArr.put(desireFeatureSlice0, desireNDArr.get(desireFeatureSlice1));
         for (int i=1; i<CommonModelF3.DESIRE_LEN; i++){
             if (desireIn[i] - prevDesire[i] > 0.99f)
                 desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, desireIn[i]);
@@ -166,13 +169,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         modelRunner.run(inputMap, outputMap);
 
         // featureTensorShape, 1, FEATURE_LEN, HISTORY_LEN
-        //    std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
-        for (int h = 0; h < CommonModelF3.HISTORY_BUFFER_LEN-1; h++) {
-            for (int f = 0; f < CommonModelF3.FEATURE_LEN; f++) {
-                featuresNDArr.putScalar(0, f, h, featuresNDArr.getFloat(0, f, h+1));
-            }
-        }
-        //    std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
+        featuresNDArr.put(featureRotateSlice0, featuresNDArr.get(featureRotateSlice1));
         for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
             featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
 
