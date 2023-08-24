@@ -322,8 +322,8 @@ class Controls:
           self.events.add(EventName.cameraMalfunction)
         elif not self.sm.all_freq_ok(self.camera_packets):
           self.events.add(EventName.cameraFrameRate)
-    if not REPLAY and self.rk.lagging:
-      self.events.add(EventName.controlsdLagging)
+    #if not REPLAY and self.rk.lagging:
+    #  self.events.add(EventName.controlsdLagging)
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
