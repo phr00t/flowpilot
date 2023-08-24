@@ -1,84 +1,54 @@
 package ai.flow.android.sensor;
 
 import ai.flow.common.ParamsInterface;
-import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
-import ai.flow.common.transformations.Model;
 import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.ModelExecutorF3;
 import ai.flow.modeld.messages.MsgFrameData;
 import ai.flow.sensor.SensorInterface;
 import ai.flow.sensor.messages.MsgFrameBuffer;
-import android.Manifest;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.BitmapRegionDecoder;
-import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.ColorSpaceTransform;
 import android.hardware.camera2.params.MeteringRectangle;
-import android.hardware.camera2.params.RggbChannelVector;
 import android.hardware.camera2.params.TonemapCurve;
-import android.icu.number.Scale;
-import android.media.Image;
-import android.media.ImageReader;
 import android.os.Build;
 import android.util.Range;
 import android.util.Size;
-import android.view.Surface;
+
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
-import androidx.camera.camera2.interop.Camera2CameraControl;
 import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.core.*;
-import androidx.camera.core.impl.UseCaseConfigFactory;
-import androidx.camera.core.internal.utils.ImageUtil;
 import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import io.github.crow_misia.libyuv.AbgrBuffer;
-import io.github.crow_misia.libyuv.ArgbBuffer;
-import io.github.crow_misia.libyuv.FilterMode;
-import io.github.crow_misia.libyuv.Nv21Buffer;
 import messaging.ZMQPubHandler;
 import org.capnproto.PrimitiveList;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import org.opencv.core.Core;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static ai.flow.android.sensor.Utils.fillYUVBuffer;
 import static ai.flow.common.BufferUtils.byteToFloat;
 import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
+import static ai.flow.common.transformations.Camera.CAMERA_TYPE_WIDE;
 
 public class CameraManager extends SensorInterface {
 
@@ -174,6 +144,8 @@ public class CameraManager extends SensorInterface {
         if (params.exists(intName)) {
             float[] cameraMatrix = byteToFloat(params.getBytes(intName));
             updateProperty("intrinsics", cameraMatrix);
+            ModelExecutorF3.updateCameraMatrix(cameraMatrix, cameraType == CAMERA_TYPE_WIDE);
+            if (utils.WideCameraOnly) ModelExecutorF3.updateCameraMatrix(cameraMatrix, false);
         }
     }
 
@@ -205,12 +177,6 @@ public class CameraManager extends SensorInterface {
                         @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
-
-                            if (ModelExecutorF3.NeedImage == false) {
-                                image.close();
-                                return;
-                            }
-
                             fillYUVBuffer(image, yuvBuffer);
 
                             ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
@@ -230,18 +196,19 @@ public class CameraManager extends SensorInterface {
 
                             msgFrameData.frameData.setFrameId(frameID);
 
-                            ModelExecutorF3.SetLatestCameraData(msgFrameData.frameData.asReader(),
-                                                                msgFrameBuffer.frameBuffer.asReader(),
-                                                                image.getImageInfo().getTimestamp());
+                            ModelExecutorF3.instance.ExecuteModel(msgFrameData.frameData.asReader(),
+                                                                  msgFrameBuffer.frameBuffer.asReader(),
+                                                                  image.getImageInfo().getTimestamp());
+
+                            // all done, you can give us another image
+                            frameID += 1;
+                            image.close();
 
                             // do this later, don't hold up the image analyzer
                             threadpool.submit(() -> {
                                 ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
                                 ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
                             });
-
-                            image.close();
-                            frameID += 1;
                         }
                     };
 
@@ -306,14 +273,14 @@ public class CameraManager extends SensorInterface {
                 new MeteringRectangle((int)Math.floor(W * 0.05f), (int)Math.floor(H * 0.25f),
                                       (int)Math.floor(W * 0.9f),  (int)Math.floor(H * 0.70f), 500)
         });
-        float[] constrastCurve = new float[] {
-                0f,   2f/8f,
+        /*float[] lowerContrastCurve = new float[] {
+                0f,   1f/8f,
                 1/8f, 4f/8f,
                 1f,   7f/8f,
         };
-        TonemapCurve curve = new TonemapCurve(constrastCurve, constrastCurve, constrastCurve);
+        TonemapCurve curve = new TonemapCurve(lowerContrastCurve, lowerContrastCurve, lowerContrastCurve);
         ext.setCaptureRequestOption(CaptureRequest.TONEMAP_MODE, CameraMetadata.TONEMAP_MODE_CONTRAST_CURVE);
-        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);
+        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);*/
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
