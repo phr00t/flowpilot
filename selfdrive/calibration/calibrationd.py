@@ -28,7 +28,7 @@ PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
-model_height = 1.22
+model_height = 1.28 # kona is about this height
 
 class Calibrator:
 
