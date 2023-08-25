@@ -34,7 +34,7 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
 WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
-HEIGHT_INIT = np.array([1.28]) # init to 1.28 for kona ev
+HEIGHT_INIT = np.array([1.22])
 
 # These values are needed to accommodate the model frame in the narrow cam of the C3
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
@@ -77,7 +77,7 @@ class Calibrator:
           rpy_init = np.array(msg.liveCalibration.rpyCalib)
           valid_blocks = msg.liveCalibration.validBlocks
           wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
-          height = np.array([1.28]) #np.array(msg.liveCalibration.height)
+          height = np.array(msg.liveCalibration.height)
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
 
@@ -237,7 +237,7 @@ class Calibrator:
     liveCalibration.rpyCalib = smooth_rpy.tolist()
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
     liveCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
-    #liveCalibration.height = self.height.tolist()
+    liveCalibration.height = self.height.tolist()
 
     if self.not_car:
       liveCalibration.validBlocks = INPUTS_NEEDED
