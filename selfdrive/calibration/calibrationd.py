@@ -130,6 +130,8 @@ class Calibrator:
         certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                             (self.valid_blocks < INPUTS_NEEDED))
 
+        print("handle cam odom...")
+
         if not straight_and_fast:
             print("Not straight/fast! rot[2](yaw):" + "{:.2f}".format(rot[2]) + ", trans[0](speed):" + "{:.2f}".format(trans[0]))
             return None
@@ -158,6 +160,9 @@ class Calibrator:
             self.block_idx = self.block_idx % INPUTS_WANTED
 
         self.update_status()
+
+        print("made new rpy")
+
         return new_rpy
 
     @staticmethod
@@ -220,6 +225,7 @@ def calibrationd_thread(sm=None, pm=None):
 
         # 4Hz driven by cameraOdometry
         if sm.frame % 5 == 0:
+            print("calibration thread running")
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
                 calibrator.reset()
                 calibrator.update_status()
