@@ -298,9 +298,6 @@ public class CameraManager extends SensorInterface {
                                     ph.publishBuffer("roadCameraBuffer", msgFrameRoadBuffer.serialize(true));
                                 }
                             });
-
-                            image.close();
-                            frameID += 1;
                         }
                     };
 
