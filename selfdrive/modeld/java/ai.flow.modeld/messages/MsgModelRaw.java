@@ -38,6 +38,7 @@ public class MsgModelRaw extends MessageBase {
         modelRaw.setValid(true);
         modelRaw.setModelExecutionTime(modelExecutionTime);
         modelRaw.setFrameId(frameId);
+        modelRaw.setFrameIdExtra(frameId);
         modelRaw.setTimestampEof(timestamp);
         modelRaw.setFrameDropPerc(frameDropPerc);
         modelRaw.setFrameAge(frameAge);
