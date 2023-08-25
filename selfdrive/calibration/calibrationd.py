@@ -63,8 +63,8 @@ class Calibrator:
     self.not_car = False
 
     # Read saved calibration
-    params = Params()
-    calibration_params = params.get("CalibrationParams")
+    self.params = Params()
+    calibration_params = self.params.get("CalibrationParams")
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     height = HEIGHT_INIT
@@ -284,6 +284,10 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
 
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:
+      if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
+        calibrator.reset()
+        calibrator.update_status()
+        calibrator.params.put_bool("ResetExtrinsicCalibration", False)
       calibrator.send_data(pm)
 
 
