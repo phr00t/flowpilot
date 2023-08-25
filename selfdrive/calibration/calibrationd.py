@@ -70,19 +70,14 @@ class Calibrator:
     valid_blocks = 0
     self.cal_status = log.LiveCalibrationData.Status.uncalibrated
 
-    load_cache()
+    live_calib_bytes = self.params.get("CalibrationParams")
+    if live_calib_bytes is not None:
+      msg = log.Event.from_bytes(live_calib_bytes)
+      self.rpy_init = np.array(msg.liveCalibration.rpyCalib)
+      self.valid_blocks = msg.liveCalibration.validBlocks
 
     self.reset(rpy_init, valid_blocks, wide_from_device_euler, height)
     self.update_status()
-
-  def load_cache(self):
-    live_calib_bytes = self.params.get("CalibrationParams")
-    if live_calib_bytes is None:
-      return False
-    msg = log.Event.from_bytes(live_calib_bytes)
-    self.rpy_init = np.array(msg.liveCalibration.rpyCalib)
-    self.valid_blocks = msg.liveCalibration.validBlocks
-    return True
 
   def reset(self, rpy_init: np.ndarray = RPY_INIT,
                   valid_blocks: int = 0,
