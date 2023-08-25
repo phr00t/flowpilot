@@ -248,6 +248,7 @@ public class CameraManager extends SensorInterface {
                         @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
+                            long startTimestamp = System.currentTimeMillis();
                             fillYUVBuffer(image, yuvBuffer);
 
                             ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
@@ -274,14 +275,14 @@ public class CameraManager extends SensorInterface {
                                         msgFrameBuffer.frameBuffer.asReader(),
                                         msgFrameRoadData.frameData.asReader(),
                                         msgFrameRoadBuffer.frameBuffer.asReader(),
-                                        image.getImageInfo().getTimestamp());
+                                        image.getImageInfo().getTimestamp(), startTimestamp);
                             } else {
                                 ModelExecutorF3.instance.ExecuteModel(
                                         msgFrameData.frameData.asReader(),
                                         msgFrameBuffer.frameBuffer.asReader(),
                                         msgFrameData.frameData.asReader(),
                                         msgFrameBuffer.frameBuffer.asReader(),
-                                        image.getImageInfo().getTimestamp());
+                                        image.getImageInfo().getTimestamp(), startTimestamp);
                             }
 
                             frameID += 1;

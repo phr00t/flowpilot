@@ -125,7 +125,7 @@ public class ModelExecutorF3 extends ModelExecutor {
 
     public void ExecuteModel(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf,
                              Definitions.FrameData.Reader roadData, Definitions.FrameBuffer.Reader roadBuf,
-                             long timestamp) {
+                             long timestamp, long processStartTimestamp) {
         frameWideData = wideData;
         frameData = roadData;
         msgFrameWideBuffer = wideBuf;
@@ -189,7 +189,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
 
         // compute runtime stats every 10 runs
-        timePerIt += end - start;
+        timePerIt += end - processStartTimestamp;
         iterationNum++;
         if (iterationNum > 10) {
             AvgIterationTime = timePerIt / iterationNum;
