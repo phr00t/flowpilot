@@ -131,15 +131,16 @@ class Calibrator:
                             (self.valid_blocks < INPUTS_NEEDED))
 
         if not straight_and_fast:
-            #print("Not straight/fast! rot[2](yaw):" + "{:.2f}".format(rot[2]) + ", trans[0](speed):" + "{:.2f}".format(trans[0]))
+            print("Not straight/fast! rot[2](yaw):" + "{:.2f}".format(rot[2]) + ", trans[0](speed):" + "{:.2f}".format(trans[0]))
             return None
 
         if not certain_if_calib:
-            #print("Not certain_if_calib!")
+            print("Not certain_if_calib!")
             return None
 
         # if we are already calibrated, dont change it
-        if self.cal_status == log.LiveCalibrationData.Status.calibrated:
+        if self.valid_blocks >= INPUTS_NEEDED and self.rpy_valid(self.rpy):
+            print("already calibrated");
             return None
 
         observed_rpy = np.array([0,
