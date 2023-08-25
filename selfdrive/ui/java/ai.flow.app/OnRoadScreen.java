@@ -30,6 +30,8 @@ import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
+
+import ai.flow.sensor.camera.CameraManager;
 import messaging.ZMQPubHandler;
 import messaging.ZMQSubHandler;
 import org.apache.commons.lang3.ArrayUtils;
@@ -239,6 +241,7 @@ public class OnRoadScreen extends ScreenAdapter {
     float updateTempTimer;
     NumberFormat formatter = new DecimalFormat("0.0");
     String tempStr = "--c", IPstring = "No Internet";
+    public static int CamSelected = 0;
 
     public void UpdateIP() {
         try {
@@ -786,7 +789,8 @@ public class OnRoadScreen extends ScreenAdapter {
 
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
-            appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,20,200);
+            appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,5,200);
+            appContext.font.draw(batch, "Camera #" + CamSelected, Gdx.graphics.getWidth() - 500f, 225f);
             appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 500f, 150f);
             appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 500f, 75f);
             batch.end();

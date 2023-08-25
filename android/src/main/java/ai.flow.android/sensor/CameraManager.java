@@ -1,5 +1,6 @@
 package ai.flow.android.sensor;
 
+import ai.flow.app.OnRoadScreen;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
 import ai.flow.common.utils;
@@ -83,13 +84,15 @@ public class CameraManager extends SensorInterface {
     ByteBuffer yuvBuffer, yuvRoadBuffer;
     String videoFileName, vidFilePath, videoLockPath;
     File lockFile;
+    public float[] CamIntrinsics;
+    public static int CamPicked = 0;
 
     public CameraSelector getCameraSelector(boolean  wide){
         if (wide) {
             List<CameraInfo> availableCamerasInfo = cameraProvider.getAvailableCameraInfos();
             android.hardware.camera2.CameraManager cameraService = (android.hardware.camera2.CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 
-            float minFocalLen = Float.MAX_VALUE;
+            float minFocalLen = Float.MAX_VALUE, camIntrinsics = 0f;
             String wideAngleCameraId = null;
 
             try {
@@ -101,6 +104,7 @@ public class CameraManager extends SensorInterface {
                     if ((focal_length < minFocalLen) && backCamera) {
                         minFocalLen = focal_length;
                         wideAngleCameraId = id;
+                        camIntrinsics = characteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)[0];
                     }
                 }
             } catch (CameraAccessException e) {
@@ -110,7 +114,14 @@ public class CameraManager extends SensorInterface {
                 wideAngleCameraId = params.getString("WideCameraID");
                 System.out.println("Using camera ID provided by 'WideCameraID' param, ID: " + wideAngleCameraId);
             }
-            return availableCamerasInfo.get(Integer.parseInt(wideAngleCameraId)).getCameraSelector();
+            CamIntrinsics = new float[9];
+            CamIntrinsics[0] = camIntrinsics;
+            CamIntrinsics[4] = camIntrinsics;
+            CamIntrinsics[2] = Math.round(W / 2f);
+            CamIntrinsics[5] = Math.round(H / 2f);
+            CamIntrinsics[8] = 1f;
+            OnRoadScreen.CamSelected = Integer.parseInt(wideAngleCameraId);
+            return availableCamerasInfo.get(OnRoadScreen.CamSelected).getCameraSelector();
         }
         else
             return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
@@ -174,16 +185,12 @@ public class CameraManager extends SensorInterface {
             ph.createPublishers(Arrays.asList("wideRoadCameraState", "roadCameraState", "roadCameraBuffer", "wideRoadCameraBuffer"));
         else
             ph.createPublishers(Arrays.asList(frameDataTopic, frameBufferTopic));
-
-        loadIntrinsics();
     }
 
     public void loadIntrinsics(){
         if (params.exists(intName)) {
             float[] cameraMatrix = byteToFloat(params.getBytes(intName));
             updateProperty("intrinsics", cameraMatrix);
-            ModelExecutorF3.updateCameraMatrix(cameraMatrix, cameraType == CAMERA_TYPE_WIDE);
-            if (utils.WideCameraOnly) ModelExecutorF3.updateCameraMatrix(cameraMatrix, false);
         }
     }
 
@@ -193,6 +200,8 @@ public class CameraManager extends SensorInterface {
         K.set(4,intrinsics[4]);
         K.set(5, intrinsics[5]);
         K.set(8, 1f);
+        ModelExecutorF3.updateCameraMatrix(intrinsics, cameraType == CAMERA_TYPE_WIDE);
+        if (utils.WideCameraOnly) ModelExecutorF3.updateCameraMatrix(intrinsics, false);
     }
 
     public void setLifeCycleFragment(Fragment lifeCycleFragment){
@@ -383,6 +392,9 @@ public class CameraManager extends SensorInterface {
         // f3 uses wide camera.
         CameraSelector cameraSelector = getCameraSelector(cameraType == Camera.CAMERA_TYPE_WIDE);
 
+        // ok, we should have intrinsics with the selected camera
+        loadIntrinsics();
+
         androidx.camera.core.Camera camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector,
                 imageAnalysis);
 
@@ -392,8 +404,12 @@ public class CameraManager extends SensorInterface {
     @Override
     public void updateProperty(String property, float[] value) {
         if (property.equals("intrinsics")){
-            assert value.length == 9 : "invalid intrinsic matrix buffer length";
-            setIntrinsics(value);
+            if (utils.UseAndroidIntrinsics) {
+                setIntrinsics(CamIntrinsics);
+            } else {
+                assert value.length == 9 : "invalid intrinsic matrix buffer length";
+                setIntrinsics(value);
+            }
         }
     }
 
