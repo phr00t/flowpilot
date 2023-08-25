@@ -58,31 +58,31 @@ def moving_avg_with_linear_decay(prev_mean: np.ndarray, new_val: np.ndarray, idx
 
 class Calibrator:
   def __init__(self, param_put: bool = False):
-    self.param_put = param_put
+    self.param_put = True
 
     self.not_car = False
 
     # Read saved calibration
     self.params = Params()
-    calibration_params = self.params.get("CalibrationParams")
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     height = HEIGHT_INIT
     valid_blocks = 0
     self.cal_status = log.LiveCalibrationData.Status.uncalibrated
 
-    if param_put and calibration_params:
-      try:
-        with log.Event.from_bytes(calibration_params) as msg:
-          rpy_init = np.array(msg.liveCalibration.rpyCalib)
-          valid_blocks = msg.liveCalibration.validBlocks
-          wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
-          height = np.array([1.28]) #np.array(msg.liveCalibration.height)
-      except Exception:
-        cloudlog.exception("Error reading cached CalibrationParams")
+    load_cache()
 
     self.reset(rpy_init, valid_blocks, wide_from_device_euler, height)
     self.update_status()
+
+  def load_cache(self):
+    live_calib_bytes = self.params.get("CalibrationParams")
+    if live_calib_bytes is None:
+      return False
+    msg = log.Event.from_bytes(live_calib_bytes)
+    self.rpy_init = np.array(msg.liveCalibration.rpyCalib)
+    self.valid_blocks = msg.liveCalibration.validBlocks
+    return True
 
   def reset(self, rpy_init: np.ndarray = RPY_INIT,
                   valid_blocks: int = 0,
@@ -161,8 +161,8 @@ class Calibrator:
       self.cal_status = log.LiveCalibrationData.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
-    if self.param_put and write_this_cycle:
-      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
+    if write_this_cycle:
+      self.params.put("CalibrationParams", self.get_msg().to_bytes())
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego
