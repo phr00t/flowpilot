@@ -138,6 +138,10 @@ class Calibrator:
             #print("Not certain_if_calib!")
             return None
 
+        # if we are already calibrated, dont change it
+        if self.cal_status == log.LiveCalibrationData.Status.calibrated:
+            return None
+
         observed_rpy = np.array([0,
                                  -np.arctan2(trans[2], trans[0]),
                                  np.arctan2(trans[1], trans[0])])
