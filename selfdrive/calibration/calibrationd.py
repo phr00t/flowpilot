@@ -130,17 +130,19 @@ class Calibrator:
         certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                             (self.valid_blocks < INPUTS_NEEDED))
 
+        print("handle cam odom...")
+
         if not straight_and_fast:
-            #print("Not straight/fast! rot[2](yaw):" + "{:.2f}".format(rot[2]) + ", trans[0](speed):" + "{:.2f}".format(trans[0]))
+            print("Not straight/fast! rot[2](yaw):" + "{:.2f}".format(rot[2]) + ", trans[0](speed):" + "{:.2f}".format(trans[0]))
             return None
 
         if not certain_if_calib:
-            #print("Not certain_if_calib!")
+            print("Not certain_if_calib!")
             return None
 
         # if we are already calibrated, dont change it
-        if self.cal_status == log.LiveCalibrationData.Status.calibrated:
-            #print("already calibrated");
+        if self.valid_blocks >= INPUTS_NEEDED and self.rpy_valid(self.rpy):
+            print("already calibrated");
             return None
 
         observed_rpy = np.array([0,
@@ -158,6 +160,8 @@ class Calibrator:
             self.block_idx = self.block_idx % INPUTS_WANTED
 
         self.update_status()
+
+        print("made new rpy")
 
         return new_rpy
 
@@ -221,6 +225,7 @@ def calibrationd_thread(sm=None, pm=None):
 
         # 4Hz driven by cameraOdometry
         if sm.frame % 5 == 0:
+            print("calibration thread running")
             if calibrator.params.get_bool("ResetExtrinsicCalibration") is True:
                 calibrator.reset()
                 calibrator.update_status()
