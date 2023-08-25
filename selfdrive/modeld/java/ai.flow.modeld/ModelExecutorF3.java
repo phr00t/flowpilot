@@ -98,7 +98,13 @@ public class ModelExecutorF3 extends ModelExecutor {
         return intrinsics[0]!=0 & intrinsics[2]!=0 & intrinsics[4]!=0 & intrinsics[5]!=0 & intrinsics[8]!=0;
     }
 
+    public static INDArray wideToRoad;
+
     public static void updateCameraMatrix(float[] intrinsics, boolean wide){
+        if (utils.SimulateRoadCamera && !wide) {
+            road_intrinsics = wideToRoad.mmul(wide_intrinsics); //.mmul(wideToRoad);
+            return;
+        }
         if (!isIntrinsicsValid(intrinsics))
             return;
         for (int i=0; i<3; i++){
@@ -117,9 +123,13 @@ public class ModelExecutorF3 extends ModelExecutor {
     ImagePrepare imagePrepare;
     ImagePrepare imageWidePrepare;
 
-    public void ExecuteModel(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf, long timestamp) {
-        frameWideData = frameData = wideData;
-        msgFrameWideBuffer = msgFrameBuffer = wideBuf;
+    public void ExecuteModel(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf,
+                             Definitions.FrameData.Reader roadData, Definitions.FrameBuffer.Reader roadBuf,
+                             long timestamp) {
+        frameWideData = wideData;
+        frameData = roadData;
+        msgFrameWideBuffer = wideBuf;
+        msgFrameBuffer = roadBuf;
 
         if (stopped || initialized == false) return;
 
@@ -149,7 +159,7 @@ public class ModelExecutorF3 extends ModelExecutor {
             for (int i = 0; i < 3; i++) {
                 augmentRot.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
+            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
             wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
         }
 
@@ -216,7 +226,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
+        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
         wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
 
         // TODO:Clean this shit.
