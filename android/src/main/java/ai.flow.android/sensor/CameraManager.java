@@ -80,9 +80,7 @@ public class CameraManager extends SensorInterface {
     int cameraType;
     CameraControl cameraControl;
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd--HH-mm-ss.SSS");
-    ByteBuffer yuvBuffer, yuvRoadBuffer;
-    String videoFileName, vidFilePath, videoLockPath;
-    File lockFile;
+    ByteBuffer yuvBuffer;
 
     public CameraSelector getCameraSelector(boolean  wide){
         if (wide) {
@@ -97,12 +95,8 @@ public class CameraManager extends SensorInterface {
     public CameraManager(Context context, int cameraType){
         msgFrameData = new MsgFrameData(cameraType);
         K = msgFrameData.intrinsics;
-        // hardcoded LG G8 intrinsics
-        K.set(0, 1394.7081f); // also check Camera.wide_intrinsics to match
-        K.set(4, 1394.7616f);
-        K.set(2, 952.62915f);
-        K.set(5, 517.53534f);
-        K.set(8, 1f);
+        for (int i=0; i<9; i++)
+            K.set(i, Camera.WideIntrinsics[i]);
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
