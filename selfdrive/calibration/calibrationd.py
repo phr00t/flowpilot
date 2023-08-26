@@ -71,11 +71,14 @@ class Calibrator:
 
     if calibration_params:
       try:
-        with log.Event.from_bytes(calibration_params) as msg:
-          rpy_init = np.array(msg.liveCalibration.rpyCalib)
-          valid_blocks = msg.liveCalibration.validBlocks
-          wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
-          print("calibration loaded OK")
+          msg = log.Event.from_bytes(calibration_params)
+          if msg is not None:
+            rpy_init = np.array(msg.liveCalibration.rpyCalib)
+            valid_blocks = msg.liveCalibration.validBlocks
+            wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
+            print("calibration loaded OK")
+          else:
+            print("msg was empty")
       except Exception as e:
         print("Error reading cached CalibrationParams:")
         print(e)
