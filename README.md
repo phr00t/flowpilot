@@ -1,8 +1,8 @@
 # This fork will likely not work with your car or device!
 
-I am only making changes I can test for my 2019 Hyundai Kona EV *WITHOUT* Smart Cruise Control. I also focus on MPH and not everything may follow metric settings. I do this to optimize results for my needs. If this is what you've got, this fork might work very well for you. I'm also working on keeping the model updated (currently on Moonrise). Navigation features don't work and I don't plan on adding it anytime soon (too experimental for practical use).
+I am only making changes I can test for my 2019 Hyundai Kona EV *WITHOUT* Smart Cruise Control on my LG G8. I also focus on MPH and not everything may follow metric settings. I do this to optimize results for my needs. If this is what you've got, this fork might work very well for you. I'm also working on keeping the model updated (currently on Moonrise). Navigation features don't work and I don't plan on adding it anytime soon (too experimental for practical use).
 
-To make it easier to keep updated with models, I only maintain the SNPE Model Runner (Android Snapdragon devices). Desktop and other phones work work.
+To make it easier to keep updated with models, I only maintain the SNPE Model Runner (Android Snapdragon devices). Desktop and other phones won't work.
 
 <img src="https://i.ibb.co/LZtKvfB/Screenshot-from-2022-09-15-22-15-14.png" alt="table" width="1270" />
 
