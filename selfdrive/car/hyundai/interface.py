@@ -106,7 +106,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743.}.get(candidate, 1275.) + STD_CARGO_KG
       ret.wheelbase = 2.6
-      ret.steerRatio = 16.1 #13.42
+      ret.steerRatio = 13.42
       tire_stiffness_factor = 0.385
       #ret.lateralTuning.torque.kf = 0.9
       #ret.lateralTuning.torque.kp = 0.9
