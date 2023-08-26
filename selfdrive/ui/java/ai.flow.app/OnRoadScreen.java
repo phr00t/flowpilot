@@ -302,6 +302,7 @@ public class OnRoadScreen extends ScreenAdapter {
         maxLabel.setColor(0.8f, 0.8f, 0.8f, 1f);
         maxCruiseSpeedLabel = new Label("N/A", appContext.skin, "default-font-bold-med", "white");
         maxLabel.setAlignment(Align.top);
+        maxCruiseSpeedLabel.setFontScale(1.3f, 1.3f);
         maxCruiseSpeedLabel.setAlignment(Align.bottom);
         table.add(maxLabel).padTop(2);
         table.row();
@@ -789,10 +790,10 @@ public class OnRoadScreen extends ScreenAdapter {
 
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
-            appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,5,200);
-            appContext.font.draw(batch, "Camera #" + CamSelected, Gdx.graphics.getWidth() - 500f, 225f);
-            appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 500f, 150f);
-            appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 500f, 75f);
+            appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,3,200);
+            appContext.font.draw(batch, "Camera #" + CamSelected, Gdx.graphics.getWidth() - 450f, 225f);
+            appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 450f, 150f);
+            appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 450f, 75f);
             batch.end();
         }
         else{
