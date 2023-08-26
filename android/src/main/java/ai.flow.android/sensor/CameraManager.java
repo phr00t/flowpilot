@@ -90,37 +90,14 @@ public class CameraManager extends SensorInterface {
     public CameraSelector getCameraSelector(boolean  wide){
         if (wide) {
             List<CameraInfo> availableCamerasInfo = cameraProvider.getAvailableCameraInfos();
-            android.hardware.camera2.CameraManager cameraService = (android.hardware.camera2.CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-
-            float minFocalLen = Float.MAX_VALUE, camIntrinsics = 0f;
-            String wideAngleCameraId = null;
-
-            try {
-                String[] cameraIds = cameraService.getCameraIdList();
-                for (String id : cameraIds) {
-                    CameraCharacteristics characteristics = cameraService.getCameraCharacteristics(id);
-                    float focal_length = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
-                    boolean backCamera = CameraCharacteristics.LENS_FACING_BACK == characteristics.get(CameraCharacteristics.LENS_FACING);
-                    if ((focal_length < minFocalLen) && backCamera) {
-                        minFocalLen = focal_length;
-                        wideAngleCameraId = id;
-                        camIntrinsics = characteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)[0] * 0.63978663f;
-                    }
-                }
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-            if (params.exists("WideCameraID")){
-                wideAngleCameraId = params.getString("WideCameraID");
-                System.out.println("Using camera ID provided by 'WideCameraID' param, ID: " + wideAngleCameraId);
-            }
             CamIntrinsics = new float[9];
-            CamIntrinsics[0] = camIntrinsics;
-            CamIntrinsics[4] = camIntrinsics;
-            CamIntrinsics[2] = Math.round(W / 2f);
-            CamIntrinsics[5] = Math.round(H / 2f);
+            // LG G8 wide camera intrinsics
+            CamIntrinsics[0] = 1394.7081f;
+            CamIntrinsics[4] = 1394.7616f;
+            CamIntrinsics[2] = 952.62915f;
+            CamIntrinsics[5] = 517.53534f;
             CamIntrinsics[8] = 1f;
-            OnRoadScreen.CamSelected = Integer.parseInt(wideAngleCameraId);
+            OnRoadScreen.CamSelected = 2;
             return availableCamerasInfo.get(OnRoadScreen.CamSelected).getCameraSelector();
         }
         else
