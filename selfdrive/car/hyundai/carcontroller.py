@@ -141,7 +141,7 @@ class CarController:
     l0d = radarState.leadOne.dRel
     l0v = radarState.leadOne.vRel
     lead_vdiff_mph = l0v * 2.23694
-    raw_vdiff = lead_vdiff_mph
+    raw_vdiff = radarState.leadOne.vLead * 2.23694
 
     # start with our picked max speed
     desired_speed = max_speed_in_mph

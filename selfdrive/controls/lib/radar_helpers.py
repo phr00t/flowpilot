@@ -143,9 +143,9 @@ class Cluster():
     else:
       self.Dists.append(lead_msg.x[0])
       self.vLeads.append(lead_msg.v[0])
-      if len(self.Dists) > 4:
+      if len(self.Dists) > 5:
         self.Dists.pop(0)
-      if len(self.vLeads) > 4:
+      if len(self.vLeads) > 5:
         self.vLeads.pop(0)
       finald = statistics.fmean(self.Dists)
       finalv = statistics.fmean(self.vLeads)
