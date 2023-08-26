@@ -104,7 +104,7 @@ public class CameraManager extends SensorInterface {
                     if ((focal_length < minFocalLen) && backCamera) {
                         minFocalLen = focal_length;
                         wideAngleCameraId = id;
-                        camIntrinsics = characteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)[0] * 0.639771f;
+                        camIntrinsics = characteristics.get(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)[0] * 0.63978663f;
                     }
                 }
             } catch (CameraAccessException e) {
