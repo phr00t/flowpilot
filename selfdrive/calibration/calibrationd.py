@@ -76,8 +76,9 @@ class Calibrator:
           valid_blocks = msg.liveCalibration.validBlocks
           wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
           height = np.array([1.28]) #np.array(msg.liveCalibration.height)
+          print("calibration loaded OK")
       except Exception:
-        cloudlog.exception("Error reading cached CalibrationParams")
+        print("Error reading cached CalibrationParams")
 
     self.reset(rpy_init, valid_blocks, wide_from_device_euler, height)
     self.update_status()
@@ -161,6 +162,7 @@ class Calibrator:
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if write_this_cycle:
       put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
+      print("calibration saved")
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego
@@ -286,6 +288,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
         calibrator.reset()
         calibrator.update_status()
         calibrator.params.put_bool("ResetExtrinsicCalibration", False)
+        print("calibration reset due to UI")
       calibrator.send_data(pm)
 
 
