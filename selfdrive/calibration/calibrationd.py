@@ -75,10 +75,10 @@ class Calibrator:
           rpy_init = np.array(msg.liveCalibration.rpyCalib)
           valid_blocks = msg.liveCalibration.validBlocks
           wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
-          height = np.array([1.28]) #np.array(msg.liveCalibration.height)
           print("calibration loaded OK")
-      except Exception:
-        print("Error reading cached CalibrationParams")
+      except Exception as e:
+        print("Error reading cached CalibrationParams:")
+        print(e)
 
     self.reset(rpy_init, valid_blocks, wide_from_device_euler, height)
     self.update_status()
