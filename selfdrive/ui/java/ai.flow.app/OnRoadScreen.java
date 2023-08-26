@@ -68,6 +68,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class OnRoadScreen extends ScreenAdapter {
     // avoid GC triggers.
+    static final String VERSION = "0.9";
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -791,7 +792,7 @@ public class OnRoadScreen extends ScreenAdapter {
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
             appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,3,200);
-            appContext.font.draw(batch, "Camera #" + CamSelected, Gdx.graphics.getWidth() - 450f, 225f);
+            appContext.font.draw(batch, "v" + VERSION + ", Cam#" + CamSelected, Gdx.graphics.getWidth() - 450f, 225f);
             appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 450f, 150f);
             appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 450f, 75f);
             batch.end();

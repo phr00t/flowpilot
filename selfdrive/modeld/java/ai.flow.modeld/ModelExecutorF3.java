@@ -102,10 +102,6 @@ public class ModelExecutorF3 extends ModelExecutor {
     public static INDArray wideToRoad;
 
     public static void updateCameraMatrix(float[] intrinsics, boolean wide){
-        if (utils.SimulateRoadCamera && !wide) {
-            road_intrinsics = wideToRoad.mmul(wide_intrinsics); //.mmul(wideToRoad);
-            return;
-        }
         if (!isIntrinsicsValid(intrinsics))
             return;
         for (int i=0; i<3; i++){
@@ -125,12 +121,9 @@ public class ModelExecutorF3 extends ModelExecutor {
     ImagePrepare imageWidePrepare;
 
     public void ExecuteModel(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf,
-                             Definitions.FrameData.Reader roadData, Definitions.FrameBuffer.Reader roadBuf,
                              long timestamp, long processStartTimestamp) {
-        frameWideData = wideData;
-        frameData = roadData;
-        msgFrameWideBuffer = wideBuf;
-        msgFrameBuffer = roadBuf;
+        frameWideData = frameData = wideData;
+        msgFrameWideBuffer = msgFrameBuffer = wideBuf;
 
         if (stopped || initialized == false) return;
 
@@ -160,7 +153,7 @@ public class ModelExecutorF3 extends ModelExecutor {
             for (int i = 0; i < 3; i++) {
                 augmentRot.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
+            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
             wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
         }
 
@@ -186,7 +179,7 @@ public class ModelExecutorF3 extends ModelExecutor {
 
         // publish outputs
         end = System.currentTimeMillis();
-        msgModelRaw.fill(netOutputs, timestamp, lastFrameID, -1, 0f, end - start);
+        msgModelRaw.fill(netOutputs, timestamp, lastFrameID, 0, 0f, end - start);
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
 
         // compute runtime stats every 10 runs
@@ -229,7 +222,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly && !utils.SimulateRoadCamera, false);
+        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
         wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
 
         // TODO:Clean this shit.
