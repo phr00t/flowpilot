@@ -77,6 +77,8 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.1
 
+    self.clu_Vanz = ret.vEgo * CV.MS_TO_MPH
+
     self.cluster_speed_counter += 1
     if self.cluster_speed_counter > CLUSTER_SAMPLE_RATE:
       self.cluster_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
