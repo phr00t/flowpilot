@@ -133,7 +133,7 @@ class Cluster():
     }
 
   def get_RadarState_from_vision(self, lead_msg, v_ego):
-    # this data is very noisy, let's smooth it out
+    # this data is a little noisy, let's smooth it out
     finalv = 0.0
     finald = 0.0
 
@@ -143,9 +143,9 @@ class Cluster():
     else:
       self.Dists.append(lead_msg.x[0])
       self.vLeads.append(lead_msg.v[0])
-      if len(self.Dists) > 5:
+      if len(self.Dists) > 4:
         self.Dists.pop(0)
-      if len(self.vLeads) > 5:
+      if len(self.vLeads) > 4:
         self.vLeads.pop(0)
       finald = statistics.fmean(self.Dists)
       finalv = statistics.fmean(self.vLeads)

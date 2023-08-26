@@ -92,21 +92,6 @@ class CarController:
 
     can_sends = []
 
-    # *** common hyundai stuff ***
-
-    # REMOVED, looks like SCC stuff
-    # tester present - w/ no response (keeps relevant ECU disabled)
-    #if self.frame % 100 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and self.CP.openpilotLongitudinalControl:
-      # for longitudinal control, either radar or ADAS driving ECU
-      #addr, bus = 0x7d0, 0
-      #if self.CP.flags & HyundaiFlags.CANFD_HDA2.value:
-        #addr, bus = 0x730, self.CAN.ECAN
-      #can_sends.append([addr, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
-
-      # for blinkers
-      #if self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
-        #can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
-
     # >90 degree steering fault prevention
     # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if CC.latActive and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
@@ -137,11 +122,6 @@ class CarController:
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
 
-    # perhaps instead of 'stoplinep', we should take info from the long planner which considers all sorts of things
-    # may need to fudge the openpilotLongitudinalControl so it parses all the accel stuff out for use here instead of
-    # CAN messages for SCC ("stopping" might be useful above, or an negative accel value?)
-    #stoplinesp = sm['longitudinalPlan'].stoplineProb
-
     max_speed_in_mph = vcruise * 0.621371
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
 
@@ -159,25 +139,131 @@ class CarController:
     radarState = sm['radarState']
     l0prob = radarState.leadOne.modelProb
     l0d = radarState.leadOne.dRel
+    l0v = radarState.leadOne.vRel
+    lead_vdiff_mph = l0v * 2.23694
+    raw_vdiff = lead_vdiff_mph
 
-    # lead velocity seems to be scaled oddly, let's correct that scale now
-    #divisor = 0.273
-    #if CS.out.vEgo < 45:
-    #  divisor = 1.163 * math.sin(1.145 - 0.04968 * CS.out.vEgo) + 1.304
-    divisor = 1.2
+    # start with our picked max speed
+    desired_speed = max_speed_in_mph
 
-    #l0vd = radarState.leadOne.vRel
-    l0vo = radarState.leadOne.vLead
-    l0v = l0vo / divisor
-    #lead_vdiff_mph = l0vd * 2.23694
-    lead_mph_scaled = l0v * 2.23694
-    lead_mph_original = l0vo * 2.23694
-    lead_scaled_diff = lead_mph_scaled - clu11_speed
+    # if we are apporaching a turn, slow down in preparation
+    # also note how much of a speed difference we need for this turn
+    vcurv_adj = 0.35 + (0.65 / (0.425 * vcurv + 1))
+    desired_speed *= vcurv_adj
+    curve_speed_ratio = clu11_speed / desired_speed
 
-    sLogger.Send(
-      "vC>" + "{:.2f}".format(vcurv) + " l0vs>" + "{:.1f}".format(lead_mph_scaled) +
-      " l0v>" + "{:.1f}".format(lead_mph_original) + " l0d>" + "{:.1f}".format(l0d) +
-      " lsd>" + "{:.1f}".format(lead_scaled_diff) + " a>" + "{:.1f}".format(actuators.accel))
+    # is there a lead?
+    if l0prob > 0.5 and clu11_speed > 5:
+      # amplify large lead car speed differences a bit so we react faster
+      lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
+      # calculate an estimate of the lead car's speed for purposes of setting our speed
+      lead_speed = clu11_speed + lead_vdiff_mph
+      # calculate lead car time
+      speed_in_ms = clu11_speed * 0.44704
+      lead_time = l0d / speed_in_ms
+      # caculate a target lead car time, which is generally 3 seconds unless we are driving fast
+      # then we need to be a little closer to keep car within good visible range
+      # and prevent big gaps where cars always are cutting in
+      target_time = 3-((clu11_speed/72)**3)
+      # do not go under a certain lead car time for safety
+      if target_time < 2.1:
+        target_time = 2.1
+      # calculate the difference of our current lead time and desired lead time
+      lead_time_ideal_offset = lead_time - target_time
+      # don't sudden slow for certain situations, as this causes significant braking
+      # 1) if the lead car is far away in either time or distance
+      # 2) if the lead car is moving away from us
+      leadcar_going_faster = lead_vdiff_mph >= 1
+      dont_sudden_slow = lead_time_ideal_offset > target_time * 0.39 or l0d >= 80 or leadcar_going_faster
+      # depending on slowing down or speeding up, scale
+      if lead_time_ideal_offset < 0:
+        lead_time_ideal_offset = -(-lead_time_ideal_offset * (10.5/target_time)) ** 1.4 # exponentially slow down if getting closer and closer
+      else:
+        lead_time_ideal_offset = (lead_time_ideal_offset * 3) ** 1.25 # exponentially not consider lead car the further away
+      # calculate the final max speed we should be going based on lead car
+      max_lead_adj = lead_speed + lead_time_ideal_offset
+      # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
+      # don't go much slower than the lead car, and cancel any sudden slowing that may be happening
+      fasterleadcar_imposed_speed_limit = max(clu11_speed - 2, lead_speed - 3)
+      if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
+        max_lead_adj = fasterleadcar_imposed_speed_limit
+      elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.8:
+        max_lead_adj = clu11_speed * 0.8
+      # cap our desired_speed to this final max speed
+      if desired_speed > max_lead_adj:
+        desired_speed = max_lead_adj
+
+    # if the model thinks we need slowing down, don't speed up
+    if actuators.accel < -0.3 and desired_speed > clu11_speed:
+      desired_speed = clu11_speed
+
+    reenable_cruise_atspd = desired_speed * 1.02 + 2.0
+
+    # what is our difference between desired speed and target speed?
+    speed_diff = desired_speed - clu11_speed
+
+    # apply a spam overpress to amplify speed changes
+    desired_speed += speed_diff * 0.6
+
+    slow_speed_factor = 1.5
+    # this can trigger sooner than lead car slowing, because curve data is much less noisy
+    if curve_speed_ratio > 1.175:
+      desired_speed = 0
+
+    # does the model really want us to nearly stop?
+    if actuators.accel < -1.3:
+      desired_speed = 0
+
+    # if we are going much faster than we want, disable cruise to trigger more intense regen braking
+    if clu11_speed > desired_speed * slow_speed_factor:
+      desired_speed = 0
+
+    # sanity checks
+    if desired_speed > max_speed_in_mph:
+      desired_speed = max_speed_in_mph
+    if desired_speed < 0:
+      desired_speed = 0
+
+    # if we recently pressed a cruise button, don't spam more to prevent errors for a little bit
+    if CS.cruise_buttons != 0:
+      self.temp_disable_spamming = 6
+    elif driver_doing_speed and abs(clu11_speed - CS.out.cruiseState.speed) > 4 and CS.out.cruiseState.speed >= 20 and clu11_speed >= 20 and self.temp_disable_spamming <= 0:
+      # if our cruise is on, but our speed is very different than our cruise speed, hit SET to set it
+      can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
+      self.temp_disable_spamming = 6
+
+    # count down self spamming timer
+    if self.temp_disable_spamming > 0:
+      self.temp_disable_spamming -= 1
+
+    # print debug data
+    sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " A>" + "{:.1f}".format(actuators.accel) + " Vd>" + "{:.1f}".format(lead_vdiff_mph) + " RVd>" + "{:.1f}".format(raw_vdiff))
+
+    cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
+    cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
+    if cruise_difference_max > 4:
+      cruise_difference_max = 4 # do a max of presses at a time
+
+    # ok, apply cruise control button spamming to match desired speed, if we have cruise on and we are not taking a break
+    # also dont press buttons if the driver is hitting the gas or brake
+    if cruise_difference >= 0.666 and CS.out.cruiseState.speed >= 20 and self.temp_disable_spamming <= 0 and not driver_doing_speed:
+      if desired_speed < 20:
+        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL)) #disable cruise to come to a stop
+        self.temp_disable_spamming = 6 # we disabled cruise, don't spam more cancels
+        CS.time_cruise_cancelled = datetime.datetime.now() # timestamp when we disabled it, used for autoresuming
+      elif CS.out.cruiseState.speed > desired_speed:
+        for x in range(cruise_difference_max):
+          can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
+        self.temp_disable_spamming = 3 # take a break
+      elif CS.out.cruiseState.speed < desired_speed:
+        for x in range(cruise_difference_max):
+          can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.RES_ACCEL)) #speed cruise
+        self.temp_disable_spamming = 3 # take a break
+
+    # are we using the auto resume feature?
+    if CS.out.cruiseState.nonAdaptive and self.temp_disable_spamming <= 0 and clu11_speed <= reenable_cruise_atspd:
+      can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) # re-enable cruise at our current speed
+      self.temp_disable_spamming = 5 # take a break
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
