@@ -9,8 +9,9 @@ from system.swaglog import cloudlog
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 # model path is in the frame of the camera
+# positive numbers go right
 PATH_OFFSET = 0.00
-CAMERA_OFFSET = 0.04
+CAMERA_OFFSET = 0.08
 
 
 class LanePlanner:
@@ -33,8 +34,8 @@ class LanePlanner:
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
-    self.camera_offset = -CAMERA_OFFSET
-    self.path_offset = -PATH_OFFSET
+    self.camera_offset = CAMERA_OFFSET
+    self.path_offset = PATH_OFFSET
 
   def parse_model(self, md):
     lane_lines = md.laneLines
