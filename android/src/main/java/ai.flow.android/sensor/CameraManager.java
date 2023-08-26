@@ -85,7 +85,6 @@ public class CameraManager extends SensorInterface {
     String videoFileName, vidFilePath, videoLockPath;
     File lockFile;
     public float[] CamIntrinsics;
-    public static int CamPicked = 0;
 
     public CameraSelector getCameraSelector(boolean  wide){
         if (wide) {
@@ -271,9 +270,6 @@ public class CameraManager extends SensorInterface {
                                         image.getImageInfo().getTimestamp(), startTimestamp);
                             }
 
-                            frameID += 1;
-                            image.close();
-
                             // do this later, don't hold up the image analyzer
                             threadpool.submit(() -> {
                                 ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
@@ -284,6 +280,9 @@ public class CameraManager extends SensorInterface {
                                     ph.publishBuffer("roadCameraBuffer", msgFrameRoadBuffer.serialize(true));
                                 }
                             });
+
+                            frameID += 1;
+                            image.close();
                         }
                     };
 

@@ -73,6 +73,7 @@ public class ModelExecutorF3 extends ModelExecutor {
     public Definitions.LiveCalibrationData.Reader liveCalib;
 
     public long start, end;
+    public int lastFrameID = 0;
 
     int desire;
     public ModelRunner modelRunner;
@@ -185,7 +186,7 @@ public class ModelExecutorF3 extends ModelExecutor {
 
         // publish outputs
         end = System.currentTimeMillis();
-        msgModelRaw.fill(netOutputs, timestamp, frameData.getFrameId(), 0, 0f, end - start);
+        msgModelRaw.fill(netOutputs, timestamp, lastFrameID, -1, 0f, end - start);
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
 
         // compute runtime stats every 10 runs
@@ -196,6 +197,8 @@ public class ModelExecutorF3 extends ModelExecutor {
             iterationNum = 0;
             timePerIt = 0;
         }
+
+        lastFrameID = frameData.getFrameId();
     }
 
     public void init(){
