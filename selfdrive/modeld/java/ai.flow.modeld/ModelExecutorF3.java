@@ -65,8 +65,6 @@ public class ModelExecutorF3 extends ModelExecutor {
     public final ParamsInterface params = ParamsInterface.getInstance();
 
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
-    public static INDArray road_intrinsics = Camera.road_intrinsics.dup(); // telephoto
-    public static INDArray wide_intrinsics = Camera.wide_intrinsics.dup(); // wide
     public final ZMQPubHandler ph = new ZMQPubHandler();
     public final ZMQSubHandler sh = new ZMQSubHandler(true);
     public MsgModelRaw msgModelRaw = new MsgModelRaw();
@@ -97,21 +95,6 @@ public class ModelExecutorF3 extends ModelExecutor {
     public static boolean isIntrinsicsValid(float[] intrinsics){
         // TODO: find better ways to check validity.
         return intrinsics[0]!=0 & intrinsics[2]!=0 & intrinsics[4]!=0 & intrinsics[5]!=0 & intrinsics[8]!=0;
-    }
-
-    public static INDArray wideToRoad;
-
-    public static void updateCameraMatrix(float[] intrinsics, boolean wide){
-        if (!isIntrinsicsValid(intrinsics))
-            return;
-        for (int i=0; i<3; i++){
-            for (int j=0; j<3; j++){
-                if (wide)
-                    wide_intrinsics.put(i, j, intrinsics[i*3 + j]);
-                else
-                    road_intrinsics.put(i, j, intrinsics[i*3 + j]);
-            }
-        }
     }
 
     INDArray netInputBuffer, netInputWideBuffer;
@@ -153,8 +136,8 @@ public class ModelExecutorF3 extends ModelExecutor {
             for (int i = 0; i < 3; i++) {
                 augmentRot.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
-            wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
+            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
+            wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, true);
         }
 
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
@@ -222,8 +205,8 @@ public class ModelExecutorF3 extends ModelExecutor {
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, utils.WideCameraOnly, false);
-        wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, true, true);
+        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
+        wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, true);
 
         // TODO:Clean this shit.
         boolean rgb;

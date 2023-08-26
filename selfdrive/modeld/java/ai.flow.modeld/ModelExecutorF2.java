@@ -55,8 +55,6 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
     public final ParamsInterface params = ParamsInterface.getInstance();
 
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
-    public static INDArray road_intrinsics = Camera.road_intrinsics.dup();
-    public static INDArray wide_intrinsics = Camera.wide_intrinsics.dup();
     public final ZMQPubHandler ph = new ZMQPubHandler();
     public final ZMQSubHandler sh = new ZMQSubHandler(true);
     public Definitions.LiveCalibrationData.Reader liveCalib;
@@ -77,21 +75,6 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
 
     public ModelExecutorF2(ModelRunner modelRunner){
         this.modelRunner = modelRunner;
-    }
-
-    public boolean isIntrinsicsValid(PrimitiveList.Float.Reader intrinsics){
-        // TODO: find better ways to check validity.
-        return intrinsics.get(0)!=0 & intrinsics.get(2)!=0 & intrinsics.get(4)!=0 & intrinsics.get(5)!=0 & intrinsics.get(8)!=0;
-    }
-
-    public void updateCameraMatrix(PrimitiveList.Float.Reader intrinsics){
-        if (!isIntrinsicsValid(intrinsics))
-            return;
-        for (int i=0; i<3; i++){
-            for (int j=0; j<3; j++){
-                road_intrinsics.put(i, j, intrinsics.get(i*3 + j));
-            }
-        }
     }
 
     public void updateCameraState(){
@@ -123,10 +106,9 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, false, false);
+        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
 
         updateCameraState();
-        updateCameraMatrix(frameData.getIntrinsics());
 
         // TODO:Clean this shit.
         ImagePrepare imagePrepare;
@@ -181,7 +163,7 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
                 for (int i = 0; i < 3; i++) {
                     augmentRot.putScalar(i, rpy.get(i));
                 }
-                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, road_intrinsics, wide_intrinsics, false, false);
+                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
             }
 
             netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);

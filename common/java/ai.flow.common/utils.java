@@ -8,12 +8,6 @@ import java.util.Queue;
 
 public class utils {
 
-    public static boolean WideCameraOnly = true, UseAndroidIntrinsics = true;
-
-    public static void Log(String s) {
-        System.out.println("PHR00TLOG: " + s);
-    }
-
     public static boolean getBoolEnvVar(String key) {
         String val = System.getenv(key);
         boolean ret = false;

@@ -8,18 +8,11 @@ public class Camera {
     public static final int CAMERA_TYPE_ROAD = 0;
     public static final int CAMERA_TYPE_WIDE = 1;
     public static final int CAMERA_TYPE_DRIVER = 2;
-    public static final float f_focal_length = 2648.0f; // : 910.0f;
-    public static final float e_focal_length = 567.0f;
     public static final int[] frameSize = new int[]{1920, 1080}; // : new int[]{1280, 720};
-    public static INDArray road_intrinsics = Nd4j.createFromArray(new float[][]{
-            {f_focal_length,  0.0f,  frameSize[0]/2f},
-            {0.0f,  f_focal_length,  frameSize[1]/2f},
-            {0.0f,  0.0f,  1.0f}
-    });
-
+    // we only use the wide camera. Hardcoded LG G8 wide cam intrinsics
     public static INDArray wide_intrinsics = Nd4j.createFromArray(new float[][]{
-            {e_focal_length,  0.0f,  frameSize[0]/2f},
-            {0.0f,  e_focal_length,  frameSize[1]/2f},
+            {1394.7081f,  0.0f,  952.62915f}, // make sure we match CameraManager.K
+            {0.0f,  1394.7616f,  517.53534f},
             {0.0f,  0.0f,  1.0f}
     });
 

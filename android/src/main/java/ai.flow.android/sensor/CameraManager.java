@@ -83,18 +83,10 @@ public class CameraManager extends SensorInterface {
     ByteBuffer yuvBuffer, yuvRoadBuffer;
     String videoFileName, vidFilePath, videoLockPath;
     File lockFile;
-    public float[] CamIntrinsics;
 
     public CameraSelector getCameraSelector(boolean  wide){
         if (wide) {
             List<CameraInfo> availableCamerasInfo = cameraProvider.getAvailableCameraInfos();
-            CamIntrinsics = new float[9];
-            // LG G8 wide camera intrinsics
-            CamIntrinsics[0] = 1394.7081f;
-            CamIntrinsics[4] = 1394.7616f;
-            CamIntrinsics[2] = 952.62915f;
-            CamIntrinsics[5] = 517.53534f;
-            CamIntrinsics[8] = 1f;
             OnRoadScreen.CamSelected = 2;
             return availableCamerasInfo.get(OnRoadScreen.CamSelected).getCameraSelector();
         }
@@ -102,14 +94,15 @@ public class CameraManager extends SensorInterface {
             return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
     }
 
-    public static Matrix WideToRoad;
-    Nv21Buffer nv21buf, nv21buf_small;
-    AbgrBuffer abgrbuf;
-    public static final float ScaleAmount = 0.425f;
-
     public CameraManager(Context context, int cameraType){
         msgFrameData = new MsgFrameData(cameraType);
         K = msgFrameData.intrinsics;
+        // hardcoded LG G8 intrinsics
+        K.set(0, 1394.7081f); // also check Camera.wide_intrinsics to match
+        K.set(4, 1394.7616f);
+        K.set(2, 952.62915f);
+        K.set(5, 517.53534f);
+        K.set(8, 1f);
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
@@ -132,23 +125,6 @@ public class CameraManager extends SensorInterface {
 
         ph = new ZMQPubHandler();
         ph.createPublishers(Arrays.asList(frameDataTopic, frameBufferTopic));
-    }
-
-    public void loadIntrinsics(){
-        if (params.exists(intName)) {
-            float[] cameraMatrix = byteToFloat(params.getBytes(intName));
-            updateProperty("intrinsics", cameraMatrix);
-        }
-    }
-
-    public void setIntrinsics(float[] intrinsics){
-        K.set(0, intrinsics[0]);
-        K.set(2, intrinsics[2]);
-        K.set(4,intrinsics[4]);
-        K.set(5, intrinsics[5]);
-        K.set(8, 1f);
-        ModelExecutorF3.updateCameraMatrix(intrinsics, cameraType == CAMERA_TYPE_WIDE);
-        if (utils.WideCameraOnly) ModelExecutorF3.updateCameraMatrix(intrinsics, false);
     }
 
     public void setLifeCycleFragment(Fragment lifeCycleFragment){
@@ -286,25 +262,10 @@ public class CameraManager extends SensorInterface {
         // f3 uses wide camera.
         CameraSelector cameraSelector = getCameraSelector(cameraType == Camera.CAMERA_TYPE_WIDE);
 
-        // ok, we should have intrinsics with the selected camera
-        loadIntrinsics();
-
         androidx.camera.core.Camera camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector,
                 imageAnalysis);
 
         cameraControl = camera.getCameraControl();
-    }
-
-    @Override
-    public void updateProperty(String property, float[] value) {
-        if (property.equals("intrinsics")){
-            if (utils.UseAndroidIntrinsics) {
-                setIntrinsics(CamIntrinsics);
-            } else {
-                assert value.length == 9 : "invalid intrinsic matrix buffer length";
-                setIntrinsics(value);
-            }
-        }
     }
 
     public boolean isRunning() {
