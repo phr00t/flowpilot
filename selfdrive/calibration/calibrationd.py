@@ -57,24 +57,27 @@ def moving_avg_with_linear_decay(prev_mean: np.ndarray, new_val: np.ndarray, idx
   return (idx*prev_mean + (block_size - idx) * new_val) / block_size
 
 class Calibrator:
-  def __init__(self, param_put: bool = False):
-    self.param_put = True
-
+  def __init__(self):
     self.not_car = False
 
     # Read saved calibration
     self.params = Params()
+    calibration_params = self.params.get("CalibrationParams")
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     height = HEIGHT_INIT
     valid_blocks = 0
     self.cal_status = log.LiveCalibrationData.Status.uncalibrated
 
-    live_calib_bytes = self.params.get("CalibrationParams")
-    if live_calib_bytes is not None:
-      msg = log.Event.from_bytes(live_calib_bytes)
-      self.rpy_init = np.array(msg.liveCalibration.rpyCalib)
-      self.valid_blocks = msg.liveCalibration.validBlocks
+    if calibration_params:
+      try:
+        with log.Event.from_bytes(calibration_params) as msg:
+          rpy_init = np.array(msg.liveCalibration.rpyCalib)
+          valid_blocks = msg.liveCalibration.validBlocks
+          wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
+          height = np.array([1.28]) #np.array(msg.liveCalibration.height)
+      except Exception:
+        cloudlog.exception("Error reading cached CalibrationParams")
 
     self.reset(rpy_init, valid_blocks, wide_from_device_euler, height)
     self.update_status()
@@ -157,7 +160,7 @@ class Calibrator:
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if write_this_cycle:
-      self.params.put("CalibrationParams", self.get_msg().to_bytes())
+      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego
@@ -257,7 +260,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
   if pm is None:
     pm = messaging.PubMaster(['liveCalibration'])
 
-  calibrator = Calibrator(param_put=True)
+  calibrator = Calibrator()
 
   while 1:
     timeout = 0 if sm.frame == -1 else 100
