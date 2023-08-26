@@ -141,7 +141,7 @@ class CarController:
     l0d = radarState.leadOne.dRel
     l0v = radarState.leadOne.vRel
     lead_vdiff_mph = l0v * 2.23694
-    raw_vdiff = radarState.leadOne.vLead * 2.23694
+    raw_vlead = radarState.leadOne.vLead * 2.23694
 
     # start with our picked max speed
     desired_speed = max_speed_in_mph
@@ -237,7 +237,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " A>" + "{:.1f}".format(actuators.accel) + " Vd>" + "{:.1f}".format(lead_vdiff_mph) + " RVd>" + "{:.1f}".format(raw_vdiff))
+    sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " A>" + "{:.1f}".format(actuators.accel) + " VL>" + "{:.1f}".format(raw_vlead) + " VD>" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
