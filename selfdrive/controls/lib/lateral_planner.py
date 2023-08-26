@@ -118,7 +118,7 @@ class LateralPlanner:
       self.x0[3] = measured_curvature * self.v_ego
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
-        cloudlog.warning("Lateral mpc - nan: True")
+        print("Lateral mpc - nan: True")
 
     if self.lat_mpc.cost > 20000. or mpc_nans:
       self.solution_invalid_cnt += 1

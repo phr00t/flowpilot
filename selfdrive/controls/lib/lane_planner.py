@@ -1,4 +1,3 @@
-# hard-forked from https://github.com/commaai/openpilot/tree/05b37552f3a38f914af41f44ccc7c633ad152a15/selfdrive/controls/lib/lane_planner.py
 import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
@@ -10,12 +9,12 @@ from system.swaglog import cloudlog
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 # model path is in the frame of the camera
-# so a path offset is not needed.
 PATH_OFFSET = 0.00
-CAMERA_OFFSET = 0.225
+CAMERA_OFFSET = 0.04
+
 
 class LanePlanner:
-  def __init__(self, wide_camera=False):
+  def __init__(self):
     self.ll_t = np.zeros((TRAJECTORY_SIZE,))
     self.ll_x = np.zeros((TRAJECTORY_SIZE,))
     self.lll_y = np.zeros((TRAJECTORY_SIZE,))
@@ -34,8 +33,8 @@ class LanePlanner:
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
-    self.camera_offset = -CAMERA_OFFSET if wide_camera else CAMERA_OFFSET
-    self.path_offset = -PATH_OFFSET if wide_camera else PATH_OFFSET
+    self.camera_offset = -CAMERA_OFFSET
+    self.path_offset = -PATH_OFFSET
 
   def parse_model(self, md):
     lane_lines = md.laneLines
