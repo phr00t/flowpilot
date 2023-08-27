@@ -84,7 +84,7 @@ class CarController:
     clu11_speed = CS.out.vEgo * 2.23694 # convert to MS -> MPH
 
     # accel + longitudinal
-    #accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
     #stopping = actuators.longControlState == LongCtrlState.stopping
     #set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
     #self.accels.append(actuators.accel)
@@ -235,7 +235,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " A>" + "{:.1f}".format(actuators.accel) + " VL>" + "{:.1f}".format(raw_vlead) + " VD>" + "{:.1f}".format(l0d))
+    sLogger.Send("vC>" + "{:.2f}".format(vcurv) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " VL>" + "{:.1f}".format(raw_vlead) + " VD>" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
