@@ -159,7 +159,7 @@ class CarController:
     curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead?
-    if l0prob > 0.3 and clu11_speed > 5:
+    if l0prob > 0.5 and clu11_speed > 5:
       # amplify large lead car speed differences a bit so we react faster
       lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
       # calculate an estimate of the lead car's speed for purposes of setting our speed
