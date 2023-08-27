@@ -8,8 +8,8 @@ public class Camera {
     // lots of important stuff calculated from this
     // current set to LG G8 wide camera
     public static final float
-        FocalX = 2180f, //1394.7081f,
-        FocalY = 2180f, //1394.7616f,
+        FocalX = 1500f, //1394.7081f,
+        FocalY = 1500f, //1394.7616f,
         CenterX = 952.62915f,
         CenterY = 517.53534f;
 
