@@ -59,7 +59,7 @@ class CarController:
     self.frame = 0
 
     self.accel_last = 0
-    self.accels = []
+    #self.accels = []
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
@@ -84,13 +84,13 @@ class CarController:
     clu11_speed = CS.out.vEgo * 2.23694 # convert to MS -> MPH
 
     # accel + longitudinal
-    accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-    stopping = actuators.longControlState == LongCtrlState.stopping
-    set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
-    self.accels.append(actuators.accel)
-    if len(self.accels) > 5:
-      self.accels.pop(0)
-    avg_accel = statistics.fmean(self.accels)
+    #accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    #stopping = actuators.longControlState == LongCtrlState.stopping
+    #set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
+    #self.accels.append(actuators.accel)
+    #if len(self.accels) > 5:
+    #  self.accels.pop(0)
+    #avg_accel = statistics.fmean(self.accels)
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
@@ -199,10 +199,6 @@ class CarController:
       if desired_speed > max_lead_adj:
         desired_speed = max_lead_adj
 
-    # if the model thinks we need slowing down, don't speed up
-    if -3.4 < avg_accel < -0.5 and desired_speed > clu11_speed:
-      desired_speed = clu11_speed
-
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
 
     # what is our difference between desired speed and target speed?
@@ -214,10 +210,6 @@ class CarController:
     slow_speed_factor = 1.5
     # this can trigger sooner than lead car slowing, because curve data is much less noisy
     if curve_speed_ratio > 1.175:
-      desired_speed = 0
-
-    # does the model really want us to nearly stop?
-    if -3.4 < avg_accel < -1.3:
       desired_speed = 0
 
     # if we are going much faster than we want, disable cruise to trigger more intense regen braking
