@@ -9,6 +9,7 @@ from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
 from common.logger import sLogger
 
+import statistics
 import datetime
 import math
 
@@ -58,6 +59,7 @@ class CarController:
     self.frame = 0
 
     self.accel_last = 0
+    self.accels = []
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
@@ -85,6 +87,10 @@ class CarController:
     accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
+    self.accels.append(actuators.accel)
+    if len(self.accels) > 5:
+      self.accels.pop(0)
+    avg_accel = statistics.fmean(self.accels)
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
@@ -153,7 +159,7 @@ class CarController:
     curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead?
-    if l0prob > 0.5 and clu11_speed > 5:
+    if l0prob > 0.3 and clu11_speed > 5:
       # amplify large lead car speed differences a bit so we react faster
       lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
       # calculate an estimate of the lead car's speed for purposes of setting our speed
@@ -194,7 +200,7 @@ class CarController:
         desired_speed = max_lead_adj
 
     # if the model thinks we need slowing down, don't speed up
-    if actuators.accel < -0.3 and desired_speed > clu11_speed:
+    if avg_accel < -0.5 and desired_speed > clu11_speed:
       desired_speed = clu11_speed
 
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
@@ -211,7 +217,7 @@ class CarController:
       desired_speed = 0
 
     # does the model really want us to nearly stop?
-    if actuators.accel < -1.3:
+    if avg_accel < -1.3:
       desired_speed = 0
 
     # if we are going much faster than we want, disable cruise to trigger more intense regen braking
