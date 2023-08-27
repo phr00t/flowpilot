@@ -68,7 +68,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class OnRoadScreen extends ScreenAdapter {
     // avoid GC triggers.
-    static final String VERSION = "0.11";
+    static final String VERSION = "0.13";
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -88,7 +88,7 @@ public class OnRoadScreen extends ScreenAdapter {
     int drawResolution = 1;
     float fadeStrength = 0.03f;
     float minZ = 0.2f;
-    float minLeadProb = 0.5f;
+    float minLeadProb = 0.333f;
     float leadDrawScale = 6f;
     float borderWidth = 30;
     float expandedBorderWidth = 600;

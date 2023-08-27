@@ -169,6 +169,10 @@ public class CameraManager extends SensorInterface {
                             ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
                             ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
 
+                            // make sure we keep our zoom level
+                            if (frameID % 10 == 0)
+                                cameraControl.setZoomRatio(Camera.digital_zoom_apply);
+
                             frameID += 1;
                             image.close();
                         }
@@ -260,6 +264,7 @@ public class CameraManager extends SensorInterface {
                 imageAnalysis);
 
         cameraControl = camera.getCameraControl();
+        cameraControl.setZoomRatio(Camera.digital_zoom_apply);
     }
 
     public boolean isRunning() {
