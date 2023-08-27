@@ -170,7 +170,7 @@ public class CameraManager extends SensorInterface {
                             ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
 
                             // make sure we keep our zoom level
-                            if (frameID % 10 == 0)
+                            if (frameID % 5 == 0)
                                 cameraControl.setZoomRatio(Camera.digital_zoom_apply);
 
                             frameID += 1;

@@ -5,12 +5,19 @@ import org.nd4j.linalg.factory.Nd4j;
 
 public class Camera {
 
-    // lots of important stuff calculated from this
+    // lots of important stuff calculated from this (Camera #2)
     public static final float[] WideIntrinsics = {
             1394.7081f, 0.0f, 952.62915f,
             0.0f,   1394.7616f, 517.53534f,
             0.0f,   0.0f, 1.0f
     };
+
+    // Camera #0 (telephoto)
+    /*public static final float[] WideIntrinsics = {
+            910f,   0.0f, 900f,
+            0.0f,   910f, 514f,
+            0.0f,   0.0f, 1.0f
+    };*/
 
     // everything auto-generated from above
     public static final float eon_wide_focal_length = 910.0f; // model expects this for some reason
