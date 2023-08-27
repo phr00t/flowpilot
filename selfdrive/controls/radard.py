@@ -66,7 +66,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
 
 def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True):
   # Determine leads, this is where the essential logic happens
-  if len(clusters) > 0 and ready and lead_msg.prob > .3:
+  if len(clusters) > 0 and ready and lead_msg.prob > .5:
     cluster = match_vision_to_cluster(v_ego, lead_msg, clusters)
   else:
     cluster = None
