@@ -1,6 +1,7 @@
 from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
 import statistics
+import numpy as np
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
@@ -13,6 +14,12 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
+
+def reject_outliers(data, m=2.):
+  d = np.abs(data - np.median(data))
+  mdev = np.median(d)
+  s = d / mdev if mdev else np.zeros(len(d))
+  return data[s < m]
 
 class Track():
   def __init__(self, v_lead, kalman_params):
@@ -137,18 +144,18 @@ class Cluster():
     finalv = 0.0
     finald = 0.0
 
-    if lead_msg.prob < 0.333:
+    if lead_msg.prob < 0.3:
       self.Dists.clear()
       self.vLeads.clear()
     else:
       self.Dists.append(lead_msg.x[0])
       self.vLeads.append(lead_msg.v[0])
-      if len(self.Dists) > 15:
+      if len(self.Dists) > 20:
         self.Dists.pop(0)
-      if len(self.vLeads) > 15:
+      if len(self.vLeads) > 20:
         self.vLeads.pop(0)
-      finald = statistics.fmean(self.Dists)
-      finalv = statistics.fmean(self.vLeads)
+      finald = statistics.fmean(reject_outliers(self.Dists))
+      finalv = statistics.fmean(reject_outliers(self.vLeads))
 
     return {
       "dRel": float(finald - RADAR_TO_CAMERA),
