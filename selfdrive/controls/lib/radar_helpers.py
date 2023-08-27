@@ -151,9 +151,9 @@ class Cluster():
     else:
       self.Dists.append(lead_msg.x[0])
       self.vLeads.append(lead_msg.v[0])
-      if len(self.Dists) > 10:
+      if len(self.Dists) > 8:
         self.Dists.pop(0)
-      if len(self.vLeads) > 10:
+      if len(self.vLeads) > 8:
         self.vLeads.pop(0)
       finald = statistics.fmean(reject_outliers(self.Dists))
       finalv = statistics.fmean(reject_outliers(self.vLeads))
