@@ -10,9 +10,8 @@ TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 # model path is in the frame of the camera
 # positive numbers go right
-PATH_OFFSET = 0.125
-CAMERA_OFFSET = 0.25
-
+PATH_OFFSET = 0.3
+CAMERA_OFFSET = 0.3
 
 class LanePlanner:
   def __init__(self):
