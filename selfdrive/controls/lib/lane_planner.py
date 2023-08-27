@@ -13,8 +13,6 @@ TRAJECTORY_SIZE = 33
 PATH_OFFSET = 0.00
 CAMERA_OFFSET = 0.225
 
-def clamp(num, min_value, max_value):
-  return max(min(num, max_value), min_value)
 
 class LanePlanner:
   def __init__(self):
@@ -45,13 +43,12 @@ class LanePlanner:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      self.lll_std = md.laneLineStds[1]
-      self.rll_std = md.laneLineStds[2]
-      # if lanes are a little fuzzy, push em out a bit by their std
-      self.lll_y = np.array(lane_lines[1].y) + self.camera_offset + self.lll_std * 0.5
-      self.rll_y = np.array(lane_lines[2].y) + self.camera_offset - self.rll_std * 0.5
+      self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
+      self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
+      self.lll_std = md.laneLineStds[1]
+      self.rll_std = md.laneLineStds[2]
 
     desire_state = md.meta.desireState
     if len(desire_state):
@@ -62,9 +59,7 @@ class LanePlanner:
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
     path_xyz[:, 1] += self.path_offset
-    # little lane boost
-    l_prob = clamp(self.lll_prob * 1.333, 0.0, 1.0)
-    r_prob = clamp(self.rll_prob * 1.333, 0.0, 1.0)
+    l_prob, r_prob = self.lll_prob, self.rll_prob
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
     for t_check in (0.0, 1.5, 3.0):
