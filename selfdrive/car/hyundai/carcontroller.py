@@ -200,7 +200,7 @@ class CarController:
         desired_speed = max_lead_adj
 
     # if the model thinks we need slowing down, don't speed up
-    if avg_accel < -0.5 and desired_speed > clu11_speed:
+    if -3.4 < avg_accel < -0.5 and desired_speed > clu11_speed:
       desired_speed = clu11_speed
 
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
@@ -217,7 +217,7 @@ class CarController:
       desired_speed = 0
 
     # does the model really want us to nearly stop?
-    if avg_accel < -1.3:
+    if -3.4 < avg_accel < -1.3:
       desired_speed = 0
 
     # if we are going much faster than we want, disable cruise to trigger more intense regen braking
