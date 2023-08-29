@@ -72,25 +72,12 @@ class LongControl:
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
-    if len(speeds) == CONTROL_N:
-      v_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], speeds)
-      a_target_now = interp(t_since_plan, T_IDXS[:CONTROL_N], long_plan.accels)
 
-      v_target_lower = interp(self.CP.longitudinalActuatorDelayLowerBound + t_since_plan, T_IDXS[:CONTROL_N], speeds)
-      a_target_lower = 2 * (v_target_lower - v_target_now) / self.CP.longitudinalActuatorDelayLowerBound - a_target_now
-
-      v_target_upper = interp(self.CP.longitudinalActuatorDelayUpperBound + t_since_plan, T_IDXS[:CONTROL_N], speeds)
-      a_target_upper = 2 * (v_target_upper - v_target_now) / self.CP.longitudinalActuatorDelayUpperBound - a_target_now
-
-      v_target = min(v_target_lower, v_target_upper)
-      a_target = min(a_target_lower, a_target_upper)
-
-      v_target_1sec = interp(self.CP.longitudinalActuatorDelayUpperBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
-    else:
-      v_target = 0.0
-      v_target_now = 0.0
-      v_target_1sec = 0.0
-      a_target = 0.0
+    # we only want raw accel data for non-SCC car consideration, so don't use this
+    v_target = 0.0
+    v_target_now = 0.0
+    v_target_1sec = 0.0
+    a_target = 0.0
 
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
