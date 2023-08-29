@@ -128,6 +128,9 @@ class CarController:
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
     long_plan = sm['longitudinalPlan']
+    accelval = 0.1
+    if len(long_plan.accels) > 0:
+      accelval = long_plan.accels[0]
 
     max_speed_in_mph = vcruise * 0.621371
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
@@ -236,7 +239,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("A>" + "{:.2f}".format(long_plan.accels[0]) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " VL>" + "{:.1f}".format(raw_vlead) + " VD>" + "{:.1f}".format(l0d))
+    sLogger.Send("A>" + "{:.2f}".format(accelval) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " VL>" + "{:.1f}".format(raw_vlead) + " VD>" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
