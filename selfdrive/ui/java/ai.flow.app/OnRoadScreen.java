@@ -297,13 +297,13 @@ public class OnRoadScreen extends ScreenAdapter {
 
     public Stack getMaxVelocityLabel(){
         Image bg = new Image(new Texture(Gdx.files.absolute(Path.internal("selfdrive/assets/icons/max_cruise.png"))));
-        bg.setColor(0.5f, 0.5f, 0.5f, 0.8f);
+        bg.setColor(0.25f, 0.25f, 0.25f, 0.8f);
         Table table = new Table();
         Label maxLabel = new Label("MAX", appContext.skin, "default-font", "white");
         maxLabel.setColor(0.8f, 0.8f, 0.8f, 1f);
         maxCruiseSpeedLabel = new Label("N/A", appContext.skin, "default-font-bold-med", "white");
         maxLabel.setAlignment(Align.top);
-        maxCruiseSpeedLabel.setFontScale(1.3f, 1.3f);
+        maxCruiseSpeedLabel.setFontScale(1.4f, 1.4f);
         maxCruiseSpeedLabel.setAlignment(Align.bottom);
         table.add(maxLabel).padTop(2);
         table.row();
@@ -351,7 +351,7 @@ public class OnRoadScreen extends ScreenAdapter {
         maxCruiseTable = new Table();
         maxCruiseTable.setFillParent(true);
         maxCruiseTable.align(Align.topLeft);
-        maxCruiseTable.padTop(20);
+        maxCruiseTable.padTop(100);
 
         alertTable = new Table();
         alertTable.setFillParent(true);
