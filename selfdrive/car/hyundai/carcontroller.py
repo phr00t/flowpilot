@@ -104,11 +104,6 @@ class CarController:
     accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
     #stopping = actuators.longControlState == LongCtrlState.stopping
     #set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
-    if 2.0 > actuators.accel > -3.5:
-      self.accels.append(actuators.accel)
-    if len(self.accels) > 6:
-      self.accels.pop(0)
-    avg_accel = statistics.fmean(reject_outliers(self.accels))
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
@@ -145,6 +140,15 @@ class CarController:
 
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
+    long_plan = sm['longitudinalPlan']
+
+    # get raw model acceleration
+    avg_accel = 0.0
+    if len(long_plan.accels) > 0:
+      self.accels.append(long_plan.accels[0])
+      if len(self.accels) > 6:
+        self.accels.pop(0)
+      avg_accel = statistics.fmean(reject_outliers(self.accels))
 
     max_speed_in_mph = vcruise * 0.621371
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
