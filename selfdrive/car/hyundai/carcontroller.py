@@ -144,10 +144,13 @@ class CarController:
 
     # get raw model acceleration
     avg_accel = 0.0
-    if len(long_plan.accels) > 0:
-      self.accels.append(long_plan.accels[0])
+    if len(long_plan.accels) > 3:
+      # add the lowest acceleration in the last half of accel arrays
+      # as we are looking for future acceleration changes
+      self.accels.append(min(long_plan.accels[len(long_plan.accels)//2:]))
       if len(self.accels) > 6:
         self.accels.pop(0)
+      # we then average out fuzzy numbers
       avg_accel = statistics.fmean(reject_outliers(self.accels))
 
     max_speed_in_mph = vcruise * 0.621371
