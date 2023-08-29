@@ -83,8 +83,9 @@ class LongitudinalPlanner:
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
-    long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
-    force_slow_decel = sm['controlsState'].forceDecel
+    # force acceleration data to be collected for processing cruise control spamming
+    long_control_off = False # sm['controlsState'].longControlState == LongCtrlState.off
+    force_slow_decel = False # sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_off #if self.CP.openpilotLongitudinalControl else not sm['controlsState'].enabled
@@ -128,7 +129,7 @@ class LongitudinalPlanner:
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
+    self.fcw = False #self.mpc.crash_cnt > 2 and not sm['carState'].standstill
     if self.fcw:
       cloudlog.info("FCW triggered")
 

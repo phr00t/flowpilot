@@ -59,7 +59,7 @@ class CarController:
     self.frame = 0
 
     self.accel_last = 0
-    #self.accels = []
+    self.accels = []
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
@@ -87,10 +87,10 @@ class CarController:
     accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
     #stopping = actuators.longControlState == LongCtrlState.stopping
     #set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
-    #self.accels.append(actuators.accel)
-    #if len(self.accels) > 5:
-    #  self.accels.pop(0)
-    #avg_accel = statistics.fmean(self.accels)
+    self.accels.append(actuators.accel)
+    if len(self.accels) > 5:
+      self.accels.pop(0)
+    avg_accel = statistics.fmean(self.accels)
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
@@ -127,10 +127,6 @@ class CarController:
 
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
-    long_plan = sm['longitudinalPlan']
-    accelval = 0.1
-    if len(long_plan.accels) > 0:
-      accelval = long_plan.accels[0]
 
     max_speed_in_mph = vcruise * 0.621371
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
@@ -239,7 +235,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("A>" + "{:.2f}".format(accelval) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " VL>" + "{:.1f}".format(raw_vlead) + " VD>" + "{:.1f}".format(l0d))
+    sLogger.Send("A>" + "{:.2f}".format(avg_accel) + " Pr?>" + str(CS.out.cruiseState.nonAdaptive) + " Rs?>" + "{:.1f}".format(reenable_cruise_atspd) + " DS>" + "{:.1f}".format(desired_speed) + " CC>" + "{:.1f}".format(CS.out.cruiseState.speed) + " VL>" + "{:.1f}".format(raw_vlead) + " VD>" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
