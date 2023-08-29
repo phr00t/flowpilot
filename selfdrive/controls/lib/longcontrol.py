@@ -10,6 +10,9 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                              v_target_1sec, brake_pressed, cruise_standstill):
+  # just return the pid
+  return LongCtrlState.pid
+
   # Ignore cruise standstill if car has a gas interceptor
   cruise_standstill = False #cruise_standstill and not CP.enableGasInterceptor
   accelerating = v_target_1sec > v_target
