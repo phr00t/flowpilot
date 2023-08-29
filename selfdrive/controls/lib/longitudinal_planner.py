@@ -79,8 +79,7 @@ class LongitudinalPlanner:
     self.mpc.mode = 'blended' #if sm['controlsState'].experimentalMode else 'acc'
 
     v_ego = sm['carState'].vEgo
-    v_cruise_kph = sm['controlsState'].vCruise
-    v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
+    v_cruise_kph = V_CRUISE_MAX
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
     # force acceleration data to be collected for processing cruise control spamming
@@ -110,8 +109,6 @@ class LongitudinalPlanner:
     # Compute model v_ego error
     self.v_model_error = get_speed_error(sm['modelV2'], v_ego)
 
-    if force_slow_decel:
-      v_cruise = 0.0
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
