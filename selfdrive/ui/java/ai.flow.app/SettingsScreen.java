@@ -270,7 +270,7 @@ public class SettingsScreen extends ScreenAdapter {
         //TODO: Get better toggle buttons.
         for (int i=0; i<AdditionalToggles.size(); i+=2) {
             TextButton nb = new TextButton("  ", appContext.skin, "toggle");
-            nb.setChecked(params.exists("FlowpilotEnabledToggle") && params.getBool(AdditionalToggles.get(i + 1)));
+            nb.setChecked(params.exists(AdditionalToggles.get(i + 1)) && params.getBool(AdditionalToggles.get(i + 1)));
             int finalI = i;
             nb.addListener(new ChangeListener() {
                 @Override

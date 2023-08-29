@@ -127,10 +127,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 
 		ModelRunner model;
 		boolean useGPU = true; // always use gpus on android phones.
-		if (params.getBool("UseSNPE"))
-			model = new SNPEModelRunner(getApplication(), modelPath, useGPU);
-		else
-			model = new TNNModelRunner(modelPath, useGPU);
+		model = new SNPEModelRunner(getApplication(), modelPath, useGPU);
 
 		ModelExecutor modelExecutor;
 		modelExecutor = new ModelExecutorF3(model);

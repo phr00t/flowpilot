@@ -94,7 +94,6 @@ public class LoadingActivity extends AppCompatActivity {
                 bootTermux();
 
                 ParamsInterface params = ParamsInterface.getInstance();
-                params.getBool("F3");
 
                 bootComplete = true;
 

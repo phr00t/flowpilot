@@ -181,7 +181,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         if (initialized) return;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-        snpe = params.getBool("UseSNPE");
+        snpe = true;
         if (snpe)
             imgTensorShape = new int[]{1, 128, 256, 12}; // SNPE only supports NHWC input.
 
