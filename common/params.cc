@@ -60,7 +60,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
     {"ResetExtrinsicCalibration", CLEAR_ON_MANAGER_START},
-    {"FlowpilotEnabledToggle", PERSISTENT},
+    {"UseAccel", PERSISTENT},
     {"IsLdwEnabled", PERSISTENT},
     {"IsRHD", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},

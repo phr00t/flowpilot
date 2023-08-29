@@ -3,6 +3,7 @@ from common.conversions import Conversions as CV
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
+from common.params import Params, put_nonblocking
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
@@ -65,6 +66,8 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
     self.frame = 0
+    self.Options = Params()
+    self.usingAccel = self.Options.get_bool("UseAccel")
 
     self.accel_last = 0
     self.accels = []
@@ -209,6 +212,22 @@ class CarController:
         desired_speed = max_lead_adj
 
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
+
+    # are we using the accel option?
+    if self.frame % 100 == 0:
+      self.usingAccel = self.Options.get_bool("UseAccel")
+
+    if self.usingAccel:
+      # does our model think we should be slowing down? if so, definitely don't speed up
+      if avg_accel < -0.5 and desired_speed > clu11_speed:
+        desired_speed = clu11_speed
+
+      # do we really want to stop?
+      if avg_accel < -1.5:
+        desired_speed = 0
+    else:
+      # note that we are not using this value with a big one
+      avg_accel += 100
 
     # what is our difference between desired speed and target speed?
     speed_diff = desired_speed - clu11_speed

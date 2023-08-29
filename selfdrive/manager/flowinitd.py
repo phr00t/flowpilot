@@ -78,10 +78,10 @@ def main():
                 proc.kill()
 
         default_params = [
-                        ("CompletedTrainingVersion", "0"),
-                        ("DisengageOnAccelerator", "1"),
-                        ("HasAcceptedTerms", "0"),
-                        ("FlowpilotEnabledToggle", "0"),
+                        ("CompletedTrainingVersion", "1"),
+                        ("DisengageOnAccelerator", "0"),
+                        ("HasAcceptedTerms", "1"),
+                        ("UseAccel", "0"),
                         ("WideCameraOnly", "1"),
                         ("UbloxAvailable", "1")
                          ]

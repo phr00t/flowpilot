@@ -106,16 +106,15 @@ class Controls:
     self.joystick_mode = self.params.get_bool("JoystickDebugMode") or self.CP.notCar
 
     # set alternative experiences from parameters
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    self.disengage_on_accelerator = False # self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
     # read params
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
-    flowpilot_enabled_toggle = self.params.get_bool("FlowpilotEnabledToggle")
-    passive = self.params.get_bool("Passive") or not flowpilot_enabled_toggle
+    self.is_metric = False #self.params.get_bool("IsMetric")
+    self.is_ldw_enabled = False #self.params.get_bool("IsLdwEnabled")
+    passive = False # self.params.get_bool("Passive") or not flowpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = True # TODO HARDWARE.get_sound_card_online()

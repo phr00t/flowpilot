@@ -23,6 +23,8 @@ import ai.flow.common.utils;
 
 import static ai.flow.app.FlowUI.getPaddedButton;
 
+import java.util.ArrayList;
+
 
 public class SettingsScreen extends ScreenAdapter {
 
@@ -33,14 +35,14 @@ public class SettingsScreen extends ScreenAdapter {
             buttonTraining, buttonPowerOff, buttonReboot, buttonSoftware,
             buttonUninstall, buttonToggle, buttonCheckUpdate, buttonLogOut;
     ImageButton closeButton;
-    TextButton FPToggle, LDWToggle, RHDToggle, MetricToggle,
-            recordDriverCamToggle, lanelessToggle, disengageAccToggle;
 
     SpriteBatch batch;
     Table rootTable, settingTable, scrollTable, currentSettingTable;
     Texture lineTex = Utils.getLineTexture(700, 1, Color.WHITE);
     ScrollPane scrollPane;
     Dialog dialog;
+    public java.util.List<String> AdditionalToggles = new java.util.ArrayList<>();
+    public java.util.List<TextButton> ToggleButtons = new ArrayList<>();
 
     public void addKeyValueTable(Table table, String key, String value, boolean addLine) {
         table.add(new Label(key, appContext.skin, "default-font", "white")).left().pad(30);
@@ -99,18 +101,17 @@ public class SettingsScreen extends ScreenAdapter {
 
     public void fillToggleSettings(){
         currentSettingTable.clear();
-        addKeyValueTable(currentSettingTable, "Enable FlowPilot", FPToggle, true);
-        //addKeyValueTable(currentSettingTable, "Enable F3", F3Toggle, true);
-        addKeyValueTable(currentSettingTable, "Enable Lane Departure Warnings", LDWToggle, true);
-        addKeyValueTable(currentSettingTable, "Enable Right Hand Driving", RHDToggle, true);
-        addKeyValueTable(currentSettingTable, "Use Metric System", MetricToggle, true);
-        addKeyValueTable(currentSettingTable, "Record & Upload Driver Camera", recordDriverCamToggle, true);
-        addKeyValueTable(currentSettingTable, "Disable Use of LaneLines (alpha)", lanelessToggle, false);
-        //addKeyValueTable(currentSettingTable, "Disengage on Accelerator Pedal", disengageAccToggle, false);
+        for (int i=0; i<ToggleButtons.size(); i++) {
+            addKeyValueTable(currentSettingTable, AdditionalToggles.get(i*2), ToggleButtons.get(i), true);
+        }
     }
 
     public SettingsScreen(FlowUI appContext) {
         this.appContext = appContext;
+
+        // easy toggles here. Pairs of string entries, first being display name and second being the parameter that gets set
+        AdditionalToggles.add("Use Model Acceleration");
+        AdditionalToggles.add("UseAccel");
 
         stage = new Stage(new FitViewport(1280, 720));
         batch = new SpriteBatch();
@@ -267,77 +268,18 @@ public class SettingsScreen extends ScreenAdapter {
         });
 
         //TODO: Get better toggle buttons.
-        FPToggle = new TextButton("  ", appContext.skin, "toggle");
-        FPToggle.setChecked(params.exists("FlowpilotEnabledToggle") && params.getBool("FlowpilotEnabledToggle"));
-        FPToggle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                params.putBool("FlowpilotEnabledToggle", FPToggle.isChecked());
-            }
-        });
-
-        /*F3Toggle = new TextButton("  ", appContext.skin, "toggle");
-        F3Toggle.setChecked(params.exists("F3") && params.getBool("F3"));
-        F3Toggle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                params.putBool("F3", F3Toggle.isChecked());
-            }
-        });*/
-
-        LDWToggle = new TextButton("  ", appContext.skin, "toggle");
-        LDWToggle.setChecked(params.exists("IsLdwEnabled") && params.getBool("IsLdwEnabled"));
-        LDWToggle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                params.putBool("IsLdwEnabled", LDWToggle.isChecked());
-            }
-        });
-
-        RHDToggle = new TextButton("  ", appContext.skin, "toggle");
-        RHDToggle.setChecked(params.exists("IsRHD") && params.getBool("IsRHD"));
-        RHDToggle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                params.putBool("IsRHD", RHDToggle.isChecked());
-            }
-        });
-
-        MetricToggle = new TextButton("  ", appContext.skin, "toggle");
-        MetricToggle.setChecked(params.exists("IsMetric") && params.getBool("IsMetric"));
-        MetricToggle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                params.putBool("IsMetric", MetricToggle.isChecked());
-                appContext.onRoadScreen.isMetric = MetricToggle.isChecked();
-            }
-        });
-
-        recordDriverCamToggle = new TextButton("  ", appContext.skin, "toggle");
-        recordDriverCamToggle.setChecked(params.exists("RecordFront") && params.getBool("RecordFront"));
-        recordDriverCamToggle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-            }
-        });
-
-        lanelessToggle = new TextButton("  ", appContext.skin, "toggle");
-        lanelessToggle.setChecked(params.exists("EndToEndToggle") && params.getBool("EndToEndToggle"));
-        lanelessToggle.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-                params.putBool("EndToEndToggle", lanelessToggle.isChecked());
-            }
-        });
-
-//        disengageAccToggle = new TextButton("  ", appContext.skin, "toggle");
-//        disengageAccToggle.setChecked(params.exists("DisengageOnAccelerator") && params.getBool("DisengageOnAccelerator"));
-//        disengageAccToggle.addListener(new ChangeListener() {
-//            @Override
-//            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
-//                params.putBool("DisengageOnAccelerator", disengageAccToggle.isChecked());
-//            }
-//        });
+        for (int i=0; i<AdditionalToggles.size(); i+=2) {
+            TextButton nb = new TextButton("  ", appContext.skin, "toggle");
+            nb.setChecked(params.exists("FlowpilotEnabledToggle") && params.getBool(AdditionalToggles.get(i + 1)));
+            int finalI = i;
+            nb.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                    params.putBool(AdditionalToggles.get(finalI + 1), nb.isChecked());
+                }
+            });
+            ToggleButtons.add(nb);
+        }
 
         fillDeviceSettings();
 
