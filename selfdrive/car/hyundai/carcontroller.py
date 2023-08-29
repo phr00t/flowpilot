@@ -8,6 +8,7 @@ from selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
 from common.logger import sLogger
+import numpy as np
 
 import statistics
 import datetime
@@ -24,6 +25,13 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 def lerp(a, b, t):
   return (b * t) + (a * (1.0 - t))
+
+def reject_outliers(data, m=2.):
+  data = np.array(data)
+  d = np.abs(data - np.median(data))
+  mdev = np.median(d)
+  s = d / mdev if mdev else np.zeros(len(d))
+  return data[s < m].tolist()
 
 def process_hud_alert(enabled, fingerprint, hud_control):
   sys_warning = (hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw))
@@ -87,10 +95,11 @@ class CarController:
     accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
     #stopping = actuators.longControlState == LongCtrlState.stopping
     #set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
-    self.accels.append(actuators.accel)
-    if len(self.accels) > 5:
+    if 2.0 > actuators.accel > -3.5:
+      self.accels.append(actuators.accel)
+    if len(self.accels) > 6:
       self.accels.pop(0)
-    avg_accel = statistics.fmean(self.accels)
+    avg_accel = statistics.fmean(reject_outliers(self.accels))
 
     # HUD messages
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
