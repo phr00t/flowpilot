@@ -112,6 +112,8 @@ public class SettingsScreen extends ScreenAdapter {
         // easy toggles here. Pairs of string entries, first being display name and second being the parameter that gets set
         AdditionalToggles.add("Use Model Acceleration");
         AdditionalToggles.add("UseAccel");
+        AdditionalToggles.add("Use DistSpeed Estimator");
+        AdditionalToggles.add("UseDistSpeed");
 
         stage = new Stage(new FitViewport(1280, 720));
         batch = new SpriteBatch();

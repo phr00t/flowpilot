@@ -68,6 +68,7 @@ class CarController:
     self.frame = 0
     self.Options = Params()
     self.usingAccel = self.Options.get_bool("UseAccel")
+    self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
 
     self.accel_last = 0
     self.accels = []
@@ -170,7 +171,7 @@ class CarController:
     time_interval_for_distspeed = 0.666
     overall_confidence = 0
     l0v_distval_mph = 0
-    if l0prob > 0.5:
+    if l0prob > 0.5 and self.usingDistSpeed:
       # ok, start averaging this distance value
       self.lead_distance_histavg.append(l0d)
       # if we've got enough data to average, do so into our main list
@@ -280,6 +281,7 @@ class CarController:
     # are we using the accel option?
     if self.frame % 100 == 0:
       self.usingAccel = self.Options.get_bool("UseAccel")
+      self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
 
     if self.usingAccel:
       # does our model think we should be slowing down? if so, definitely don't speed up
