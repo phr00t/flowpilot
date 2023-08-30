@@ -142,19 +142,14 @@ class CarController:
     path_plan = sm['lateralPlan']
     long_plan = sm['longitudinalPlan']
 
-    # get raw model acceleration
-    avg_accel = 0.0
-    if len(long_plan.accels) > 3:
-      # add the lowest acceleration in the last half of accel arrays
-      # as we are looking for future acceleration changes
-      self.accels.append(min(long_plan.accels[len(long_plan.accels)//2:]))
-      if len(self.accels) > 6:
-        self.accels.pop(0)
-      # we then average out fuzzy numbers
-      avg_accel = statistics.fmean(reject_outliers(self.accels))
-
     max_speed_in_mph = vcruise * 0.621371
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
+
+    # what speed does the model want us going?
+    # we store model raw v output in accels
+    target_v = max_speed_in_mph
+    if len(long_plan.accels) > 3:
+      target_v = statistics.fmean(reject_outliers(long_plan.accels)) * CV.MS_TO_MPH
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
@@ -285,22 +280,10 @@ class CarController:
 
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
 
-    # are we using the accel option?
+    # are we using the model velocity option?
     if self.frame % 100 == 0:
       self.usingAccel = self.Options.get_bool("UseAccel")
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
-
-    if self.usingAccel:
-      # does our model think we should be slowing down? if so, definitely don't speed up
-      if avg_accel < -0.5 and desired_speed > clu11_speed:
-        desired_speed = clu11_speed
-
-      # do we really want to stop?
-      if avg_accel < -1.5:
-        desired_speed = 0
-    else:
-      # note that we are not using this value with a big one
-      avg_accel += 100
 
     # what is our difference between desired speed and target speed?
     speed_diff = desired_speed - clu11_speed
@@ -336,7 +319,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("A" + "{:.2f}".format(avg_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " Rs?" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " VL" + "{:.1f}".format(raw_vlead) + " VD" + "{:.1f}".format(l0d))
+    sLogger.Send("v" + "{:.f}".format(target_v) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " Rs?" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " VL" + "{:.1f}".format(raw_vlead) + " VD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
