@@ -67,8 +67,6 @@ class Track():
 class Cluster():
   def __init__(self):
     self.tracks = set()
-    self.vLeads = []
-    self.Dists = []
 
   def add(self, t):
     # add the first track
@@ -140,27 +138,27 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists):
     # this data is a little noisy, let's smooth it out
     finalv = 0.0
     finald = 0.0
     finalprob = 0.0
 
     if lead_msg.prob < 0:
-      self.Dists.clear()
-      self.vLeads.clear()
+      Dists.clear()
+      vLeads.clear()
     else:
-      self.Dists.append(lead_msg.x[0])
-      self.vLeads.append(lead_msg.v[0])
-      if len(self.Dists) > 8:
-        self.Dists.pop(0)
-      if len(self.vLeads) > 8:
-        self.vLeads.pop(0)
-      finald = statistics.fmean(reject_outliers(self.Dists))
-      finalv = statistics.fmean(reject_outliers(self.vLeads))
+      Dists.append(lead_msg.x[0])
+      vLeads.append(lead_msg.v[0])
+      if len(Dists) > 8:
+        Dists.pop(0)
+      if len(vLeads) > 8:
+        vLeads.pop(0)
+      finald = statistics.fmean(reject_outliers(Dists))
+      finalv = statistics.fmean(reject_outliers(vLeads))
       # only consider lead if we've collected enough data on it
-      #if len(self.vLeads) > 3:
-      finalprob = len(self.vLeads) #lead_msg.prob * 100
+      if len(vLeads) > 3:
+        finalprob = lead_msg.prob
 
     return {
       "dRel": float(finald - RADAR_TO_CAMERA),
