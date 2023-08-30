@@ -291,7 +291,7 @@ class CarController:
     # apply a spam overpress to amplify speed changes
     desired_speed += speed_diff * 0.6
 
-    slow_speed_factor = 1.5
+    slow_speed_factor = 1.45
     # this can trigger sooner than lead car slowing, because curve data is much less noisy
     if curve_speed_ratio > 1.175:
       desired_speed = 0
