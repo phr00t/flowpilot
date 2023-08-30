@@ -153,7 +153,7 @@ class CarController:
       accel_values = 0
       accel_total = 0
       for i in range(accel_count//2, accel_count):
-        accel_values++
+        accel_values+=1
         accel_total+=long_plan.accels[i]
       target_v = accel_total / accel_values
 
