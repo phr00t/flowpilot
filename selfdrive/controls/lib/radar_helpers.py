@@ -159,8 +159,8 @@ class Cluster():
       finald = statistics.fmean(reject_outliers(self.Dists))
       finalv = statistics.fmean(reject_outliers(self.vLeads))
       # only consider lead if we've collected enough data on it
-      if len(self.vLeads) > 3:
-        finalprob = lead_msg.prob * 100
+      #if len(self.vLeads) > 3:
+      finalprob = len(self.vLeads) #lead_msg.prob * 100
 
     return {
       "dRel": float(finald - RADAR_TO_CAMERA),
