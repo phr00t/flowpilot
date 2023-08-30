@@ -68,7 +68,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class OnRoadScreen extends ScreenAdapter {
     // avoid GC triggers.
-    static final String VERSION = "23";
+    static final String VERSION = "24";
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -119,6 +119,7 @@ public class OnRoadScreen extends ScreenAdapter {
     String controlsStateTopic = "controlsState";
     String deviceStateTopic = "deviceState";
     String Line1 = "Empty", Line2 = "Empty";
+    public static float CameraLuminance;
 
     Label velocityLabel, velocityUnitLabel, alertText1, alertText2, maxCruiseSpeedLabel, dateLabel, vesrionLabel;
     Table velocityTable, maxCruiseTable, alertTable, infoTable, offRoadTable, rootTable, offRoadRootTable;

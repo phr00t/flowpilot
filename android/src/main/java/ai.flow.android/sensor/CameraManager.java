@@ -3,7 +3,6 @@ package ai.flow.android.sensor;
 import ai.flow.app.OnRoadScreen;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
-import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.ModelExecutorF3;
 import ai.flow.modeld.messages.MsgFrameData;
@@ -12,10 +11,6 @@ import ai.flow.sensor.messages.MsgFrameBuffer;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Matrix;
-import android.graphics.Rect;
-import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
@@ -28,36 +23,32 @@ import android.util.Size;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
+import androidx.camera.camera2.interop.Camera2CameraControl;
+import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.Camera2Interop;
+import androidx.camera.camera2.interop.CaptureRequestOptions;
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.*;
+import androidx.camera.core.impl.CameraCaptureResult;
+import androidx.camera.core.impl.utils.ExifData;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import io.github.crow_misia.libyuv.AbgrBuffer;
-import io.github.crow_misia.libyuv.FilterMode;
-import io.github.crow_misia.libyuv.Nv21Buffer;
 import messaging.ZMQPubHandler;
 import org.capnproto.PrimitiveList;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import org.opencv.core.Core;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static ai.flow.android.sensor.Utils.fillYUVBuffer;
-import static ai.flow.common.BufferUtils.byteToFloat;
 import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
-import static ai.flow.common.transformations.Camera.CAMERA_TYPE_WIDE;
 
 public class CameraManager extends SensorInterface {
 
@@ -81,6 +72,10 @@ public class CameraManager extends SensorInterface {
     CameraControl cameraControl;
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd--HH-mm-ss.SSS");
     ByteBuffer yuvBuffer;
+    Camera2CameraControl c2control;
+    Camera2CameraInfo c2info;
+    androidx.camera.core.Camera camera;
+    public int currentExposureIndex = 0;
 
     public CameraSelector getCameraSelector(boolean  wide){
         if (wide) {
@@ -138,7 +133,8 @@ public class CameraManager extends SensorInterface {
                 try {
                     cameraProvider = cameraProviderFuture.get();
                     myAnalyzer = new ImageAnalysis.Analyzer() {
-                        @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
+                        @SuppressLint("RestrictedApi")
+                        @ExperimentalCamera2Interop @OptIn(markerClass = ExperimentalGetImage.class) @RequiresApi(api = Build.VERSION_CODES.N)
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
                             long startTimestamp = System.currentTimeMillis();
@@ -233,9 +229,9 @@ public class CameraManager extends SensorInterface {
         builder.setDefaultResolution(ims);
         builder.setMaxResolution(ims);
         builder.setTargetResolution(ims);
-        Camera2Interop.Extender<ImageAnalysis> ext = new Camera2Interop.Extender<>(builder);
+        Camera2Interop.Extender<ImageAnalysis> CameraRequests = new Camera2Interop.Extender<>(builder);
         // try to box just the road area for metering
-        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
+        CameraRequests.setCaptureRequestOption(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{
                 new MeteringRectangle((int)Math.floor(W * 0.05f), (int)Math.floor(H * 0.25f),
                                       (int)Math.floor(W * 0.9f),  (int)Math.floor(H * 0.70f), 500)
         });
@@ -246,27 +242,28 @@ public class CameraManager extends SensorInterface {
                 0.8000f, 0.9063f, 0.8667f, 0.9389f, 0.9333f, 0.9701f, 1.0000f, 1.0000f
         };
         for (int i=3; i<gammaCurve.length; i+=2)
-            gammaCurve[i] = (gammaCurve[i] * 3f + 1f) / 4f;
+            gammaCurve[i] = (gammaCurve[i] * 4f + 1f) / 5f;
         TonemapCurve curve = new TonemapCurve(gammaCurve, gammaCurve, gammaCurve);
-        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_MODE, CameraMetadata.TONEMAP_MODE_CONTRAST_CURVE);
-        ext.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);
-        ext.setCaptureRequestOption(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-        ext.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_FAST);
-        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
-        ext.setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
-        ext.setCaptureRequestOption(CaptureRequest.LENS_FOCUS_DISTANCE, 0f);
+        CameraRequests.setCaptureRequestOption(CaptureRequest.TONEMAP_MODE, CameraMetadata.TONEMAP_MODE_CONTRAST_CURVE);
+        CameraRequests.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);
+        CameraRequests.setCaptureRequestOption(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+        CameraRequests.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+        CameraRequests.setCaptureRequestOption(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_FAST);
+        CameraRequests.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(20, 20));
+        CameraRequests.setCaptureRequestOption(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+        CameraRequests.setCaptureRequestOption(CaptureRequest.LENS_FOCUS_DISTANCE, 0f);
         ImageAnalysis imageAnalysis = builder.build();
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context), myAnalyzer);
 
         // f3 uses wide camera.
         CameraSelector cameraSelector = getCameraSelector(cameraType == Camera.CAMERA_TYPE_WIDE);
 
-        androidx.camera.core.Camera camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector,
-                imageAnalysis);
+        camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector, imageAnalysis);
 
         cameraControl = camera.getCameraControl();
         cameraControl.setZoomRatio(Camera.digital_zoom_apply);
+        c2control = Camera2CameraControl.from(cameraControl);
+        c2info = Camera2CameraInfo.from(camera.getCameraInfo());
     }
 
     public boolean isRunning() {
