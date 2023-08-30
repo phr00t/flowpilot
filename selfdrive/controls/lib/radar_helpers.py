@@ -171,7 +171,7 @@ class Cluster():
       "aLeadK": float(0),
       "aLeadTau": _LEAD_ACCEL_TAU,
       "fcw": False,
-      "modelProb": float(finalprob),
+      "modelProb": float(1.0),
       "radar": False,
       "status": True
     }
