@@ -146,6 +146,7 @@ class CarController:
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
 
     # what speed does the model want us going?
+    # this looks for stop signs and red lights
     # accels is a weird type so we will do this weird average of the last half
     target_v = max_speed_in_mph
     accel_count = len(long_plan.accels)
@@ -290,20 +291,27 @@ class CarController:
       self.usingAccel = self.Options.get_bool("UseAccel")
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
 
-    # what is our difference between desired speed and target speed?
-    speed_diff = desired_speed - clu11_speed
-
-    # apply a spam overpress to amplify speed changes
-    desired_speed += speed_diff * 0.6
-
-    slow_speed_factor = 1.45
-    # this can trigger sooner than lead car slowing, because curve data is much less noisy
-    if curve_speed_ratio > 1.175:
+    if self.usingAccel and target_v < 10 and clu11_speed < 45:
+      # stop sign or red light, stop!
       desired_speed = 0
+      # make sure we don't re-enable cruise after seeing a stop sign!
+      reenable_cruise_atspd = 0
+      CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
+    else:
+      # what is our difference between desired speed and target speed?
+      speed_diff = desired_speed - clu11_speed
 
-    # if we are going much faster than we want, disable cruise to trigger more intense regen braking
-    if clu11_speed > desired_speed * slow_speed_factor:
-      desired_speed = 0
+      # apply a spam overpress to amplify speed changes
+      desired_speed += speed_diff * 0.6
+
+      slow_speed_factor = 1.47
+      # this can trigger sooner than lead car slowing, because curve data is much less noisy
+      if curve_speed_ratio > 1.175:
+        desired_speed = 0
+
+      # if we are going much faster than we want, disable cruise to trigger more intense regen braking
+      if clu11_speed > desired_speed * slow_speed_factor:
+        desired_speed = 0
 
     # sanity checks
     if desired_speed > max_speed_in_mph:
