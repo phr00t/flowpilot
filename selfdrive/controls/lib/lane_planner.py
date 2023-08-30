@@ -13,6 +13,9 @@ TRAJECTORY_SIZE = 33
 PATH_OFFSET = 0.175
 CAMERA_OFFSET = 0.32
 
+def clamp(num, min_value, max_value):
+  return max(min(num, max_value), min_value)
+
 class LanePlanner:
   def __init__(self):
     self.ll_t = np.zeros((TRAJECTORY_SIZE,))
@@ -58,7 +61,9 @@ class LanePlanner:
     # Reduce reliance on lanelines that are too far apart or
     # will be in a few seconds
     path_xyz[:, 1] += self.path_offset
-    l_prob, r_prob = self.lll_prob, self.rll_prob
+    # probabily boost so we rely more on std to reduce probabilities
+    l_prob = clamp(self.lll_prob * 1.4, 0.0, 1.0)
+    r_prob = clamp(self.rll_prob * 1.4, 0.0, 1.0)
     width_pts = self.rll_y - self.lll_y
     prob_mods = []
     for t_check in (0.0, 1.5, 3.0):

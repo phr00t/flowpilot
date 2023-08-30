@@ -246,7 +246,7 @@ class CarController:
     # is there a lead?
     if l0prob > 0.5 and clu11_speed > 5:
       # amplify large lead car speed differences a bit so we react faster
-      lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
+      # lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1 # maybe we don't need to do this anymore
       # calculate an estimate of the lead car's speed for purposes of setting our speed
       lead_speed = clu11_speed + lead_vdiff_mph
       # calculate lead car time
@@ -332,7 +332,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("v" + "{:.1f}".format(target_v) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " Rs?" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " VL" + "{:.1f}".format(raw_vlead) + " VD" + "{:.1f}".format(l0d))
+    sLogger.Send("lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " Rs?" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " VL" + "{:.1f}".format(raw_vlead) + " VD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
