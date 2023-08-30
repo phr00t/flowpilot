@@ -11,7 +11,7 @@ TRAJECTORY_SIZE = 33
 # model path is in the frame of the camera
 # positive numbers go right
 PATH_OFFSET = 0.175
-CAMERA_OFFSET = 0.34
+CAMERA_OFFSET = 0.32
 
 class LanePlanner:
   def __init__(self):
