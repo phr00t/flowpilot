@@ -146,10 +146,16 @@ class CarController:
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
 
     # what speed does the model want us going?
-    # we store model raw v output in accels
+    # accels is a weird type so we will do this weird average of the last half
     target_v = max_speed_in_mph
-    if len(long_plan.accels) > 10:
-      target_v = statistics.fmean(long_plan.accels[8:]) * CV.MS_TO_MPH
+    accel_count = len(long_plan.accels)
+    if accel_count > 4:
+      accel_values = 0
+      accel_total = 0
+      for i in range(accel_count//2, accel_count):
+        accel_values++
+        accel_total+=long_plan.accels[i]
+      target_v = accel_total / accel_values
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
