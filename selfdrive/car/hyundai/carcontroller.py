@@ -148,8 +148,8 @@ class CarController:
     # what speed does the model want us going?
     # we store model raw v output in accels
     target_v = max_speed_in_mph
-    if len(long_plan.accels) > 3:
-      target_v = statistics.fmean(reject_outliers(long_plan.accels)) * CV.MS_TO_MPH
+    if len(long_plan.accels) > 10:
+      target_v = statistics.fmean(long_plan.accels[8:]) * CV.MS_TO_MPH
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
