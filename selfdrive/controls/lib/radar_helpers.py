@@ -16,11 +16,11 @@ RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
 def reject_outliers(data, m=2.):
-  newdata = np.array(data.copy())
-  d = np.abs(newdata - np.median(newdata))
+  data = np.array(data)
+  d = np.abs(data - np.median(data))
   mdev = np.median(d)
   s = d / mdev if mdev else np.zeros(len(d))
-  return newdata[s < m].tolist()
+  return data[s < m].tolist()
 
 class Track():
   def __init__(self, v_lead, kalman_params):
