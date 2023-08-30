@@ -144,7 +144,7 @@ class Cluster():
     finald = 0.0
     finalprob = 0.0
 
-    if lead_msg.prob < 0:
+    if lead_msg.prob < 0.45:
       Dists.clear()
       vLeads.clear()
     else:
