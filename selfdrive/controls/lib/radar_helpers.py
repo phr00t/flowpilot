@@ -144,6 +144,7 @@ class Cluster():
     # this data is a little noisy, let's smooth it out
     finalv = 0.0
     finald = 0.0
+    finalprob = 0.0
 
     if lead_msg.prob < 0.45:
       self.Dists.clear()
@@ -151,12 +152,14 @@ class Cluster():
     else:
       self.Dists.append(lead_msg.x[0])
       self.vLeads.append(lead_msg.v[0])
-      if len(self.Dists) > 10:
+      if len(self.Dists) > 8:
         self.Dists.pop(0)
-      if len(self.vLeads) > 10:
+      if len(self.vLeads) > 8:
         self.vLeads.pop(0)
       finald = statistics.fmean(reject_outliers(self.Dists))
       finalv = statistics.fmean(reject_outliers(self.vLeads))
+      # only consider lead if we've collected enough data on it
+      finalprob = lead_msg.prob if len(self.vLeads) > 3 else 0.0
 
     return {
       "dRel": float(finald - RADAR_TO_CAMERA),
@@ -167,7 +170,7 @@ class Cluster():
       "aLeadK": float(0),
       "aLeadTau": _LEAD_ACCEL_TAU,
       "fcw": False,
-      "modelProb": float(lead_msg.prob),
+      "modelProb": float(finalprob),
       "radar": False,
       "status": True
     }
