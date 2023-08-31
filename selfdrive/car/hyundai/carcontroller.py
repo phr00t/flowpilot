@@ -299,13 +299,18 @@ class CarController:
     else:
       self.stop_counter = 0
 
-    if self.usingAccel and self.stop_counter > 3 and clu11_speed < 45:
+    if self.usingAccel and self.stop_counter > 4 and clu11_speed < 45:
       # stop sign or red light, stop!
       desired_speed = 0
-      # make sure we don't re-enable cruise after seeing a stop sign!
-      reenable_cruise_atspd = 0
-      CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
+      # if we are really sure about this stop, don't re-enable cruise
+      if self.stop_counter > 8:
+        reenable_cruise_atspd = 0
+        CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     else:
+      # if we may be approaching a stop, start slowing a little bit
+      if self.usingAccel and self.stop_counter > 1 and desired_speed > clu11_speed - 1:
+        desired_speed = clu11_speed - 1
+
       # what is our difference between desired speed and target speed?
       speed_diff = desired_speed - clu11_speed
 
