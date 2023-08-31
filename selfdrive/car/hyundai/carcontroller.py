@@ -77,6 +77,7 @@ class CarController:
     self.last_button_frame = 0
     self.lkas11_cnt = 0
     self.mdpsBus = 0
+    self.stop_counter = 0
 
     self.lead_distance_hist = []
     self.lead_distance_times = []
@@ -173,7 +174,6 @@ class CarController:
     l0d = radarState.leadOne.dRel
     l0v = radarState.leadOne.vRel
     lead_vdiff_mph = l0v * 2.23694
-    raw_vlead = radarState.leadOne.vLead * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
     time_interval_for_distspeed = 0.666
@@ -291,7 +291,13 @@ class CarController:
       self.usingAccel = self.Options.get_bool("UseAccel")
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
 
-    if self.usingAccel and target_v < 10 and clu11_speed < 45:
+    # if we are under 10 a bunch, we must be at a stop sign or red light
+    if target_v < 10:
+      self.stop_counter += 1
+    else:
+      self.stop_counter = 0
+
+    if self.usingAccel and self.stop_counter > 3 and clu11_speed < 45:
       # stop sign or red light, stop!
       desired_speed = 0
       # make sure we don't re-enable cruise after seeing a stop sign!
