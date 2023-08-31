@@ -31,7 +31,6 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 
-import ai.flow.sensor.camera.CameraManager;
 import messaging.ZMQPubHandler;
 import messaging.ZMQSubHandler;
 import org.apache.commons.lang3.ArrayUtils;
@@ -68,7 +67,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class OnRoadScreen extends ScreenAdapter {
     // avoid GC triggers.
-    static final String VERSION = "25";
+    static final String VERSION = "28";
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -119,7 +118,7 @@ public class OnRoadScreen extends ScreenAdapter {
     String controlsStateTopic = "controlsState";
     String deviceStateTopic = "deviceState";
     String Line1 = "Empty", Line2 = "Empty";
-    public static float CameraLuminance;
+    public static int CamExposure;
 
     Label velocityLabel, velocityUnitLabel, alertText1, alertText2, maxCruiseSpeedLabel, dateLabel, vesrionLabel;
     Table velocityTable, maxCruiseTable, alertTable, infoTable, offRoadTable, rootTable, offRoadRootTable;
@@ -793,7 +792,7 @@ public class OnRoadScreen extends ScreenAdapter {
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
             appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,3,200);
-            appContext.font.draw(batch, "v" + VERSION + ", Cam#" + CamSelected, Gdx.graphics.getWidth() - 450f, 225f);
+            appContext.font.draw(batch, "v" + VERSION + ", E" + CamExposure, Gdx.graphics.getWidth() - 450f, 225f);
             appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 450f, 150f);
             appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 450f, 75f);
             batch.end();

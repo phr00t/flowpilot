@@ -11,9 +11,12 @@ import ai.flow.sensor.messages.MsgFrameBuffer;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.TonemapCurve;
 import android.os.Build;
@@ -46,6 +49,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static ai.flow.android.sensor.Utils.fillYUVBuffer;
 import static ai.flow.common.transformations.Camera.CAMERA_TYPE_ROAD;
@@ -65,6 +71,7 @@ public class CameraManager extends SensorInterface {
     public PrimitiveList.Float.Builder K;
     public int frameID = 0;
     public boolean recording = false;
+    ExecutorService threadpool = Executors.newSingleThreadScheduledExecutor();
     public Context context;
     public ParamsInterface params = ParamsInterface.getInstance();
     public Fragment lifeCycleFragment;
@@ -162,15 +169,34 @@ public class CameraManager extends SensorInterface {
                                     msgFrameBuffer.frameBuffer.asReader(),
                                     image.getImageInfo().getTimestamp(), startTimestamp);
 
+
                             ph.publishBuffer(frameDataTopic, msgFrameData.serialize(true));
                             ph.publishBuffer(frameBufferTopic, msgFrameBuffer.serialize(true));
 
-                            // make sure we keep our zoom level
-                            if (frameID % 5 == 0)
-                                cameraControl.setZoomRatio(Camera.digital_zoom_apply);
-
                             frameID += 1;
                             image.close();
+
+                            // make sure we keep our zoom level and monitor brightness
+                            if (frameID % 5 == 0) {
+                                cameraControl.setZoomRatio(Camera.digital_zoom_apply);
+                                // evaluate luminosity in another thread
+                                threadpool.submit(() -> {
+                                    byte[] bytes = yuvBuffer.array();
+                                    int total = 0, count = bytes.length / 2048;
+                                    if (count > 0) {
+                                        for (int i=0; i<bytes.length; i+=2048)
+                                            total += bytes[i] & 0xFF;
+                                        final int luminance = total / count;
+                                        OnRoadScreen.CamExposure = luminance;
+                                    }
+                                });
+                                // try to stay at 128
+                                if (OnRoadScreen.CamExposure > 125 && currentExposureIndex > -10)
+                                    currentExposureIndex--;
+                                else if(OnRoadScreen.CamExposure < 120 && currentExposureIndex < 0)
+                                    currentExposureIndex++;
+                                cameraControl.setExposureCompensationIndex(currentExposureIndex);
+                            }
                         }
                     };
 
@@ -242,7 +268,7 @@ public class CameraManager extends SensorInterface {
                 0.8000f, 0.9063f, 0.8667f, 0.9389f, 0.9333f, 0.9701f, 1.0000f, 1.0000f
         };
         for (int i=3; i<gammaCurve.length; i+=2)
-            gammaCurve[i] = (gammaCurve[i] * 4f + 1f) / 5f;
+            gammaCurve[i] = (gammaCurve[i] * 3f + 1f) / 4f;
         TonemapCurve curve = new TonemapCurve(gammaCurve, gammaCurve, gammaCurve);
         CameraRequests.setCaptureRequestOption(CaptureRequest.TONEMAP_MODE, CameraMetadata.TONEMAP_MODE_CONTRAST_CURVE);
         CameraRequests.setCaptureRequestOption(CaptureRequest.TONEMAP_CURVE, curve);
