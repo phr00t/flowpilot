@@ -276,7 +276,7 @@ class CarController:
       max_lead_adj = lead_speed + lead_time_ideal_offset
       # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
       # don't go much slower than the lead car, and cancel any sudden slowing that may be happening
-      fasterleadcar_imposed_speed_limit = max(clu11_speed - 2, lead_speed - 3)
+      fasterleadcar_imposed_speed_limit = max(clu11_speed - 2, lead_speed - 2.5)
       if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
         max_lead_adj = fasterleadcar_imposed_speed_limit
       elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.8:
@@ -345,7 +345,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("tv" + "{:.1f}".format(target_v) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " lp" + "{:.1f}".format(l0prob) + " VD" + "{:.1f}".format(l0d))
+    #sLogger.Send("tv" + "{:.1f}".format(target_v) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " lp" + "{:.1f}".format(l0prob) + " VD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
