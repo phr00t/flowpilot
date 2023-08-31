@@ -303,7 +303,7 @@ class CarController:
       # stop sign or red light, stop!
       desired_speed = 0
       # if we are really sure about this stop, don't re-enable cruise
-      if self.stop_counter > 8:
+      if self.stop_counter > 10:
         reenable_cruise_atspd = 0
         CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     else:
