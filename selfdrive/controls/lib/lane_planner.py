@@ -4,7 +4,7 @@ from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import interp
 from common.realtime import DT_MDL
 from system.swaglog import cloudlog
-
+from common.logger import sLogger
 
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
@@ -12,6 +12,7 @@ TRAJECTORY_SIZE = 33
 # positive numbers go right
 PATH_OFFSET = 0.175
 CAMERA_OFFSET = 0.32
+KEEP_MIN_DISTANCE_FROM_LANE = 1.0
 
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
@@ -22,9 +23,9 @@ class LanePlanner:
     self.ll_x = np.zeros((TRAJECTORY_SIZE,))
     self.lll_y = np.zeros((TRAJECTORY_SIZE,))
     self.rll_y = np.zeros((TRAJECTORY_SIZE,))
-    self.lane_width_estimate = FirstOrderFilter(3.7, 9.95, DT_MDL)
+    self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
     self.lane_width_certainty = FirstOrderFilter(1.0, 0.95, DT_MDL)
-    self.lane_width = 3.7
+    self.lane_width = 3.2
 
     self.lll_prob = 0.
     self.rll_prob = 0.
@@ -63,14 +64,6 @@ class LanePlanner:
     path_xyz[:, 1] += self.path_offset
     l_prob = self.lll_prob # clamp(self.lll_prob * 1.4, 0.0, 1.0)
     r_prob = self.rll_prob # clamp(self.rll_prob * 1.4, 0.0, 1.0)
-    width_pts = self.rll_y - self.lll_y
-    prob_mods = []
-    for t_check in (0.0, 1.5, 3.0):
-      width_at_t = interp(t_check * (v_ego + 7), self.ll_x, width_pts)
-      prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
-    mod = min(prob_mods)
-    l_prob *= mod
-    r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
     l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
@@ -80,15 +73,21 @@ class LanePlanner:
 
     # Find current lanewidth
     self.lane_width_certainty.update(l_prob * r_prob)
-    current_lane_width = abs(self.rll_y[0] - self.lll_y[0])
+    current_lane_width = clamp(abs(self.rll_y[0] - self.lll_y[0]), 2.0, 4.0)
     self.lane_width_estimate.update(current_lane_width)
-    speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
+    speed_lane_width = interp(v_ego, [0., 31.], [2.7, 3.7])
     self.lane_width = self.lane_width_certainty.x * self.lane_width_estimate.x + \
                       (1 - self.lane_width_certainty.x) * speed_lane_width
 
-    clipped_lane_width = min(4.0, self.lane_width)
-    path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
-    path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
+    # ideally we are half distance of lane width
+    # but clamp lane distances to not push us over the current lane width
+    lane_distance = clamp(self.lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE, current_lane_width - KEEP_MIN_DISTANCE_FROM_LANE)
+
+    # debug
+    sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob))
+
+    path_from_left_lane = self.lll_y + lane_distance
+    path_from_right_lane = self.rll_y - lane_distance
 
     self.d_prob = l_prob + r_prob - l_prob * r_prob
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
