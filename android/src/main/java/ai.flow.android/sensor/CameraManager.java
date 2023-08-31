@@ -177,7 +177,7 @@ public class CameraManager extends SensorInterface {
                             image.close();
 
                             // make sure we keep our zoom level and monitor brightness
-                            if (frameID % 5 == 0) {
+                            if (frameID % 6 == 0) {
                                 cameraControl.setZoomRatio(Camera.digital_zoom_apply);
                                 // evaluate luminosity in another low priority thread
                                 threadpool.submit(() -> {
