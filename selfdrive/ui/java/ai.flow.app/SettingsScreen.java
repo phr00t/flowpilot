@@ -110,10 +110,12 @@ public class SettingsScreen extends ScreenAdapter {
         this.appContext = appContext;
 
         // easy toggles here. Pairs of string entries, first being display name and second being the parameter that gets set
-        AdditionalToggles.add("Use Model Acceleration");
+        AdditionalToggles.add("Stop Sign/Red Lights");
         AdditionalToggles.add("UseAccel");
         AdditionalToggles.add("Use DistSpeed Estimator");
         AdditionalToggles.add("UseDistSpeed");
+        AdditionalToggles.add("More Sensitive Slower");
+        AdditionalToggles.add("SensitiveSlow");
 
         stage = new Stage(new FitViewport(1280, 720));
         batch = new SpriteBatch();

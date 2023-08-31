@@ -83,6 +83,7 @@ def main():
                         ("HasAcceptedTerms", "1"),
                         ("UseAccel", "0"),
                         ("UseDistSpeed", "0"),
+                        ("SensitiveSlow", "1"),
                         ("WideCameraOnly", "1"),
                         ("UbloxAvailable", "1")
                          ]

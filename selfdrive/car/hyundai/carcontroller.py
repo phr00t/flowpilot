@@ -69,6 +69,7 @@ class CarController:
     self.Options = Params()
     self.usingAccel = self.Options.get_bool("UseAccel")
     self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
+    self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
     self.accel_last = 0
     self.accels = []
@@ -286,10 +287,11 @@ class CarController:
 
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
 
-    # are we using the model velocity option?
+    # get option updates
     if self.frame % 100 == 0:
       self.usingAccel = self.Options.get_bool("UseAccel")
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
+      self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
     # if we are under 10 a bunch, we must be at a stop sign or red light
     if target_v < 10:
@@ -310,7 +312,7 @@ class CarController:
       # apply a spam overpress to amplify speed changes
       desired_speed += speed_diff * 0.6
 
-      slow_speed_factor = 1.45
+      slow_speed_factor = 1.45 if self.sensitiveSlow else 1.5
       # this can trigger sooner than lead car slowing, because curve data is much less noisy
       if curve_speed_ratio > 1.175:
         desired_speed = 0

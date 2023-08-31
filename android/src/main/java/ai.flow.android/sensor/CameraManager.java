@@ -179,8 +179,9 @@ public class CameraManager extends SensorInterface {
                             // make sure we keep our zoom level and monitor brightness
                             if (frameID % 5 == 0) {
                                 cameraControl.setZoomRatio(Camera.digital_zoom_apply);
-                                // evaluate luminosity in another thread
+                                // evaluate luminosity in another low priority thread
                                 threadpool.submit(() -> {
+                                    Thread.currentThread().setPriority(Thread.NORM_PRIORITY - 1);
                                     byte[] bytes = yuvBuffer.array();
                                     int total = 0, count = bytes.length / 2048;
                                     if (count > 0) {
@@ -189,13 +190,13 @@ public class CameraManager extends SensorInterface {
                                         final int luminance = total / count;
                                         OnRoadScreen.CamExposure = luminance;
                                     }
+                                    // try to stay at 128
+                                    if (OnRoadScreen.CamExposure > 125 && currentExposureIndex > -10)
+                                        currentExposureIndex--;
+                                    else if(OnRoadScreen.CamExposure < 120 && currentExposureIndex < 0)
+                                        currentExposureIndex++;
+                                    cameraControl.setExposureCompensationIndex(currentExposureIndex);
                                 });
-                                // try to stay at 128
-                                if (OnRoadScreen.CamExposure > 125 && currentExposureIndex > -10)
-                                    currentExposureIndex--;
-                                else if(OnRoadScreen.CamExposure < 120 && currentExposureIndex < 0)
-                                    currentExposureIndex++;
-                                cameraControl.setExposureCompensationIndex(currentExposureIndex);
                             }
                         }
                     };
