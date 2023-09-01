@@ -92,7 +92,7 @@ class CarState(CarStateBase):
 
     ret.vEgoCluster = self.cluster_speed * speed_conv
 
-    ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"] + 2.1 # my kona ev has a ~2.1 degree offset compensated here
+    ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"] + 1.8 # my kona ev has a degree offset compensated here
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
     ret.yawRate = cp.vl["ESP12"]["YAW_RATE"]
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(
