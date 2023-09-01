@@ -5,6 +5,8 @@ from common.numpy_fast import interp
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from common.logger import sLogger
+
 
 # At higher speeds (25+mph) we can assume:
 # Lateral acceleration achieved by a specific car correlates to
@@ -51,6 +53,9 @@ class LatControlTorque(LatControl):
         actual_curvature_llk = llk.angularVelocityCalibrated.value[2] / CS.vEgo
         actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
         curvature_deadzone = 0.0
+
+      sLogger.Send("Steer:" + "{:.2f}".format(CS.steeringAngleDeg) + ", Offset:" + "{:.2f}".format(params.angleOffsetDeg) + ", final:" + "{:.2f}".format(CS.steeringAngleDeg - params.angleOffsetDeg))
+
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
 
       # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
