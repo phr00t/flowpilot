@@ -7,11 +7,8 @@ from system.swaglog import cloudlog
 from common.logger import sLogger
 
 TRAJECTORY_SIZE = 33
-# camera offset is meters from center car to camera
-# model path is in the frame of the camera
 # positive numbers go right
-PATH_OFFSET = 0.175
-CAMERA_OFFSET = 0.32
+CAMERA_OFFSET = 0.17
 KEEP_MIN_DISTANCE_FROM_LANE = 1.0
 
 def clamp(num, min_value, max_value):
@@ -37,17 +34,14 @@ class LanePlanner:
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
-    self.camera_offset = CAMERA_OFFSET
-    self.path_offset = PATH_OFFSET
-
   def parse_model(self, md):
     lane_lines = md.laneLines
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      self.lll_y = np.array(lane_lines[1].y) + self.camera_offset
-      self.rll_y = np.array(lane_lines[2].y) + self.camera_offset
+      self.lll_y = np.array(lane_lines[1].y)
+      self.rll_y = np.array(lane_lines[2].y)
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
@@ -59,11 +53,9 @@ class LanePlanner:
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
-    # Reduce reliance on lanelines that are too far apart or
-    # will be in a few seconds
-    path_xyz[:, 1] += self.path_offset
-    l_prob = self.lll_prob # clamp(self.lll_prob * 1.4, 0.0, 1.0)
-    r_prob = self.rll_prob # clamp(self.rll_prob * 1.4, 0.0, 1.0)
+    # set probabilities
+    l_prob = self.lll_prob
+    r_prob = self.rll_prob
 
     # Reduce reliance on uncertain lanelines
     l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
@@ -97,4 +89,8 @@ class LanePlanner:
       path_xyz[:,1] = self.d_prob * lane_path_y_interp + (1.0 - self.d_prob) * path_xyz[:,1]
     else:
       cloudlog.warning("Lateral mpc - NaNs in laneline times, ignoring")
+
+    # apply path offset after everything
+    path_xyz[:, 1] += CAMERA_OFFSET
+
     return path_xyz
