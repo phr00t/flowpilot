@@ -8,7 +8,7 @@ from common.logger import sLogger
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.17
+CAMERA_OFFSET = 0.16
 KEEP_MIN_DISTANCE_FROM_LANE = 1.3
 
 def clamp(num, min_value, max_value):
@@ -40,8 +40,8 @@ class LanePlanner:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      self.lll_y = np.array(lane_lines[1].y)
-      self.rll_y = np.array(lane_lines[2].y)
+      self.lll_y = np.array(lane_lines[1].y) + CAMERA_OFFSET * 0.666
+      self.rll_y = np.array(lane_lines[2].y) + CAMERA_OFFSET * 0.666
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
