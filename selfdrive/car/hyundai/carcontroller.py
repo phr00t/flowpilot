@@ -78,7 +78,6 @@ class CarController:
     self.last_button_frame = 0
     self.lkas11_cnt = 0
     self.mdpsBus = 0
-    self.stop_counter = 0
 
     self.lead_distance_hist = []
     self.lead_distance_times = []
@@ -150,14 +149,16 @@ class CarController:
     # what speed does the model want us going?
     # this looks for stop signs and red lights
     # accels is a weird type so we will do this weird average of the last half
-    target_v = max_speed_in_mph
     accel_count = len(long_plan.accels)
     if accel_count > 4:
       accel_smallest = 9999
       for i in range(accel_count//2, accel_count):
         if long_plan.accels[i] < accel_smallest:
           accel_smallest = long_plan.accels[i]
-      target_v = accel_smallest * CV.MS_TO_MPH
+      self.accels.append(accel_smallest * CV.MS_TO_MPH)
+      if len(self.accels) > 8:
+        self.accels.pop(0)
+    avg_accel = statistics.fmean(self.accels) if len(self.accels) > 6 else max_speed_in_mph
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
@@ -293,22 +294,14 @@ class CarController:
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
       self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
-    # if we are under 10 a bunch, we must be at a stop sign or red light
-    if target_v < 10:
-      self.stop_counter += 1
-    else:
-      self.stop_counter = 0
-
-    if self.usingAccel and self.stop_counter > 4 and clu11_speed < 45:
+    if self.usingAccel and avg_accel < 8.0 and clu11_speed < 45:
       # stop sign or red light, stop!
       desired_speed = 0
-      # if we are really sure about this stop, don't re-enable cruise
-      if self.stop_counter > 10:
-        reenable_cruise_atspd = 0
-        CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
+      #reenable_cruise_atspd = 0
+      #CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     else:
-      # if we may be approaching a stop, start slowing a little bit
-      if self.usingAccel and self.stop_counter > 1 and desired_speed > clu11_speed - 1:
+      # does the model think we should be really slowing down?
+      if self.usingAccel and avg_accel < clu11_speed * 0.5 and desired_speed > clu11_speed - 1:
         desired_speed = clu11_speed - 1
 
       # what is our difference between desired speed and target speed?
