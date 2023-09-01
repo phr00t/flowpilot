@@ -20,6 +20,8 @@ class LanePlanner:
     self.ll_x = np.zeros((TRAJECTORY_SIZE,))
     self.lll_y = np.zeros((TRAJECTORY_SIZE,))
     self.rll_y = np.zeros((TRAJECTORY_SIZE,))
+    self.le_y = np.zeros((TRAJECTORY_SIZE,))
+    self.re_y = np.zeros((TRAJECTORY_SIZE,))
     self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
     self.lane_width_certainty = FirstOrderFilter(1.0, 0.95, DT_MDL)
     self.lane_width = 3.2
@@ -36,6 +38,8 @@ class LanePlanner:
 
   def parse_model(self, md):
     lane_lines = md.laneLines
+    edges = md.roadEdges
+
     if len(lane_lines) == 4 and len(lane_lines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
@@ -46,6 +50,13 @@ class LanePlanner:
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
       self.rll_std = md.laneLineStds[2]
+
+    if len(edges[0].t) == TRAJECTORY_SIZE:
+      self.le_y = np.array(edges[0].y)
+      self.re_y = np.array(edges[1].y)
+    else:
+      self.le_y = self.lll_y
+      self.re_y = self.rll_y
 
     desire_state = md.meta.desireState
     if len(desire_state):
@@ -65,7 +76,7 @@ class LanePlanner:
 
     # Find current lanewidth
     self.lane_width_certainty.update(l_prob * r_prob)
-    current_lane_width = clamp(abs(self.rll_y[0] - self.lll_y[0]), 2.6, 4.0)
+    current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), 2.6, 4.0)
     self.lane_width_estimate.update(current_lane_width)
     speed_lane_width = interp(v_ego, [0., 31.], [2.7, 3.7])
     self.lane_width = self.lane_width_certainty.x * self.lane_width_estimate.x + \
@@ -77,7 +88,7 @@ class LanePlanner:
     lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
 
     # debug
-    #sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob))
+    sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob))
 
     path_from_left_lane = self.lll_y + lane_distance
     path_from_right_lane = self.rll_y - lane_distance
