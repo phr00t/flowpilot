@@ -54,7 +54,7 @@ class LatControlTorque(LatControl):
         actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
         curvature_deadzone = 0.0
 
-      sLogger.Send("Steer:" + "{:.2f}".format(CS.steeringAngleDeg) + ", Offset:" + "{:.2f}".format(params.angleOffsetDeg) + ", final:" + "{:.2f}".format(CS.steeringAngleDeg - params.angleOffsetDeg))
+      #sLogger.Send("Steer:" + "{:.2f}".format(CS.steeringAngleDeg) + ", Offset:" + "{:.2f}".format(params.angleOffsetDeg) + ", final:" + "{:.2f}".format(CS.steeringAngleDeg - params.angleOffsetDeg))
 
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
 
