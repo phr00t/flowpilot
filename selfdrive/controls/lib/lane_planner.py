@@ -9,7 +9,7 @@ from common.logger import sLogger
 TRAJECTORY_SIZE = 33
 # positive numbers go right
 CAMERA_OFFSET = 0.17
-KEEP_MIN_DISTANCE_FROM_LANE = 1.0
+KEEP_MIN_DISTANCE_FROM_LANE = 1.3
 
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
@@ -73,7 +73,8 @@ class LanePlanner:
 
     # ideally we are half distance of lane width
     # but clamp lane distances to not push us over the current lane width
-    lane_distance = clamp(self.lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE, current_lane_width - KEEP_MIN_DISTANCE_FROM_LANE)
+    use_min_distance = min(current_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
+    lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
 
     # debug
     sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob))
