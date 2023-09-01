@@ -338,7 +338,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0tv" + "{:.1f}".format(target_v) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " lp" + "{:.1f}".format(l0prob) + " VD" + "{:.1f}".format(l0d))
+    sLogger.Send("0at" + "{:.1f}".format(avg_accel) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " lp" + "{:.1f}".format(l0prob) + " VD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
