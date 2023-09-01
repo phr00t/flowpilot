@@ -40,8 +40,8 @@ class LanePlanner:
       self.ll_t = (np.array(lane_lines[1].t) + np.array(lane_lines[2].t))/2
       # left and right ll x is the same
       self.ll_x = lane_lines[1].x
-      self.lll_y = np.array(lane_lines[1].y) + CAMERA_OFFSET * 0.666
-      self.rll_y = np.array(lane_lines[2].y) + CAMERA_OFFSET * 0.666
+      self.lll_y = np.array(lane_lines[1].y)
+      self.rll_y = np.array(lane_lines[2].y)
       self.lll_prob = md.laneLineProbs[1]
       self.rll_prob = md.laneLineProbs[2]
       self.lll_std = md.laneLineStds[1]
@@ -77,7 +77,7 @@ class LanePlanner:
     lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
 
     # debug
-    sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob))
+    #sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob))
 
     path_from_left_lane = self.lll_y + lane_distance
     path_from_right_lane = self.rll_y - lane_distance
