@@ -93,8 +93,10 @@ class LanePlanner:
     path_from_left_lane = self.lll_y + lane_distance
     path_from_right_lane = self.rll_y - lane_distance
 
-    lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
-    path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
+    safe_idxs = np.isfinite(self.ll_t)
+    if safe_idxs[0]:
+      lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
+      path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
     # apply path offset after everything
     path_xyz[:, 1] += CAMERA_OFFSET
