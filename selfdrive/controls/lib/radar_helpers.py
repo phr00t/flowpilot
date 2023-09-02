@@ -140,19 +140,19 @@ class Cluster():
 
   def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists):
     # this data is a little noisy, let's smooth it out
-    finalv = 0.0
-    finald = 0.0
+    finalv = v_ego
+    finald = 150.0
     finalprob = 0.0
 
-    if lead_msg.prob < 0.6:
+    if lead_msg.prob < 0.5:
       Dists.clear()
       vLeads.clear()
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0])
-      if len(Dists) > 6:
+      if len(Dists) > 7:
         Dists.pop(0)
-      if len(vLeads) > 6:
+      if len(vLeads) > 7:
         vLeads.pop(0)
       finald = statistics.fmean(reject_outliers(Dists))
       finalv = statistics.fmean(reject_outliers(vLeads))
@@ -165,7 +165,7 @@ class Cluster():
       "yRel": float(-lead_msg.y[0]),
       "vRel": float(finalv - v_ego),
       "vLead": float(finalv),
-      "vLeadK": float(finalv),
+      "vLeadK": float(lead_msg.vStd[0]),
       "aLeadK": float(0),
       "aLeadTau": _LEAD_ACCEL_TAU,
       "fcw": False,

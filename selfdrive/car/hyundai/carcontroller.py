@@ -177,6 +177,7 @@ class CarController:
     l0prob = radarState.leadOne.modelProb
     l0d = radarState.leadOne.dRel
     l0v = radarState.leadOne.vRel
+    l0vstd = radarState.leadOne.vLeadK
     lead_vdiff_mph = l0v * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
@@ -248,8 +249,7 @@ class CarController:
     curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead worth making decisions on?
-    # low probabilities have very noisy data
-    if l0prob > 0.7:
+    if l0prob > 0.5:
       self.lead_seen_counter += 1
       if clu11_speed > 5:
         # amplify large lead car speed differences a bit so we react faster
@@ -347,7 +347,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0aa" + "{:.1f}".format(avg_accel) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " lc" + "{:.1f}".format(self.lead_seen_counter) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0lvs" + "{:.1f}".format(l0vstd) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " lc" + "{:.1f}".format(self.lead_seen_counter) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
