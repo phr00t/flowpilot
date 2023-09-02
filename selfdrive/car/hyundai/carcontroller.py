@@ -150,17 +150,17 @@ class CarController:
 
     # what speed does the model want us going?
     # this looks for stop signs and red lights
-    # accels is a weird type so we will do this weird average of the last half
+    # accels is a weird type so we will iterate over it and take a lowest average
     accel_count = len(long_plan.accels)
     if accel_count > 4:
       accel_smallest = 9999
-      for i in range(accel_count//2, accel_count):
+      for i in range(0, accel_count):
         if long_plan.accels[i] < accel_smallest:
           accel_smallest = long_plan.accels[i]
       self.accels.append(accel_smallest * CV.MS_TO_MPH)
       if len(self.accels) > 8:
         self.accels.pop(0)
-    avg_accel = statistics.fmean(self.accels) if len(self.accels) > 6 else max_speed_in_mph
+    avg_accel = statistics.fmean(self.accels) if len(self.accels) > 7 else max_speed_in_mph
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
@@ -346,7 +346,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0at" + "{:.1f}".format(avg_accel) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " ds" + "{:.1f}".format(l0v_distval_mph) + " c" + "{:.2f}".format(overall_confidence) + " lp" + "{:.1f}".format(l0prob) + " VD" + "{:.1f}".format(l0d))
+    sLogger.Send("0aa" + "{:.1f}".format(avg_accel) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " Pr" + str(CS.out.cruiseState.nonAdaptive) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " lc" + "{:.1f}".format(self.lead_seen_counter) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
