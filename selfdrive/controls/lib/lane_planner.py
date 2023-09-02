@@ -52,8 +52,8 @@ class LanePlanner:
       self.rll_std = md.laneLineStds[2]
 
     if len(edges[0].t) == TRAJECTORY_SIZE:
-      self.le_y = np.array(edges[0].y)
-      self.re_y = np.array(edges[1].y)
+      self.le_y = np.array(edges[0].y) + md.roadEdgeStds[0] * 0.4
+      self.re_y = np.array(edges[1].y) - md.roadEdgeStds[1] * 0.4
     else:
       self.le_y = self.lll_y
       self.re_y = self.rll_y
