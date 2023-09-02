@@ -247,8 +247,9 @@ class CarController:
     desired_speed *= vcurv_adj
     curve_speed_ratio = clu11_speed / desired_speed
 
-    # is there a lead?
-    if l0prob > 0.5:
+    # is there a lead worth making decisions on?
+    # low probabilities have very noisy data
+    if l0prob > 0.7:
       self.lead_seen_counter += 1
       if clu11_speed > 5:
         # amplify large lead car speed differences a bit so we react faster
