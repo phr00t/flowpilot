@@ -67,7 +67,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class OnRoadScreen extends ScreenAdapter {
     // avoid GC triggers.
-    static final String VERSION = "29";
+    static final String VERSION = "30";
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -149,7 +149,15 @@ public class OnRoadScreen extends ScreenAdapter {
     Map<AudibleAlert, Sound> soundAlerts;
     double elapsed;
 
+    long[] LastDebugMessageTime = new long[2];
+
+    public boolean NoDebugMessagesWarning() {
+        return System.currentTimeMillis() - Math.min(LastDebugMessageTime[0], LastDebugMessageTime[1]) > 500;
+    }
+
     public void PrepareDebugReader() {
+        LastDebugMessageTime[0] = System.currentTimeMillis();
+        LastDebugMessageTime[1] = System.currentTimeMillis();
         Thread thread = new Thread(() -> {
             try {
                 InetAddress localhost = InetAddress.getByName("localhost");
@@ -159,10 +167,13 @@ public class OnRoadScreen extends ScreenAdapter {
                     DatagramPacket p = new DatagramPacket(buf, buf.length);
                     s.receive(p);
                     String debugLine = new String(buf, 0, p.getLength());
-                    if (debugLine.startsWith("0"))
+                    if (debugLine.startsWith("0")) {
                         Line1 = debugLine.replace('\n', ' ').substring(1);
-                    else
+                        LastDebugMessageTime[0] = System.currentTimeMillis();
+                    } else {
                         Line2 = debugLine.replace('\n', ' ');
+                        LastDebugMessageTime[1] = System.currentTimeMillis();
+                    }
                 }
             } catch (Exception e) {}
         });
@@ -613,11 +624,13 @@ public class OnRoadScreen extends ScreenAdapter {
         }
     }
 
-    public void handleSounds(Definitions.ControlsState.Reader controlState){
-        if (controlState==null)
-            return;
+    public void handleSounds(Definitions.ControlsState.Reader controlState, AudibleAlert alert){
+        if (alert == AudibleAlert.NONE) {
+            if (controlState==null || controlsAlive == false)
+                return;
 
-        AudibleAlert alert = controlState.getAlertSound();
+            alert = controlState.getAlertSound();
+        }
 
         if (currentAudibleAlert == alert)
             return;
@@ -642,10 +655,15 @@ public class OnRoadScreen extends ScreenAdapter {
         }
     }
 
-    public void drawAlert(Definitions.ControlsState.Reader controlState) {
+    public void drawAlert(Definitions.ControlsState.Reader controlState, String forceAlert) {
         Definitions.ControlsState.AlertStatus alertStatus = null;
         Definitions.ControlsState.FlowpilotState state = null;
-        if (controlState != null) {
+        if (forceAlert != null) {
+            alertText1.setText(forceAlert);
+            alertText2.setText(forceAlert);
+            alertStatus = Definitions.ControlsState.AlertStatus.CRITICAL;
+            state = Definitions.ControlsState.FlowpilotState.DISABLED;
+        } else if (controlState != null) {
             alertText1.setText(controlState.getAlertText1().toString());
             alertText2.setText(controlState.getAlertText2().toString());
             alertStatus = controlState.getAlertStatus();
@@ -735,12 +753,7 @@ public class OnRoadScreen extends ScreenAdapter {
     }
 
     public void setUnits(){
-        if (!controlsAlive)
-            velocityUnitLabel.setText("");
-        else if (isMetric)
-            velocityUnitLabel.setText("kmph");
-        else
-            velocityUnitLabel.setText("mph");
+        velocityUnitLabel.setText("mph");
     }
 
     @Override
@@ -756,6 +769,10 @@ public class OnRoadScreen extends ScreenAdapter {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling?GL20.GL_COVERAGE_BUFFER_BIT_NV:0));
         elapsed += Gdx.graphics.getDeltaTime();
+
+        String noDebugInfo = null;
+        if (appContext.isOnRoad && NoDebugMessagesWarning())
+            noDebugInfo = "System Unresponsive!";
 
         if (appContext.isOnRoad) {
             offRoadRootTable.setVisible(false);
@@ -777,7 +794,7 @@ public class OnRoadScreen extends ScreenAdapter {
             if (sh.updated(carStateTopic))
                 updateCarState();
 
-            drawAlert(controlState);
+            drawAlert(controlState, noDebugInfo);
 
             stageUI.getViewport().apply();
             stageUI.draw();
@@ -836,9 +853,10 @@ public class OnRoadScreen extends ScreenAdapter {
 
         if (sh.updated(controlsStateTopic)) {
             updateControls();
-            handleSounds(controlState);
             controlsAlive = true;
-        }
+        } else controlsAlive = false;
+
+        handleSounds(controlState, noDebugInfo == null ? AudibleAlert.NONE : AudibleAlert.WARNING_IMMEDIATE);
 
         if (sh.updated(deviceStateTopic)) {
             updateDeviceState();
