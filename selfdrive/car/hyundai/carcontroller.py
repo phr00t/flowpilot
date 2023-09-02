@@ -178,64 +178,65 @@ class CarController:
     l0v = radarState.leadOne.vRel
     lead_vdiff_mph = l0v * 2.23694
 
-    # store distance history of lead car to merge with l0v to get a better speed relative value
-    time_interval_for_distspeed = 0.666
-    overall_confidence = 0
-    l0v_distval_mph = 0
-    if l0prob > 0.5 and self.usingDistSpeed:
-      # ok, start averaging this distance value
-      self.lead_distance_histavg.append(l0d)
-      # if we've got enough data to average, do so into our main list
-      if len(self.lead_distance_histavg) >= 16:
-        # get some statistics on the data we've collected
-        finalavg = statistics.fmean(self.lead_distance_histavg)
-        # calculate accuracy based on variance within X meters
-        finalacc = 1.0 - (statistics.pvariance(self.lead_distance_histavg) / 3.5)
-        if finalacc < 0.0:
-          finalacc = 0.0
-        self.lead_distance_hist.append(finalavg)
-        self.lead_distance_accuracy.append(finalacc)
+    if self.usingDistSpeed:
+      # store distance history of lead car to merge with l0v to get a better speed relative value
+      time_interval_for_distspeed = 0.666
+      overall_confidence = 0
+      l0v_distval_mph = 0
+      if l0prob > 0.5:
+        # ok, start averaging this distance value
+        self.lead_distance_histavg.append(l0d)
+        # if we've got enough data to average, do so into our main list
+        if len(self.lead_distance_histavg) >= 16:
+          # get some statistics on the data we've collected
+          finalavg = statistics.fmean(self.lead_distance_histavg)
+          # calculate accuracy based on variance within X meters
+          finalacc = 1.0 - (statistics.pvariance(self.lead_distance_histavg) / 3.5)
+          if finalacc < 0.0:
+            finalacc = 0.0
+          self.lead_distance_hist.append(finalavg)
+          self.lead_distance_accuracy.append(finalacc)
+          self.lead_distance_histavg.clear()
+          # timestamp
+          self.lead_distance_times.append(datetime.datetime.now())
+          # should we remove an old entry now that we just added a new one?
+          if len(self.lead_distance_times) > 2 and (self.lead_distance_times[-1] - self.lead_distance_times[1]).total_seconds() > time_interval_for_distspeed:
+            self.lead_distance_hist.pop(0)
+            self.lead_distance_times.pop(0)
+            self.lead_distance_accuracy.pop(0)
+        # do we have enough averaged data to calculate a speed?
+        if len(self.lead_distance_times) > 1:
+          time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
+          # if we've got enough data, calculate a speed based on our distance data
+          # also get confidence based on the individual distance values compared
+          if time_diff > time_interval_for_distspeed:
+            l0v_distval_mph = ((self.lead_distance_hist[-1] - self.lead_distance_hist[0]) / time_diff) * 2.23694
+            overall_confidence = self.lead_distance_accuracy[-1] * self.lead_distance_accuracy[0]
+            # values shouldn't be less than my current speed (cars are not driving into me, hopefully)
+            if l0v_distval_mph < -clu11_speed:
+              l0v_distval_mph = -clu11_speed
+            # clamp values far over model speed
+            if l0v_distval_mph > lead_vdiff_mph + 20:
+              l0v_distval_mph = lead_vdiff_mph + 20
+            # reduce confidence of large values different from model's values
+            difference_factor = 1.0 - ((abs(l0v_distval_mph - lead_vdiff_mph) / 15.0) ** 1.5)
+            # sanity checks / clamping
+            if difference_factor < 0:
+              difference_factor = 0
+            elif difference_factor > 1.0:
+              difference_factor = 1.0
+            # ok, apply factor for final confidence
+            overall_confidence *= difference_factor
+      else:
+        # no lead, clear data
+        self.lead_distance_hist.clear()
+        self.lead_distance_times.clear()
         self.lead_distance_histavg.clear()
-        # timestamp
-        self.lead_distance_times.append(datetime.datetime.now())
-        # should we remove an old entry now that we just added a new one?
-        if len(self.lead_distance_times) > 2 and (self.lead_distance_times[-1] - self.lead_distance_times[1]).total_seconds() > time_interval_for_distspeed:
-          self.lead_distance_hist.pop(0)
-          self.lead_distance_times.pop(0)
-          self.lead_distance_accuracy.pop(0)
-      # do we have enough averaged data to calculate a speed?
-      if len(self.lead_distance_times) > 1:
-        time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
-        # if we've got enough data, calculate a speed based on our distance data
-        # also get confidence based on the individual distance values compared
-        if time_diff > time_interval_for_distspeed:
-          l0v_distval_mph = ((self.lead_distance_hist[-1] - self.lead_distance_hist[0]) / time_diff) * 2.23694
-          overall_confidence = self.lead_distance_accuracy[-1] * self.lead_distance_accuracy[0]
-          # values shouldn't be less than my current speed (cars are not driving into me, hopefully)
-          if l0v_distval_mph < -clu11_speed:
-            l0v_distval_mph = -clu11_speed
-          # clamp values far over model speed
-          if l0v_distval_mph > lead_vdiff_mph + 20:
-            l0v_distval_mph = lead_vdiff_mph + 20
-          # reduce confidence of large values different from model's values
-          difference_factor = 1.0 - ((abs(l0v_distval_mph - lead_vdiff_mph) / 15.0) ** 1.5)
-          # sanity checks / clamping
-          if difference_factor < 0:
-            difference_factor = 0
-          elif difference_factor > 1.0:
-            difference_factor = 1.0
-          # ok, apply factor for final confidence
-          overall_confidence *= difference_factor
-    else:
-      # no lead, clear data
-      self.lead_distance_hist.clear()
-      self.lead_distance_times.clear()
-      self.lead_distance_histavg.clear()
 
-    # if we got a distspeed value, mix it with l0v based on overall confidence
-    # otherwise, just use the model l0v
-    if overall_confidence > 0:
-      lead_vdiff_mph = lerp(lead_vdiff_mph, l0v_distval_mph, overall_confidence * 0.5)
+      # if we got a distspeed value, mix it with l0v based on overall confidence
+      # otherwise, just use the model l0v
+      if overall_confidence > 0:
+        lead_vdiff_mph = lerp(lead_vdiff_mph, l0v_distval_mph, overall_confidence * 0.5)
 
     # start with our picked max speed
     desired_speed = max_speed_in_mph
