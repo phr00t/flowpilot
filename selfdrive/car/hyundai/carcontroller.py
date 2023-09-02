@@ -94,7 +94,8 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
-    if not CC.latActive:
+    # if we are disabled, or the driver is doing a sharp turn themselves, don't apply any additional steering
+    if not CC.latActive or abs(CS.out.steeringAngleDeg) > 89 and CS.out.steeringPressed:
       apply_steer = 0
 
     self.apply_steer_last = apply_steer
