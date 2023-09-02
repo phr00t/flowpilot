@@ -8,7 +8,7 @@ from common.logger import sLogger
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.1
+CAMERA_OFFSET = 0.09
 KEEP_MIN_DISTANCE_FROM_LANE = 1.2
 
 def clamp(num, min_value, max_value):
