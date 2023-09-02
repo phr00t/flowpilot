@@ -83,6 +83,7 @@ class CarController:
     self.lead_distance_times = []
     self.lead_distance_histavg = []
     self.lead_distance_accuracy = []
+    self.lead_seen_counter = 0
 
     self.temp_disable_spamming = 0
 
@@ -247,45 +248,51 @@ class CarController:
     curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead?
-    if l0prob > 0.5 and clu11_speed > 5:
-      # amplify large lead car speed differences a bit so we react faster
-      lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
-      # calculate an estimate of the lead car's speed for purposes of setting our speed
-      lead_speed = clu11_speed + lead_vdiff_mph
-      # calculate lead car time
-      speed_in_ms = clu11_speed * 0.44704
-      lead_time = l0d / speed_in_ms
-      # caculate a target lead car time, which is generally 3 seconds unless we are driving fast
-      # then we need to be a little closer to keep car within good visible range
-      # and prevent big gaps where cars always are cutting in
-      target_time = 3-((clu11_speed/72)**3)
-      # do not go under a certain lead car time for safety
-      if target_time < 2.1:
-        target_time = 2.1
-      # calculate the difference of our current lead time and desired lead time
-      lead_time_ideal_offset = lead_time - target_time
-      # don't sudden slow for certain situations, as this causes significant braking
-      # 1) if the lead car is far away in either time or distance
-      # 2) if the lead car is moving away from us
-      leadcar_going_faster = lead_vdiff_mph >= 1
-      dont_sudden_slow = lead_time_ideal_offset > target_time * 0.39 or l0d >= 80 or leadcar_going_faster
-      # depending on slowing down or speeding up, scale
-      if lead_time_ideal_offset < 0:
-        lead_time_ideal_offset = -(-lead_time_ideal_offset * (10.5/target_time)) ** 1.4 # exponentially slow down if getting closer and closer
-      else:
-        lead_time_ideal_offset = (lead_time_ideal_offset * 3) ** 1.25 # exponentially not consider lead car the further away
-      # calculate the final max speed we should be going based on lead car
-      max_lead_adj = lead_speed + lead_time_ideal_offset
-      # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
-      # don't go much slower than the lead car, and cancel any sudden slowing that may be happening
-      fasterleadcar_imposed_speed_limit = max(clu11_speed - 2, lead_speed - 2.5)
-      if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
-        max_lead_adj = fasterleadcar_imposed_speed_limit
-      elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.8:
-        max_lead_adj = clu11_speed * 0.8
-      # cap our desired_speed to this final max speed
-      if desired_speed > max_lead_adj:
-        desired_speed = max_lead_adj
+    if l0prob > 0.5:
+      self.lead_seen_counter += 1
+      if clu11_speed > 5:
+        # amplify large lead car speed differences a bit so we react faster
+        lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
+        # calculate an estimate of the lead car's speed for purposes of setting our speed
+        lead_speed = clu11_speed + lead_vdiff_mph
+        # calculate lead car time
+        speed_in_ms = clu11_speed * 0.44704
+        lead_time = l0d / speed_in_ms
+        # caculate a target lead car time, which is generally 3 seconds unless we are driving fast
+        # then we need to be a little closer to keep car within good visible range
+        # and prevent big gaps where cars always are cutting in
+        target_time = 3 - ((clu11_speed / 72) ** 3)
+        # do not go under a certain lead car time for safety
+        if target_time < 2.1:
+          target_time = 2.1
+        # calculate the difference of our current lead time and desired lead time
+        lead_time_ideal_offset = lead_time - target_time
+        # don't sudden slow for certain situations, as this causes significant braking
+        # 1) if the lead car is far away in either time or distance
+        # 2) if the lead car is moving away from us
+        leadcar_going_faster = lead_vdiff_mph >= 1
+        dont_sudden_slow = lead_time_ideal_offset > target_time * 0.39 or l0d >= 80 or leadcar_going_faster
+        # depending on slowing down or speeding up, scale
+        if lead_time_ideal_offset < 0:
+          lead_time_ideal_offset = -(-lead_time_ideal_offset * (10.5 / target_time)) ** 1.4  # exponentially slow down if getting closer and closer
+        else:
+          lead_time_ideal_offset = (lead_time_ideal_offset * 3) ** 1.25  # exponentially not consider lead car the further away
+        # calculate the final max speed we should be going based on lead car
+        max_lead_adj = lead_speed + lead_time_ideal_offset
+        # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
+        # don't go much slower than the lead car, and cancel any sudden slowing that may be happening
+        fasterleadcar_imposed_speed_limit = max(clu11_speed - 2, lead_speed - 2.3)
+        if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
+          max_lead_adj = fasterleadcar_imposed_speed_limit # slowly make space between cars
+        elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.8:
+          max_lead_adj = clu11_speed * 0.8 # slow down, but not aggresively
+        elif not leadcar_going_faster and self.lead_seen_counter < 100: # 100 should be 1 second
+          max_lead_adj = clu11_speed # dont speed up if we see a new car and its not going faster than us
+        # cap our desired_speed to this final max speed
+        if desired_speed > max_lead_adj:
+          desired_speed = max_lead_adj
+    else:
+      self.lead_seen_counter = 0
 
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
 
