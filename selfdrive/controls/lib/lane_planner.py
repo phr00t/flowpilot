@@ -64,9 +64,9 @@ class LanePlanner:
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
-    # set probabilities
-    l_prob = self.lll_prob
-    r_prob = self.rll_prob
+    # set probabilities and boost model rates, so we rely more on std to reduce chances
+    l_prob = clamp(self.lll_prob * 5, 0.0, 1.0)
+    r_prob = clamp(self.rll_prob * 5, 0.0, 1.0)
 
     # Reduce reliance on uncertain lanelines
     l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
