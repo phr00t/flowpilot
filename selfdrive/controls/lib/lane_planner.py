@@ -23,12 +23,11 @@ class LanePlanner:
     self.le_y = np.zeros((TRAJECTORY_SIZE,))
     self.re_y = np.zeros((TRAJECTORY_SIZE,))
     self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
-    self.lane_width_certainty = FirstOrderFilter(1.0, 0.95, DT_MDL)
     self.lane_width = 3.2
+    self.lane_change_multiplier = 1
 
     self.lll_prob = 0.
     self.rll_prob = 0.
-    self.d_prob = 0.
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -64,23 +63,24 @@ class LanePlanner:
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
-    # set probabilities and boost model rates, so we rely more on std to reduce chances
-    l_prob = clamp(self.lll_prob * 5, 0.0, 1.0)
-    r_prob = clamp(self.rll_prob * 5, 0.0, 1.0)
-
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
-    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
-    l_prob *= l_std_mod
-    r_prob *= r_std_mod
+    l_prob = self.lll_prob * interp(self.lll_std, [.15, .3], [1.0, 0.0])
+    r_prob = self.rll_prob * interp(self.rll_std, [.15, .3], [1.0, 0.0])
+
+    # always consider seeing the lanes, just prefer the one more likely be the model and stds
+    # normalize to always be 1
+    total_prob = l_prob + r_prob
+    if total_prob < 0.01:
+      l_prob = 0.5
+      r_prob = 0.5
+    else:
+      l_prob = l_prob / total_prob
+      r_prob = r_prob / total_prob
 
     # Find current lanewidth
-    self.lane_width_certainty.update(l_prob * r_prob)
     current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), 2.6, 4.0)
     self.lane_width_estimate.update(current_lane_width)
-    speed_lane_width = interp(v_ego, [0., 31.], [2.7, 3.7])
-    self.lane_width = self.lane_width_certainty.x * self.lane_width_estimate.x + \
-                      (1 - self.lane_width_certainty.x) * speed_lane_width
+    self.lane_width = self.lane_width_estimate.x
 
     # ideally we are half distance of lane width
     # but clamp lane distances to not push us over the current lane width
@@ -93,14 +93,8 @@ class LanePlanner:
     path_from_left_lane = self.lll_y + lane_distance
     path_from_right_lane = self.rll_y - lane_distance
 
-    self.d_prob = l_prob + r_prob - l_prob * r_prob
-    lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    safe_idxs = np.isfinite(self.ll_t)
-    if safe_idxs[0]:
-      lane_path_y_interp = np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs])
-      path_xyz[:,1] = self.d_prob * lane_path_y_interp + (1.0 - self.d_prob) * path_xyz[:,1]
-    else:
-      cloudlog.warning("Lateral mpc - NaNs in laneline times, ignoring")
+    lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
+    path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
     # apply path offset after everything
     path_xyz[:, 1] += CAMERA_OFFSET
