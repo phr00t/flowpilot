@@ -8,7 +8,7 @@ from common.logger import sLogger
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.09
+CAMERA_OFFSET = 0.08
 KEEP_MIN_DISTANCE_FROM_LANE = 1.2
 
 def clamp(num, min_value, max_value):
@@ -65,13 +65,13 @@ class LanePlanner:
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
     # Reduce reliance on uncertain lanelines
     # only give some credit to the model probabilities, rely more on stds
-    l_prob = clamp(0.5 + self.lll_prob * 0.5, 0.0, 1.0) * interp(self.lll_std, [.1, .4], [1.0, 0.0])
-    r_prob = clamp(0.5 + self.rll_prob * 0.5, 0.0, 1.0) * interp(self.rll_std, [.1, .4], [1.0, 0.0])
+    l_prob = clamp(0.5 + self.lll_prob * 0.5, 0.0, 1.0) * interp(self.lll_std, [.1, .35], [1.0, 0.0])
+    r_prob = clamp(0.5 + self.rll_prob * 0.5, 0.0, 1.0) * interp(self.rll_std, [.1, .35], [1.0, 0.0])
 
     # always consider seeing the lanes, just prefer the one more likely be the model and stds
     # normalize to always be 1
     total_prob = l_prob + r_prob
-    if total_prob < 0.01:
+    if total_prob < 0.05:
       # we've completely lost lanes, we will just use the path
       l_prob = 0
       r_prob = 0
