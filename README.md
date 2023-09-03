@@ -4,6 +4,8 @@ I am only making changes I can test for my 2019 Hyundai Kona EV *WITHOUT* Smart 
 
 To make it easier to keep updated with models, I only maintain the SNPE Model Runner (Android Snapdragon devices). Desktop and other phones won't work.
 
+# [Learn how to make your LG G8 drive a car here!](https://github.com/phr00t/flowpilot/wiki/How-to-make-an-LG-G8-Flow-Pilot-Device)
+
 <img src="https://i.ibb.co/LZtKvfB/Screenshot-from-2022-09-15-22-15-14.png" alt="table" width="1270" />
 
 # What is Flowpilot?
