@@ -25,6 +25,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
@@ -74,30 +76,13 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			throw new RuntimeException(e);
 		}
 
-
-		HardwareManager androidHardwareManager = new AndroidHardwareManager(getWindow());
-		// keep app from dimming due to inactivity.
+		Window activity = getWindow();
+		HardwareManager androidHardwareManager = new AndroidHardwareManager(activity);
 		androidHardwareManager.enableScreenWakeLock(true);
-
-		// get wakelock so we can switch windows without getting killed.
-		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-		PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ai.flow.app::wakelock");
-
-		// acquiring wakelock causes crash on some devices.
-		//try {
-		//	wakeLock.acquire();
-		//} catch (Exception e){
-		//	System.err.println(e);
-		//}
-
-		// tune system for max throughput. Does this really help ?
-		//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-		//	getWindow().setSustainedPerformanceMode(true);
-		//}
+		activity.setSustainedPerformanceMode(true);
+		activity.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		params = ParamsInterface.getInstance();
-		//utils.F3Mode = true; //params.existsAndCompare("F3", true);
-		//utils.WideCameraOnly = true; //params.existsAndCompare("WideCameraOnly", true);
 
 		TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
 		String dongleID = "";
