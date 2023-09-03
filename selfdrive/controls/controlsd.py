@@ -826,7 +826,6 @@ class Controls:
 
   def controlsd_thread(self):
     self.i = 0
-    gc.disable() # disable garbage collector for performance
     while True:
       self.step()
       self.rk.monitor_time()
