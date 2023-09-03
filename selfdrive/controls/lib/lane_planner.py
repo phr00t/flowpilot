@@ -72,8 +72,9 @@ class LanePlanner:
     # normalize to always be 1
     total_prob = l_prob + r_prob
     if total_prob < 0.01:
-      l_prob = 0.5
-      r_prob = 0.5
+      # we've completely lost lanes, we will just use the path
+      l_prob = 0
+      r_prob = 0
     else:
       l_prob = l_prob / total_prob
       r_prob = r_prob / total_prob
@@ -95,7 +96,7 @@ class LanePlanner:
     path_from_right_lane = self.rll_y - lane_distance
 
     safe_idxs = np.isfinite(self.ll_t)
-    if safe_idxs[0]:
+    if safe_idxs[0] and l_prob + r_prob > 0.9:
       lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
       path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
