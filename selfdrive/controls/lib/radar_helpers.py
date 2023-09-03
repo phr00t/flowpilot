@@ -150,12 +150,11 @@ class Cluster():
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0])
-      if len(Dists) > 7:
+      if len(Dists) > 5:
         Dists.pop(0)
-      if len(vLeads) > 7:
         vLeads.pop(0)
-      finald = statistics.fmean(reject_outliers(Dists))
-      finalv = statistics.fmean(reject_outliers(vLeads))
+      finald = statistics.fmean(Dists)
+      finalv = statistics.fmean(vLeads)
       # only consider lead if we've collected enough data on it
       if len(vLeads) > 3:
         finalprob = lead_msg.prob
