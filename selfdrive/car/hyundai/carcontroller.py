@@ -183,8 +183,8 @@ class CarController:
     l0vstd = radarState.leadOne.vLeadK
     lead_vdiff_mph = l0v * 2.23694
 
-    # if our lead speed is fuzzy, cap big numbers more and more the fuzzier it gets
-    if l0vstd > 1.5:
+    # if our lead speed is fuzzy and far away, cap big numbers more and more the fuzzier it gets
+    if l0vstd > 1.5 and l0d > 75:
       clamp_amount = clamp(15 - (l0vstd - 1.5) * 20, 5, 15)
       lead_vdiff_mph = clamp(lead_vdiff_mph, -clamp_amount, clamp_amount)
 
@@ -293,8 +293,8 @@ class CarController:
         fasterleadcar_imposed_speed_limit = max(clu11_speed - 2, lead_speed - 2.3)
         if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
           max_lead_adj = fasterleadcar_imposed_speed_limit # slowly make space between cars
-        elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.8:
-          max_lead_adj = clu11_speed * 0.8 # slow down, but not aggresively
+        elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.875:
+          max_lead_adj = clu11_speed * 0.875 # slow down, but not aggresively
         elif not leadcar_going_faster and self.lead_seen_counter < 150: # 100 should be 1 second
           max_lead_adj = clu11_speed # dont speed up if we see a new car and its not going faster than us
         # cap our desired_speed to this final max speed
