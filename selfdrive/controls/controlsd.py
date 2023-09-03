@@ -183,6 +183,12 @@ class Controls:
     self.experimental_mode = False
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
+    self.timer1 = 0.
+    self.timer2 = 0.
+    self.timer3 = 0.
+    self.timer4 = 0.
+    self.timer5 = 0.
+
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
     self.can_log_mono_time = 0
@@ -795,32 +801,26 @@ class Controls:
 
   def step(self):
     start_time = sec_since_boot()
-    self.prof.checkpoint("Ratekeeper", ignore=True)
-
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    cloudlog.timestamp("Data sampled")
-    self.prof.checkpoint("Sample")
+    self.timer1 = max(self.timer1, sec_since_boot() - start_time)
 
     self.update_events(CS)
-    cloudlog.timestamp("Events updated")
+    self.timer2 = max(self.timer2, sec_since_boot() - start_time)
 
     if not self.read_only and self.initialized:
       # Update control state
       self.state_transition(CS)
-      self.prof.checkpoint("State transition")
+      self.timer3 = max(self.timer3, sec_since_boot() - start_time)
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
-
-    self.prof.checkpoint("State Control")
+    self.timer4 = max(self.timer4, sec_since_boot() - start_time)
 
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
-    self.prof.checkpoint("Sent")
+    self.timer5 = max(self.timer5, sec_since_boot() - start_time)
 
     self.CS_prev = CS
 
@@ -829,7 +829,6 @@ class Controls:
     while True:
       self.step()
       self.rk.monitor_time()
-      self.prof.display()
 
       # TODO: remove this after testing
       if self.i % 500 == 0:
@@ -838,6 +837,12 @@ class Controls:
           print(EVENT_NAME[event])
         print('enabled:', self.enabled)
         print('current alerts:', self.current_alert)
+        print('timer_now:', sec_since_boot())
+        print('timer1:', self.timer1)
+        print('timer2:', self.timer1)
+        print('timer3:', self.timer1)
+        print('timer4:', self.timer1)
+        print('timer5:', self.timer1)
         print("---------------")
       self.i += 1
 
