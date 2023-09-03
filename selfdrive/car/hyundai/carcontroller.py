@@ -279,7 +279,7 @@ class CarController:
         # don't sudden slow for certain situations, as this causes significant braking
         # 1) if the lead car is far away in either time or distance
         # 2) if the lead car is moving away from us
-        leadcar_going_faster = lead_vdiff_mph >= 1
+        leadcar_going_faster = lead_vdiff_mph >= 0.6
         dont_sudden_slow = lead_time_ideal_offset > target_time * 0.39 or l0d >= 80 or leadcar_going_faster
         # depending on slowing down or speeding up, scale
         if lead_time_ideal_offset < 0:
