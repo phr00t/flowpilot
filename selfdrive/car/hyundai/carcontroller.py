@@ -24,6 +24,9 @@ MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
+def clamp(num, min_value, max_value):
+  return max(min(num, max_value), min_value)
+
 def lerp(a, b, t):
   return (b * t) + (a * (1.0 - t))
 
@@ -180,6 +183,11 @@ class CarController:
     l0vstd = radarState.leadOne.vLeadK
     lead_vdiff_mph = l0v * 2.23694
 
+    # if our lead speed is fuzzy, cap big numbers more and more the fuzzier it gets
+    if l0vstd > 1.5:
+      clamp_amount = clamp(15 - (l0vstd - 1.5) * 20, 5, 15)
+      lead_vdiff_mph = clamp(lead_vdiff_mph, -clamp_amount, clamp_amount)
+
     # store distance history of lead car to merge with l0v to get a better speed relative value
     time_interval_for_distspeed = 0.666
     overall_confidence = 0
@@ -287,7 +295,7 @@ class CarController:
           max_lead_adj = fasterleadcar_imposed_speed_limit # slowly make space between cars
         elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.8:
           max_lead_adj = clu11_speed * 0.8 # slow down, but not aggresively
-        elif not leadcar_going_faster and self.lead_seen_counter < 100: # 100 should be 1 second
+        elif not leadcar_going_faster and self.lead_seen_counter < 150: # 100 should be 1 second
           max_lead_adj = clu11_speed # dont speed up if we see a new car and its not going faster than us
         # cap our desired_speed to this final max speed
         if desired_speed > max_lead_adj:
@@ -319,7 +327,7 @@ class CarController:
       # apply a spam overpress to amplify speed changes
       desired_speed += speed_diff * 0.6
 
-      slow_speed_factor = 1.45 if self.sensitiveSlow else 1.5
+      slow_speed_factor = 1.42 if self.sensitiveSlow else 1.45
       # this can trigger sooner than lead car slowing, because curve data is much less noisy
       if curve_speed_ratio > 1.175:
         desired_speed = 0
