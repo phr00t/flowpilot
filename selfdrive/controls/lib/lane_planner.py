@@ -64,9 +64,11 @@ class LanePlanner:
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
     # Reduce reliance on uncertain lanelines
-    # only give some credit to the model probabilities, rely more on stds
-    l_prob = clamp(0.5 + self.lll_prob * 0.5, 0.0, 1.0) * interp(self.lll_std, [.1, .4], [1.0, 0.0])
-    r_prob = clamp(0.5 + self.rll_prob * 0.5, 0.0, 1.0) * interp(self.rll_std, [.1, .4], [1.0, 0.0])
+    # only give some credit to the model probabilities, rely more on stds and closeness
+    distance = self.rll_y[0] - self.lll_y[0]  # 2.8
+    right_ratio = self.rll_y[0] / distance  # 2/2.8 = 0.71 (closer to left example)
+    l_prob = (right_ratio         + self.lll_prob * 0.5) * interp(self.lll_std, [.1, .4], [1.0, 0.0])
+    r_prob = ((1.0 - right_ratio) + self.rll_prob * 0.5) * interp(self.rll_std, [.1, .4], [1.0, 0.0])
 
     total_prob = l_prob + r_prob
     if total_prob < 0.05:
@@ -74,15 +76,8 @@ class LanePlanner:
       l_prob = 0
       r_prob = 0
     else:
-      # if our probabilities are similar, give preference to the closer lane
-      if abs(l_prob - r_prob) < 0.1:
-        distance = self.rll_y[0] - self.lll_y[0] #2.8
-        right_ratio = self.rll_y[0] / distance   #2/2.8 = 0.71 (closer to left example)
-        r_prob = (1 - right_ratio)               #0.29
-        l_prob = right_ratio                     #0.71
-      else:
-        l_prob = l_prob / total_prob             #normalize to 1
-        r_prob = r_prob / total_prob
+      l_prob = l_prob / total_prob             #normalize to 1
+      r_prob = r_prob / total_prob
 
     # Find current lanewidth
     current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), 2.6, 4.0)
