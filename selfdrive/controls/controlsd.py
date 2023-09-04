@@ -538,6 +538,7 @@ class Controls:
 
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
+    lp = self.sm['liveParameters']
 
     scale_stiffness = interp(lat_plan.dProb, [.1, .4], [1.0, 1.95])
     self.VM.update_params(scale_stiffness, 13.42)
