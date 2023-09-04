@@ -193,12 +193,12 @@ class CarController:
       # ok, start averaging this distance value
       self.lead_distance_hist.append(l0d)
       # if we've got enough data to calculate an average distance, do so now
-      if len(self.lead_distance_hist) > 20:
+      if len(self.lead_distance_hist) > 40:
         self.lead_distance_distavg.append(statistics.fmean(reject_outliers(self.lead_distance_hist)))
         self.lead_distance_times.append(datetime.datetime.now())
         self.lead_distance_hist.pop(0)
         # do we have enough distances over time to get a distspeed estimate?
-        if len(self.lead_distance_distavg) > 60:
+        if len(self.lead_distance_distavg) > 50:
           time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
           dist_diff = self.lead_distance_distavg[-1] - self.lead_distance_distavg[0]
           self.lead_distance_distavg.pop(0)
