@@ -2,6 +2,7 @@ import os
 import gc
 import math
 from typing import SupportsFloat
+from common.numpy_fast import interp
 
 from cereal import car, log
 from common.numpy_fast import clip
