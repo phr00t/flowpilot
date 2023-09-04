@@ -203,7 +203,7 @@ class CarController:
           dist_diff = self.lead_distance_distavg[-1] - self.lead_distance_distavg[0]
           self.lead_distance_distavg.pop(0)
           self.lead_distance_times.pop(0)
-          l0v_distval_mph = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, -clu11_speed, lead_vdiff_mph + 20)
+          l0v_distval_mph = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, lead_vdiff_mph - 12, lead_vdiff_mph + 12)
           # reduce confidence of large values different from model's values
           difference_factor = clamp(1.0 - ((abs(l0v_distval_mph - lead_vdiff_mph) / 15.0) ** 1.5), 0.0, 1.0)
           if difference_factor > 0:
