@@ -89,7 +89,7 @@ class LanePlanner:
     # but clamp lane distances to not push us over the current lane width
     use_min_distance = min(current_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
     lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
-    curve_prepare = clamp(vcurv * -0.5, self.lll_y[0] + use_min_distance, self.rll_y[0] - use_min_distance)
+    curve_prepare = clamp(vcurv * -0.2, self.lll_y[0] + use_min_distance, self.rll_y[0] - use_min_distance)
 
     # debug
     sLogger.Send("CP" + "{:.1f}".format(curve_prepare) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
