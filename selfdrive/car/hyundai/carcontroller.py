@@ -194,15 +194,15 @@ class CarController:
       self.lead_distance_hist.append(l0d)
       self.lead_distance_times.append(datetime.datetime.now())
       # if we've got enough data to calculate a speed distance, do so now
-      if len(self.lead_distance_hist) > 70:
+      if len(self.lead_distance_hist) > 60:
         time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
         dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
         self.lead_distance_hist.pop(0)
         self.lead_distance_times.pop(0)
         distspeed_estimate = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, -clu11_speed, lead_vdiff_mph + 20)
         self.lead_distance_distavg.append(distspeed_estimate)
-        if len(self.lead_distance_distavg) > 10:
-          l0v_distval_mph = statistics.fmean(self.lead_distance_distavg)
+        if len(self.lead_distance_distavg) > 20:
+          l0v_distval_mph = statistics.fmean(reject_outliers(self.lead_distance_distavg))
           self.lead_distance_distavg.pop(0)
           # reduce confidence of large values different from model's values
           difference_factor = clamp(1.0 - ((abs(l0v_distval_mph - lead_vdiff_mph) / 15.0) ** 1.5), 0.0, 1.0)
