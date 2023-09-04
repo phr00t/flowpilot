@@ -540,7 +540,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
     lp = self.sm['liveParameters']
 
-    scale_stiffness = interp(lat_plan.dProb, [.1, .4], [1.0, 1.95])
+    scale_stiffness = interp(lat_plan.dProb, [.05, .3], [1.0, 1.95])
     self.VM.update_params(scale_stiffness, 13.42)
 
     CC = car.CarControl.new_message()
