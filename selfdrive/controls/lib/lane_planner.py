@@ -65,8 +65,8 @@ class LanePlanner:
   def get_d_path(self, CS, v_ego, path_t, path_xyz):
     # Reduce reliance on uncertain lanelines
     # only give some credit to the model probabilities, rely more on stds
-    l_prob = clamp(0.5 + self.lll_prob * 0.5, 0.0, 1.0) * interp(self.lll_std, [.1, .35], [1.0, 0.0])
-    r_prob = clamp(0.5 + self.rll_prob * 0.5, 0.0, 1.0) * interp(self.rll_std, [.1, .35], [1.0, 0.0])
+    l_prob = clamp(0.5 + self.lll_prob * 0.5, 0.0, 1.0) * interp(self.lll_std, [.1, .4], [1.0, 0.0])
+    r_prob = clamp(0.5 + self.rll_prob * 0.5, 0.0, 1.0) * interp(self.rll_std, [.1, .4], [1.0, 0.0])
 
     # always consider seeing the lanes, just prefer the one more likely be the model and stds
     # normalize to always be 1

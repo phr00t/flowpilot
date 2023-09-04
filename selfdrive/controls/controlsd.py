@@ -535,21 +535,11 @@ class Controls:
   def state_control(self, CS):
     """Given the state, this function returns a CarControl packet"""
 
-    # Update VehicleModel
-    lp = self.sm['liveParameters']
-    x = max(lp.stiffnessFactor, 0.1)
-    sr = max(lp.steerRatio, 0.1)
-    if not NOSENSOR:
-      self.VM.update_params(x, sr)
-
-    # Update Torque Params
-    if self.CP.lateralTuning.which() == 'torque' and not NOSENSOR:
-      torque_params = self.sm['liveTorqueParameters']
-      if self.sm.all_checks(['liveTorqueParameters']) and torque_params.useParams:
-        self.LaC.update_live_torque_params(torque_params.latAccelFactorFiltered, torque_params.latAccelOffsetFiltered, torque_params.frictionCoefficientFiltered)
-
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
+
+    scale_stiffness = interp(lat_plan.dProb, [.1, .4], [1.0, 1.95])
+    self.VM.update_params(scale_stiffness, 13.42)
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
@@ -703,7 +693,7 @@ class Controls:
     if not self.read_only and self.initialized:
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(sec_since_boot() * 1e9)
-      self.last_actuators, can_sends = self.CI.apply(CC, self.sm, self.v_cruise_helper.v_cruise_kph, now_nanos)
+      self.last_actuators, can_sends = self.CI.apply(self.VM, CC, self.sm, self.v_cruise_helper.v_cruise_kph, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:

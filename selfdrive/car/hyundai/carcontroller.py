@@ -89,7 +89,7 @@ class CarController:
 
     self.temp_disable_spamming = 0
 
-  def update(self, CC, sm, vcruise, CS, now_nanos):
+  def update(self, VM, CC, sm, vcruise, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -322,7 +322,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0ds" + "{:.1f}".format(l0v_distval_mph) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " v" + "{:.1f}".format(l0v * CV.MS_TO_MPH) + " Rs" + "{:.1f}".format(reenable_cruise_atspd) + " DS" + "{:.1f}".format(desired_speed) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0ds" + "{:.1f}".format(l0v_distval_mph) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " v" + "{:.1f}".format(l0v * CV.MS_TO_MPH) + " TS" + "{:.2f}".format(VM.cF) + " DS" + "{:.1f}".format(desired_speed) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
