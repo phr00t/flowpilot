@@ -5,7 +5,6 @@ from common.numpy_fast import interp
 from common.realtime import DT_MDL
 from system.swaglog import cloudlog
 from common.logger import sLogger
-import math
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
