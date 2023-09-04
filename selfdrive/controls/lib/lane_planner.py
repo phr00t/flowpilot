@@ -9,7 +9,7 @@ from common.logger import sLogger
 TRAJECTORY_SIZE = 33
 # positive numbers go right
 CAMERA_OFFSET = 0.08
-KEEP_MIN_DISTANCE_FROM_LANE = 1.2
+KEEP_MIN_DISTANCE_FROM_LANE = 1.3
 
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
@@ -85,22 +85,20 @@ class LanePlanner:
     self.lane_width_estimate.update(current_lane_width)
     self.lane_width = self.lane_width_estimate.x
 
+    # ideally we are half distance of lane width
+    # but clamp lane distances to not push us over the current lane width
+    use_min_distance = min(current_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
+    lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
+
     # debug
     sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
-    path_from_left_lane = self.lll_y + self.lane_width * 0.5
-    path_from_right_lane = self.rll_y - self.lane_width * 0.5
+    path_from_left_lane = self.lll_y + lane_distance
+    path_from_right_lane = self.rll_y - lane_distance
 
     safe_idxs = np.isfinite(self.ll_t)
     if safe_idxs[0] and l_prob + r_prob > 0.9:
       lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
-
-      # verify lane path maintains min distance from lanes at all times
-      for i in range(len(lane_path_y)):
-        widthpoint = self.rll_y[i] - self.lll_y[i]
-        use_min_distance = min(widthpoint * 0.475, KEEP_MIN_DISTANCE_FROM_LANE)
-        lane_path_y[i] = clamp(lane_path_y[i], self.lll_y[i] + use_min_distance, self.rll_y[i] - use_min_distance)
-
       path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
     # apply path offset after everything
