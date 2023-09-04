@@ -147,7 +147,7 @@ class LateralPlanner:
       curv_middle = math.floor((curv_len - 1)/2)
       for x in range(curv_middle, curv_len):
         acurval = abs(lateralPlan.curvatures[x] * 100)
-        if acurval > vcurv:
+        if acurval > self.vcurv:
           self.vcurv = acurval
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
