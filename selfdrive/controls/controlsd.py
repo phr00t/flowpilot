@@ -832,10 +832,10 @@ class Controls:
         print('current alerts:', self.current_alert)
         print('timer_now:', sec_since_boot())
         print('timer1:', self.timer1)
-        print('timer2:', self.timer1)
-        print('timer3:', self.timer1)
-        print('timer4:', self.timer1)
-        print('timer5:', self.timer1)
+        print('timer2:', self.timer2)
+        print('timer3:', self.timer3)
+        print('timer4:', self.timer4)
+        print('timer5:', self.timer5)
         print("---------------")
       self.i += 1
 
