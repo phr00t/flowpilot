@@ -540,6 +540,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
     lp = self.sm['liveParameters']
 
+    # if are lane lines are fuzzy, don't be so jerky with the steering
     scale_stiffness = interp(lat_plan.dProb, [.05, .3], [1.0, 1.95])
     self.VM.update_params(scale_stiffness, 13.42)
 
