@@ -62,7 +62,7 @@ class LanePlanner:
       self.l_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeLeft]
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
-  def get_d_path(self, CS, v_ego, path_t, path_xyz):
+  def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # Reduce reliance on uncertain lanelines
     # only give some credit to the model probabilities, rely more on stds and closeness
     distance = self.rll_y[0] - self.lll_y[0]  # 2.8
@@ -89,9 +89,10 @@ class LanePlanner:
     # but clamp lane distances to not push us over the current lane width
     use_min_distance = min(current_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
     lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
+    curve_prepare = clamp(vcurv * -0.5, self.lll_y[0] + use_min_distance, self.rll_y[0] - use_min_distance)
 
     # debug
-    sLogger.Send("LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+    sLogger.Send("CP" + "{:.1f}".format(curve_prepare) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
     path_from_left_lane = self.lll_y + lane_distance
     path_from_right_lane = self.rll_y - lane_distance
@@ -101,7 +102,7 @@ class LanePlanner:
       lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
       path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
-    # apply path offset after everything
-    path_xyz[:, 1] += CAMERA_OFFSET
+    # apply path offset after everything, plus a wide curve offset
+    path_xyz[:, 1] += CAMERA_OFFSET + curve_prepare
 
     return path_xyz

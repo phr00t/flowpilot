@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from system.swaglog import cloudlog
@@ -46,6 +47,7 @@ class LateralPlanner:
     self.v_ego = 0.0
     self.l_lane_change_prob = 0.0
     self.r_lane_change_prob = 0.0
+    self.vcurv = 0.0
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
@@ -84,7 +86,7 @@ class LateralPlanner:
       self.LP.lane_change_multiplier = 1.0
 
     # lanelines calculation?
-    self.path_xyz = self.LP.get_d_path(CS, self.v_ego, self.t_idxs, self.path_xyz)
+    self.path_xyz = self.LP.get_d_path(CS, self.v_ego, self.t_idxs, self.path_xyz, self.vcurv)
 
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
@@ -138,6 +140,15 @@ class LateralPlanner:
 
     lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
     lateralPlan.curvatureRates = [float(x/self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+
+    # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
+    curv_len = len(lateralPlan.curvatures)
+    if curv_len > 0:
+      curv_middle = math.floor((curv_len - 1)/2)
+      for x in range(curv_middle, curv_len):
+        acurval = abs(lateralPlan.curvatures[x] * 100)
+        if acurval > vcurv:
+          self.vcurv = acurval
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
