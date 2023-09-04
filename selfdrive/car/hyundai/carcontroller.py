@@ -192,18 +192,18 @@ class CarController:
     if l0prob > 0.5 and self.usingDistSpeed:
       # ok, start averaging this distance value
       self.lead_distance_hist.append(l0d)
-      self.lead_distance_times.append(datetime.datetime.now())
-      # if we've got enough data to calculate a speed distance, do so now
-      if len(self.lead_distance_hist) > 60:
-        time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
-        dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
+      # if we've got enough data to calculate an average distance, do so now
+      if len(self.lead_distance_hist) > 20:
+        self.lead_distance_distavg.append(statistics.fmean(reject_outliers(self.lead_distance_hist)))
+        self.lead_distance_times.append(datetime.datetime.now())
         self.lead_distance_hist.pop(0)
-        self.lead_distance_times.pop(0)
-        distspeed_estimate = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, -clu11_speed, lead_vdiff_mph + 20)
-        self.lead_distance_distavg.append(distspeed_estimate)
-        if len(self.lead_distance_distavg) > 20:
-          l0v_distval_mph = statistics.fmean(reject_outliers(self.lead_distance_distavg))
+        # do we have enough distances over time to get a distspeed estimate?
+        if len(self.lead_distance_distavg) > 60:
+          time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
+          dist_diff = self.lead_distance_distavg[-1] - self.lead_distance_distavg[0]
           self.lead_distance_distavg.pop(0)
+          self.lead_distance_times.pop(0)
+          l0v_distval_mph = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, -clu11_speed, lead_vdiff_mph + 20)
           # reduce confidence of large values different from model's values
           difference_factor = clamp(1.0 - ((abs(l0v_distval_mph - lead_vdiff_mph) / 15.0) ** 1.5), 0.0, 1.0)
           if difference_factor > 0:
