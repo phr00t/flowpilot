@@ -104,7 +104,7 @@ public class ModelExecutorF3 extends ModelExecutor {
     ImagePrepare imageWidePrepare;
 
     public void ExecuteModel(Definitions.FrameData.Reader wideData, Definitions.FrameBuffer.Reader wideBuf,
-                             long timestamp, long processStartTimestamp) {
+                             long processStartTimestamp) {
         frameWideData = frameData = wideData;
         msgFrameWideBuffer = msgFrameBuffer = wideBuf;
 
@@ -162,7 +162,7 @@ public class ModelExecutorF3 extends ModelExecutor {
 
         // publish outputs
         end = System.currentTimeMillis();
-        msgModelRaw.fill(netOutputs, timestamp, lastFrameID, 0, 0f, end - start);
+        msgModelRaw.fill(netOutputs, processStartTimestamp, lastFrameID, 0, 0f, end - start);
         ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
 
         // compute runtime stats every 10 runs
