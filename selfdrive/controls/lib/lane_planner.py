@@ -14,9 +14,6 @@ KEEP_MIN_DISTANCE_FROM_LANE = 1.3
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
 
-def sigmoid(x):
-  return 1 / (1 + math.exp(-(10*x-5)))
-
 class LanePlanner:
   def __init__(self):
     self.ll_t = np.zeros((TRAJECTORY_SIZE,))
@@ -69,14 +66,19 @@ class LanePlanner:
     # Reduce reliance on uncertain lanelines
     # only give some credit to the model probabilities, rely more on stds and closeness
     distance = self.rll_y[0] - self.lll_y[0]  # 2.8
-    left_ratio = sigmoid(self.rll_y[0] / distance)  # higher numbers mean we are closer to the left
-    l_prob = 0.01 + (left_ratio         + self.lll_prob * 0.4) * interp(self.lll_std, [0, .5], [1.0, 0.0])
-    r_prob = 0.01 + ((1.0 - left_ratio) + self.rll_prob * 0.4) * interp(self.rll_std, [0, .5], [1.0, 0.0])
+    right_ratio = self.rll_y[0] / distance  # 2/2.8 = 0.71 (closer to left example)
+    l_prob = (right_ratio         + self.lll_prob * 0.4) * interp(self.lll_std, [0, .5], [1.0, 0.01])
+    r_prob = ((1.0 - right_ratio) + self.rll_prob * 0.4) * interp(self.rll_std, [0, .5], [1.0, 0.01])
 
-    # normalize to 1
     total_prob = l_prob + r_prob
-    l_prob = l_prob / total_prob
-    r_prob = r_prob / total_prob
+    if total_prob < 0.01:
+      # we've completely lost lanes, we will just use the path, unfortunately
+      # this should be very unlikely
+      l_prob = 0
+      r_prob = 0
+    else:
+      l_prob = l_prob / total_prob             #normalize to 1
+      r_prob = r_prob / total_prob
 
     # Find current lanewidth
     current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), 2.6, 4.0)
