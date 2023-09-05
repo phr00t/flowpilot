@@ -143,13 +143,14 @@ class LateralPlanner:
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     curv_len = len(lateralPlan.curvatures)
-    self.vcurv = 0.0 # reset for this scan
+    biggest_curve = 0.0
     if curv_len > 0:
       curv_middle = math.floor((curv_len - 1)/2)
       for x in range(curv_middle, curv_len):
-        acurval = abs(lateralPlan.curvatures[x] * 100)
-        if acurval > self.vcurv:
-          self.vcurv = acurval
+        acurval = abs(lateralPlan.curvatures[x])
+        if acurval > biggest_curve:
+          biggest_curve = acurval
+          self.vcurv = lateralPlan.curvatures[x] * 100
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
