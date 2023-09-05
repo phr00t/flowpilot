@@ -25,7 +25,7 @@ setup(name="flowpilot",
                                         "thermald_=selfdrive.thermald.thermald:main", # thermald name is reserverd
                                         "laikad=selfdrive.locationd.laikad:main",
                                         "torqued=selfdrive.locationd.torqued:main",
-                                        "paramsd=selfdrive.locationd.paramsd:main",
+                                        #"paramsd=selfdrive.locationd.paramsd:main",
                                         "flowinit=selfdrive.manager.flowinitd:main"]}
      )
 

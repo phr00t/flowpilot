@@ -35,9 +35,9 @@ procs = [
   #ManagerProcess("deleter", "deleter", enabled=True, offroad=True),
   ManagerProcess("ubloxd", "./selfdrive/locationd/ubloxd", onroad=False),
   ManagerProcess("laikad", "laikad", enabled=False),
-  ManagerProcess("paramsd", "paramsd", enabled=False),
+  #ManagerProcess("paramsd", "paramsd", enabled=False),
   ManagerProcess("torqued", "torqued", enabled=False),
-  ManagerProcess("locationd", "./selfdrive/locationd/locationd", enabled=False),
+  #ManagerProcess("locationd", "./selfdrive/locationd/locationd", enabled=False),
 ]
 
 platform = "android" if is_android() else "desktop" 
