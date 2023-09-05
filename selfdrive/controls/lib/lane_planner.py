@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from cereal import log
 from common.filter_simple import FirstOrderFilter
@@ -13,6 +14,9 @@ KEEP_MIN_DISTANCE_FROM_LANE = 1.3
 
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
+
+def sigmoid(x, scale=1, offset=0):
+  return (1 / (1 + math.exp(-x*scale))) + offset
 
 class LanePlanner:
   def __init__(self):
@@ -89,7 +93,7 @@ class LanePlanner:
     # but clamp lane distances to not push us over the current lane width
     use_min_distance = min(current_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
     lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
-    curve_prepare = clamp(vcurv * -0.2, self.lll_y[0] + use_min_distance, self.rll_y[0] - use_min_distance)
+    curve_prepare = clamp(sigmoid(vcurv, 1.5, -0.5), self.lll_y[0] + use_min_distance, self.rll_y[0] - use_min_distance)
 
     # debug
     sLogger.Send("CP" + "{:.1f}".format(curve_prepare) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
@@ -102,7 +106,7 @@ class LanePlanner:
       lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
       path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
-    # apply path offset after everything, plus a wide curve offset
-    path_xyz[:, 1] += CAMERA_OFFSET + curve_prepare
+    # apply path offset after everything, plus a wide curve offset if we are not changing lanes
+    path_xyz[:, 1] += CAMERA_OFFSET + curve_prepare * self.lane_change_multiplier
 
     return path_xyz
