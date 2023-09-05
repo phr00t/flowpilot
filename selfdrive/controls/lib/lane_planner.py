@@ -94,7 +94,6 @@ class LanePlanner:
     use_min_distance = min(self.lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
     lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
     prepare_wiggle_room = min(current_lane_width, lane_distance) - use_min_distance
-    prepare_wiggle_room = clamp(prepare_wiggle_room, self.lll_y[0] + use_min_distance, self.rll_y[0] - use_min_distance)
     curve_prepare = clamp(sigmoid(vcurv, 1.0, -0.5), -prepare_wiggle_room, prepare_wiggle_room)
 
     # debug
