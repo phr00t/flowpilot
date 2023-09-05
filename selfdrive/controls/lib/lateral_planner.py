@@ -143,6 +143,7 @@ class LateralPlanner:
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     curv_len = len(lateralPlan.curvatures)
+    self.vcurv = 0.0 # reset for this scan
     if curv_len > 0:
       curv_middle = math.floor((curv_len - 1)/2)
       for x in range(curv_middle, curv_len):
