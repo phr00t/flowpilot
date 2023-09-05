@@ -71,13 +71,13 @@ class LanePlanner:
     # only give some credit to the model probabilities, rely more on stds and closeness
     distance = self.rll_y[0] - self.lll_y[0]  # 2.8
     right_ratio = self.rll_y[0] / distance  # 2/2.8 = 0.71 (closer to left example)
-    l_prob = (right_ratio         + self.lll_prob * 0.4) * interp(self.lll_std, [0, .5], [1.0, 0.01])
-    r_prob = ((1.0 - right_ratio) + self.rll_prob * 0.4) * interp(self.rll_std, [0, .5], [1.0, 0.01])
+    l_prob = (right_ratio         + self.lll_prob * 0.4) * interp(self.lll_std, [0, .8], [1.0, 0.01])
+    r_prob = ((1.0 - right_ratio) + self.rll_prob * 0.4) * interp(self.rll_std, [0, .8], [1.0, 0.01])
 
     total_prob = l_prob + r_prob
     if total_prob < 0.01:
       # we've completely lost lanes, we will just use the path, unfortunately
-      # this should be very unlikely
+      # this should be very unlikely (impossible even)
       l_prob = 0
       r_prob = 0
     else:
