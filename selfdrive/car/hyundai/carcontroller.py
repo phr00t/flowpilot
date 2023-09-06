@@ -262,7 +262,7 @@ class CarController:
           max_lead_adj = fasterleadcar_imposed_speed_limit # slowly make space between cars
         elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.875:
           max_lead_adj = clu11_speed * 0.875 # slow down, but not aggresively
-        elif not leadcar_going_faster and self.lead_seen_counter < 150: # 100 should be 1 second
+        elif not leadcar_going_faster and self.lead_seen_counter < 150 and max_lead_adj > clu11_speed:
           max_lead_adj = clu11_speed # dont speed up if we see a new car and its not going faster than us
         # cap our desired_speed to this final max speed
         if desired_speed > max_lead_adj:
