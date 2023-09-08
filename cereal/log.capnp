@@ -2267,6 +2267,18 @@ struct Event {
     livestreamWideRoadEncodeData @121 :EncodeData;
     livestreamDriverEncodeData @122 :EncodeData;
 
+    # *********** Custom: reserved for forks ***********
+    customReserved0 @107 :Text;
+    customReserved1 @108 :Text;
+    customReserved2 @109 :Text;
+    customReserved3 @110 :Text;
+    customReserved4 @111 :Text;
+    customReserved5 @112 :Text;
+    customReserved6 @113 :Text;
+    customReserved7 @114 :Text;
+    customReserved8 @115 :Text;
+    customReserved9 @116 :Text;
+
     # *********** legacy + deprecated ***********
     model @9 :Legacy.ModelData; # TODO: rename modelV2 and mark this as deprecated
     liveMpcDEPRECATED @36 :LiveMpcData;
