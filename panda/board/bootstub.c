@@ -39,8 +39,11 @@ int main(void) {
 
   disable_interrupts();
   clock_init();
-  detect_external_debug_serial();
   detect_board_type();
+
+#ifdef PANDA_JUNGLE
+  current_board->set_panda_power(true);
+#endif
 
   if (enter_bootloader_mode == ENTER_SOFTLOADER_MAGIC) {
     enter_bootloader_mode = 0;
