@@ -9,7 +9,7 @@ from common.logger import sLogger
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.07
+CAMERA_OFFSET = 0.08
 KEEP_MIN_DISTANCE_FROM_LANE = 1.22
 
 def clamp(num, min_value, max_value):
@@ -87,27 +87,27 @@ class LanePlanner:
     # Find current lanewidth
     current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), 2.6, 4.0)
     self.lane_width_estimate.update(current_lane_width)
-    self.lane_width = self.lane_width_estimate.x
+    self.lane_width = min(self.lane_width_estimate.x, current_lane_width)
 
     # ideally we are half distance of lane width
     # but clamp lane distances to not push us over the current lane width
-    use_min_distance = min(self.lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
-    lane_distance = clamp(self.lane_width * 0.5, use_min_distance, current_lane_width - use_min_distance)
-    prepare_wiggle_room = min(current_lane_width * 0.5, lane_distance) - use_min_distance
+    lane_distance = self.lane_width * 0.5
+    use_min_distance = min(lane_distance, KEEP_MIN_DISTANCE_FROM_LANE)
+    prepare_wiggle_room = lane_distance - use_min_distance
     curve_prepare = clamp(0.7 * sigmoid(vcurv, 3.5, -0.5), -prepare_wiggle_room, prepare_wiggle_room) if prepare_wiggle_room > 0.0 else 0.0
 
     # debug
     sLogger.Send("vC" + "{:.2f}".format(vcurv) + " CP" + "{:.1f}".format(curve_prepare) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
-    path_from_left_lane = self.lll_y + lane_distance
-    path_from_right_lane = self.rll_y - lane_distance
+    path_from_left_lane = self.lll_y + lane_distance + curve_prepare
+    path_from_right_lane = self.rll_y - lane_distance + curve_prepare
 
     safe_idxs = np.isfinite(self.ll_t)
     if safe_idxs[0] and l_prob + r_prob > 0.9:
       lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
       path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
-    # apply path offset after everything, plus a wide curve offset if we are not changing lanes
-    path_xyz[:, 1] += CAMERA_OFFSET + curve_prepare * self.lane_change_multiplier
+    # apply camera offset after everything
+    path_xyz[:, 1] += CAMERA_OFFSET
 
     return path_xyz
