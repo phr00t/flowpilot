@@ -14,10 +14,10 @@ public class MsgModelDataV2 extends MessageBase {
 
     public Definitions.ModelDataV2.Builder modelDataV2;
 
-    public Definitions.ModelDataV2.XYZTData.Builder position;
-    public Definitions.ModelDataV2.XYZTData.Builder velocity;
-    public Definitions.ModelDataV2.XYZTData.Builder orientation;
-    public Definitions.ModelDataV2.XYZTData.Builder orientationRate;
+    public Definitions.XYZTData.Builder position;
+    public Definitions.XYZTData.Builder velocity;
+    public Definitions.XYZTData.Builder orientation;
+    public Definitions.XYZTData.Builder orientationRate;
     public PrimitiveList.Float.Builder positionX;
     public PrimitiveList.Float.Builder positionY;
     public PrimitiveList.Float.Builder positionZ;
@@ -50,11 +50,11 @@ public class MsgModelDataV2 extends MessageBase {
     public PrimitiveList.Float.Builder orientationRateYStd;
     public PrimitiveList.Float.Builder orientationRateZStd;
 
-    public StructList.Builder<Definitions.ModelDataV2.XYZTData.Builder> laneLines;
-    public Definitions.ModelDataV2.XYZTData.Builder laneLine1;
-    public Definitions.ModelDataV2.XYZTData.Builder laneLine2;
-    public Definitions.ModelDataV2.XYZTData.Builder laneLine3;
-    public Definitions.ModelDataV2.XYZTData.Builder laneLine4;
+    public StructList.Builder<Definitions.XYZTData.Builder> laneLines;
+    public Definitions.XYZTData.Builder laneLine1;
+    public Definitions.XYZTData.Builder laneLine2;
+    public Definitions.XYZTData.Builder laneLine3;
+    public Definitions.XYZTData.Builder laneLine4;
 
     public PrimitiveList.Float.Builder laneLineX1;
     public PrimitiveList.Float.Builder laneLineY1;
@@ -93,9 +93,9 @@ public class MsgModelDataV2 extends MessageBase {
     public PrimitiveList.Float.Builder laneLineProbs;
     public PrimitiveList.Float.Builder laneLineStds;
 
-    public StructList.Builder<Definitions.ModelDataV2.XYZTData.Builder> roadEdges;
-    public Definitions.ModelDataV2.XYZTData.Builder roadEdge1;
-    public Definitions.ModelDataV2.XYZTData.Builder roadEdge2;
+    public StructList.Builder<Definitions.XYZTData.Builder> roadEdges;
+    public Definitions.XYZTData.Builder roadEdge1;
+    public Definitions.XYZTData.Builder roadEdge2;
 
     public PrimitiveList.Float.Builder roadEdgeX1;
     public PrimitiveList.Float.Builder roadEdgeY1;

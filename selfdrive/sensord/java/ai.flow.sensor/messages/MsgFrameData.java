@@ -8,7 +8,6 @@ import org.capnproto.PrimitiveList;
 public class MsgFrameData extends MessageBase {
 
     public Definitions.FrameData.Builder frameData;
-    public PrimitiveList.Float.Builder intrinsics;
 
     public MsgFrameData(int cameraType) {
         super();
@@ -23,6 +22,5 @@ public class MsgFrameData extends MessageBase {
             frameData = event.initRoadCameraState();
         else if (cameraType == Camera.CAMERA_TYPE_WIDE)
             frameData = event.initWideRoadCameraState();
-        intrinsics = frameData.initIntrinsics(9);
     }
 }

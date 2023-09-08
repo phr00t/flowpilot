@@ -68,7 +68,6 @@ public class CameraManager extends SensorInterface {
     public int H = Camera.frameSize[1];
     public MsgFrameData msgFrameData, msgFrameRoadData;
     public MsgFrameBuffer msgFrameBuffer, msgFrameRoadBuffer;
-    public PrimitiveList.Float.Builder K;
     public int frameID = 0;
     public boolean recording = false;
     ExecutorService threadpool = Executors.newSingleThreadScheduledExecutor();
@@ -97,9 +96,6 @@ public class CameraManager extends SensorInterface {
 
     public CameraManager(Context context, int cameraType){
         msgFrameData = new MsgFrameData(cameraType);
-        K = msgFrameData.intrinsics;
-        for (int i=0; i<9; i++)
-            K.set(i, Camera.WideIntrinsics[i]);
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;

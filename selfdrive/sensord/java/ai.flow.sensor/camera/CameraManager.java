@@ -39,7 +39,6 @@ public class CameraManager extends SensorInterface implements Runnable {
     public MsgFrameData msgFrameData = new MsgFrameData(CAMERA_TYPE_ROAD);
     public MsgFrameBuffer msgFrameBuffer;
     public Mat frame, frameProcessed, frameCrop, framePadded;
-    public PrimitiveList.Float.Builder K = msgFrameData.intrinsics;
     public int frameID = 0;
     public ParamsInterface params = ParamsInterface.getInstance();
     public String frameDataTopic = null;
@@ -47,13 +46,6 @@ public class CameraManager extends SensorInterface implements Runnable {
     public String cameraParamName = null;
     public RGB2YUV rgb2yuv;
     ByteBuffer yuvBuffer, rgbBuffer;
-
-    public void setIntrinsics(float[] intrinsics){
-        assert (intrinsics.length == 9) : "invalid intrinsic matrix length";
-        for (int i=0; i<intrinsics.length; i++) {
-            K.set(i, intrinsics[i]);
-        }
-    }
 
     public CameraManager(int cameraType, int frequency, String videoSrc, int frameWidth, int frameHeight) {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -120,7 +112,6 @@ public class CameraManager extends SensorInterface implements Runnable {
         rgbBuffer = bufferFromAddress(frameProcessed.dataAddr(), frameHeight*frameWidth*3);
 
         deltaTime = (long) 1000/frequency; //ms
-        loadIntrinsics();
     }
 
     public void processFrame(Mat frame){
@@ -201,21 +192,6 @@ public class CameraManager extends SensorInterface implements Runnable {
 
     public boolean isRunning() {
         return this.initialized;
-    }
-
-    public void loadIntrinsics(){
-        if (params.exists(cameraParamName)) {
-            float[] cameraMatrix = byteToFloat(params.getBytes(cameraParamName));
-            updateProperty("intrinsics", cameraMatrix);
-        }
-    }
-
-    @Override
-    public synchronized void updateProperty(String property, float[] value) {
-        if (property.equals("intrinsics")){
-            assert value.length == 9 : "invalid intrinsic matrix buffer length";
-            setIntrinsics(value);
-        }
     }
 
     public void start() {

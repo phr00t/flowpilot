@@ -67,7 +67,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class OnRoadScreen extends ScreenAdapter {
     // avoid GC triggers.
-    static final String VERSION = "33";
+    static final String VERSION = "34";
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -133,7 +133,6 @@ public class OnRoadScreen extends ScreenAdapter {
     float uiHeight = 640;
     int notificationWidth = 950;
     float settingsBarWidth;
-    INDArray K = Camera.wide_intrinsics.dup();
     boolean cameraMatrixUpdated = false;
     boolean isMetric;
     ByteBuffer imgBuffer;
@@ -521,29 +520,6 @@ public class OnRoadScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(inputMultiplexer);
     }
 
-    // TODO: move to common
-    public boolean isIntrinsicsValid(Definitions.FrameData.Reader frameData){
-        // PS: find better ways to check validity.
-        if (!frameData.hasIntrinsics())
-            return false;
-        PrimitiveList.Float.Reader intrinsics = frameData.getIntrinsics();
-        return intrinsics.get(0)!=0 & intrinsics.get(2)!=0 & intrinsics.get(4)!=0 & intrinsics.get(5)!=0 & intrinsics.get(8)!=0;
-    }
-
-    public void updateCameraMatrix(Definitions.FrameData.Reader frameData){
-        if (!isIntrinsicsValid(frameData)) {
-            System.out.println("got invalid intrinsics from camera manager");
-            return;
-        }
-        PrimitiveList.Float.Reader intrinsics = frameData.getIntrinsics();
-        for (int i=0; i<3; i++){
-            for (int j=0; j<3; j++){
-                K.put(i, j, intrinsics.get(i*3 + j));
-            }
-        }
-        cameraMatrixUpdated = true;
-    }
-
     public void updateCamera() {
         // wait for our first picture if needed...
         while (ModelExecutorF3.msgFrameWideBuffer == null || ModelExecutorF3.frameWideData == null) {
@@ -554,8 +530,6 @@ public class OnRoadScreen extends ScreenAdapter {
         msgframeBuffer = ModelExecutorF3.msgFrameWideBuffer; // sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
         msgframeData = ModelExecutorF3.frameWideData; // sh.recv(cameraTopic).getWideRoadCameraState();
         imgBuffer = updateImageBuffer(msgframeBuffer, imgBuffer);
-
-        updateCameraMatrix(msgframeData);
     }
 
     public void renderImage(boolean rgb) {
@@ -610,15 +584,15 @@ public class OnRoadScreen extends ScreenAdapter {
                 parsed.roadEdges.get(0).get(0)[i] = Math.max(parsed.roadEdges.get(0).get(0)[i], minZ);
                 parsed.roadEdges.get(1).get(0)[i] = Math.max(parsed.roadEdges.get(1).get(0)[i], minZ);
             }
-            path = Draw.getLaneCameraFrame(parsed.position, K, RtPath, 0.9f);
-            lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), K, Rt, 0.07f);
-            lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), K, Rt, 0.05f);
-            lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), K, Rt, 0.05f);
-            lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), K, Rt, 0.07f);
-            edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), K, Rt, 0.1f);
-            edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), K, Rt, 0.1f);
+            path = Draw.getLaneCameraFrame(parsed.position, Camera.wide_intrinsics, RtPath, 0.9f);
+            lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), Camera.wide_intrinsics, Rt, 0.07f);
+            lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), Camera.wide_intrinsics, Rt, 0.05f);
+            lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), Camera.wide_intrinsics, Rt, 0.05f);
+            lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), Camera.wide_intrinsics, Rt, 0.07f);
+            edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), Camera.wide_intrinsics, Rt, 0.1f);
+            edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), Camera.wide_intrinsics, Rt, 0.1f);
 
-            lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), K, Rt, leadDrawScale);
+            lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), Camera.wide_intrinsics, Rt, leadDrawScale);
             //lead2s = Draw.getTriangleCameraFrame(parsed.leads.get(1), K, Rt, leadDrawScale);
             //lead3s = Draw.getTriangleCameraFrame(parsed.leads.get(2), K, Rt, leadDrawScale);
         }
