@@ -649,7 +649,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   longitudinalPlanMonoTime @28 :UInt64;
   lateralPlanMonoTime @50 :UInt64;
 
-  state @31 :OpenpilotState;
+  state @31 :FlowpilotState;
   enabled @19 :Bool;
   active @36 :Bool;
 
@@ -693,7 +693,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     lqrStateDEPRECATED @55 :LateralLQRState;
   }
 
-  enum OpenpilotState @0xdbe58b96d2d1ac61 {
+  enum FlowpilotState @0xdbe58b96d2d1ac61 {
     disabled @0;
     preEnabled @1;
     enabled @2;
