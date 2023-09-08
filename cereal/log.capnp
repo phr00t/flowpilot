@@ -2114,6 +2114,18 @@ struct NavInstruction {
   }
 }
 
+struct ModelRaw {
+  frameId @0 :UInt32;
+  frameIdExtra @1 :UInt32;
+  frameAge @2 :UInt32;
+  frameDropPerc @3 :Float32;
+  timestampEof @4 :UInt64;
+  modelExecutionTime @5 :Float32;
+  valid @6 :Bool;
+
+  rawPredictions @7 :List(Float32);
+}
+
 struct NavRoute {
   coordinates @0 :List(Coordinate);
 
@@ -2302,7 +2314,7 @@ struct Event {
     navStatusDEPRECATED @38 :Legacy.NavStatus;
     trafficEventsDEPRECATED @43 :List(Legacy.TrafficEvent);
     liveLocationTimingDEPRECATED @44 :Legacy.LiveLocationData;
-    liveLocationCorrectedDEPRECATED @46 :Legacy.LiveLocationData;
+    modelRaw @46 :ModelRaw;
     navUpdateDEPRECATED @27 :Legacy.NavUpdate;
     orbObservationDEPRECATED @47 :List(Legacy.OrbObservation);
     locationDEPRECATED @49 :Legacy.LiveLocationData;
