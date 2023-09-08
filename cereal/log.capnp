@@ -2160,6 +2160,31 @@ struct NavModelData {
   }
 }
 
+struct FrameBuffer {
+  image @0 :Data;
+  # address is useful to share buffer within same process.
+  imageAddress @1 :UInt64;
+  encoding @2 :Encoding;
+
+  frameWidth @3 :Int32;
+  frameHeight @4 :Int32;
+
+  stride @5 :Int32;
+  yWidth @6 :Int32;
+  yHeight @7 :Int32;
+  yPixelStride @8 :Int32;
+  uvWidth @9 :Int32;
+  uvHeight @10 :Int32;
+  uvPixelStride @11 :Int32;
+  uOffset @12 :Int32;
+  vOffset @13 :Int32;
+
+  enum Encoding {
+    yuv @0;
+    rgb @1;
+  }
+}
+
 struct EncodeData {
   idx @0 :EncodeIndex;
   data @1 :Data;
@@ -2301,7 +2326,6 @@ struct Event {
     sensorEventDEPRECATED @4 :SensorEventData;
     liveEventDEPRECATED @8 :List(Legacy.LiveEventData);
     liveLocationDEPRECATED @25 :Legacy.LiveLocationData;
-    ethernetDataDEPRECATED @26 :List(Legacy.EthernetPacket);
     cellInfoDEPRECATED @28 :List(Legacy.CellInfo);
     wifiScanDEPRECATED @29 :List(Legacy.WifiScan);
     uiNavigationEventDEPRECATED @50 :Legacy.UiNavigationEvent;
@@ -2315,10 +2339,11 @@ struct Event {
     trafficEventsDEPRECATED @43 :List(Legacy.TrafficEvent);
     liveLocationTimingDEPRECATED @44 :Legacy.LiveLocationData;
     modelRaw @46 :ModelRaw;
+    roadCameraBuffer @47 :FrameBuffer;
+    wideRoadCameraBuffer @26 :FrameBuffer;
+    driverCameraBuffer @53 :FrameBuffer;
     navUpdateDEPRECATED @27 :Legacy.NavUpdate;
-    orbObservationDEPRECATED @47 :List(Legacy.OrbObservation);
     locationDEPRECATED @49 :Legacy.LiveLocationData;
-    orbOdometryDEPRECATED @53 :Legacy.OrbOdometry;
     orbFeaturesDEPRECATED @54 :Legacy.OrbFeatures;
     applanixLocationDEPRECATED @55 :Legacy.LiveLocationData;
     orbKeyFrameDEPRECATED @56 :Legacy.OrbKeyFrame;
