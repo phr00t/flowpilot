@@ -122,19 +122,6 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
   }
 
-  // wait for FW query at OBD port to finish
-  while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition) {
-      return false;
-    }
-
-    if (p.getBool("FirmwareObdQueryDone")) {
-      LOGW("finished FW query at OBD port");
-      break;
-    }
-    util::sleep_for(20);
-  }
-
   // set to ELM327 to finish fingerprinting and for potential ECU knockouts
   for (Panda *panda : pandas) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
