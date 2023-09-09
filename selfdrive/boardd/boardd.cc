@@ -600,6 +600,7 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread(Panda *panda) {
+  return; // disable pigeon, no gps
   util::set_thread_name("boardd_pigeon");
 
   PubMaster pm({"ubloxRaw"});
@@ -680,7 +681,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda, getenv("NO_FAN_CONTROL") != nullptr);
-    threads.emplace_back(pigeon_thread, peripheral_panda);
+    //threads.emplace_back(pigeon_thread, peripheral_panda);
 
     threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, pandas);
@@ -720,7 +721,7 @@ void boardd_main_thread(const int fd) {
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda, getenv("NO_FAN_CONTROL") != nullptr);
-    threads.emplace_back(pigeon_thread, peripheral_panda);
+    //threads.emplace_back(pigeon_thread, peripheral_panda);
     
     threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, pandas);
