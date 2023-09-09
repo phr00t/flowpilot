@@ -97,7 +97,7 @@ static int hyundai_community_rx_hook(CANPacket_t *to_push) {
     if (addr == 1056 && !OP_SCC_live) {
       // 1 bits: 0
       int cruise_available = GET_BIT(to_push, 0U);
-      hyundai_common_cruise_state_check_alt(cruise_available);
+      hyundai_common_cruise_state_check(cruise_available);
     }
 
     // cruise control for car without SCC
@@ -105,7 +105,7 @@ static int hyundai_community_rx_hook(CANPacket_t *to_push) {
       int cruise_button = GET_BYTE(to_push, 0) & 0x7U;
       // enable on res+ or set- buttons press
       if (!controls_allowed && (cruise_button == 1 || cruise_button == 2)) {
-        hyundai_common_cruise_state_check_alt(1);
+        hyundai_common_cruise_state_check(1);
       }
       // disable on cancel press
       if (cruise_button == 4) {
