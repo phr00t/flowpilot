@@ -1,9 +1,8 @@
 #pragma once
 
+#include <mutex>
 #include <atomic>
 #include <cstdint>
-#include <mutex>
-#include <string>
 #include <vector>
 
 #ifndef __APPLE__
@@ -14,14 +13,15 @@
 
 
 #define TIMEOUT 0
-#define SPI_BUF_SIZE 2048
+#define SPI_BUF_SIZE 1024
 
 
 // comms base class
 class PandaCommsHandle {
 public:
-  PandaCommsHandle(std::string serial) {}
-  virtual ~PandaCommsHandle() {}
+  PandaCommsHandle(std::string serial) {};
+  PandaCommsHandle(int fd) {};
+  virtual ~PandaCommsHandle() {};
   virtual void cleanup() = 0;
 
   std::string hw_serial;
@@ -39,6 +39,7 @@ public:
 class PandaUsbHandle : public PandaCommsHandle {
 public:
   PandaUsbHandle(std::string serial);
+  PandaUsbHandle(int fd);
   ~PandaUsbHandle();
   int control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout=TIMEOUT);
   int control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout=TIMEOUT);
@@ -74,9 +75,9 @@ private:
   uint8_t rx_buf[SPI_BUF_SIZE];
   inline static std::recursive_mutex hw_lock;
 
-  int wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, unsigned int length);
-  int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len, unsigned int timeout);
-  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
-  int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
+  int wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack);
+  int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len);
+  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
+  int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
 };
 #endif

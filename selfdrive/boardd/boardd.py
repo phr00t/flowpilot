@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 # Cython, now uses scons to build
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
 assert can_list_to_can_capnp

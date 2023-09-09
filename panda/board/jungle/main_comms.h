@@ -80,7 +80,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xc2:
       COMPILE_TIME_ASSERT(sizeof(can_health_t) <= USBPACKET_MAX_SIZE);
       if (req->param1 < 3U) {
-        update_can_health_pkt(req->param1, 0U);
         can_health[req->param1].can_speed = (bus_config[req->param1].can_speed / 10U);
         can_health[req->param1].can_data_speed = (bus_config[req->param1].can_data_speed / 10U);
         can_health[req->param1].canfd_enabled = bus_config[req->param1].canfd_enabled;
@@ -222,10 +221,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xf5:
       can_silent = (req->param1 > 0U) ? ALL_CAN_SILENT : ALL_CAN_LIVE;
       can_init_all();
-      break;
-    // **** 0xf7: enable/disable header pin by number
-    case 0xf7:
-      current_board->enable_header_pin(req->param1, req->param2 > 0U);
       break;
     // **** 0xf9: set CAN FD data bitrate
     case 0xf9:

@@ -6,7 +6,6 @@
 #include <list>
 #include <memory>
 #include <optional>
-#include <string>
 #include <vector>
 
 #include "cereal/gen/cpp/car.capnp.h"
@@ -43,11 +42,11 @@ struct can_frame {
 
 
 class Panda {
-private:
-  std::unique_ptr<PandaCommsHandle> handle;
 
 public:
+  std::unique_ptr<PandaCommsHandle> handle;
   Panda(std::string serial="", uint32_t bus_offset=0);
+  Panda(int fd, uint32_t bus_offset=0);
 
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
@@ -58,7 +57,7 @@ public:
   std::string hw_serial();
 
   // Static functions
-  static std::vector<std::string> list(bool usb_only=false);
+  static std::vector<std::string> list();
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
@@ -73,7 +72,6 @@ public:
   std::optional<can_health_t> get_can_state(uint16_t can_number);
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
-  bool up_to_date();
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
   void enable_deepsleep();

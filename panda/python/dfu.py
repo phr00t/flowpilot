@@ -14,9 +14,9 @@ class PandaDFU:
   def __init__(self, dfu_serial: Optional[str]):
     # try USB, then SPI
     handle: Optional[BaseSTBootloaderHandle]
-    self._context, handle = PandaDFU.usb_connect(dfu_serial)
+    handle = PandaDFU.usb_connect(dfu_serial)
     if handle is None:
-      self._context, handle = PandaDFU.spi_connect(dfu_serial)
+      handle = PandaDFU.spi_connect(dfu_serial)
 
     if handle is None:
       raise Exception(f"failed to open DFU device {dfu_serial}")
@@ -24,21 +24,8 @@ class PandaDFU:
     self._handle: BaseSTBootloaderHandle = handle
     self._mcu_type: McuType = self._handle.get_mcu_type()
 
-  def __enter__(self):
-    return self
-
-  def __exit__(self, *args):
-    self.close()
-
-  def close(self):
-    if self._handle is not None:
-      self._handle.close()
-      self._handle = None
-      if self._context is not None:
-        self._context.close()
-
   @staticmethod
-  def usb_connect(dfu_serial: Optional[str]):
+  def usb_connect(dfu_serial: Optional[str]) -> Optional[STBootloaderUSBHandle]:
     handle = None
     context = usb1.USBContext()
     context.open()
@@ -53,10 +40,10 @@ class PandaDFU:
           handle = STBootloaderUSBHandle(device, device.open())
           break
 
-    return context, handle
+    return handle
 
   @staticmethod
-  def spi_connect(dfu_serial: Optional[str]):
+  def spi_connect(dfu_serial: Optional[str]) -> Optional[STBootloaderSPIHandle]:
     handle = None
     this_dfu_serial = None
 
@@ -69,10 +56,10 @@ class PandaDFU:
     if dfu_serial is not None and dfu_serial != this_dfu_serial:
       handle = None
 
-    return None, handle
+    return handle
 
   @staticmethod
-  def list() -> List[str]: # noqa: A003
+  def list() -> List[str]:
     ret = PandaDFU.usb_list()
     ret += PandaDFU.spi_list()
     return list(set(ret))
@@ -95,7 +82,7 @@ class PandaDFU:
   @staticmethod
   def spi_list() -> List[str]:
     try:
-      _, h = PandaDFU.spi_connect(None)
+      h = PandaDFU.spi_connect(None)
       if h is not None:
         dfu_serial = PandaDFU.st_serial_to_dfu_serial(h.get_uid(), h.get_mcu_type())
         return [dfu_serial, ]

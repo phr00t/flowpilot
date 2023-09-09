@@ -8,6 +8,9 @@
 static int init_usb_ctx(libusb_context **context) {
   assert(context != nullptr);
 
+  #ifdef LIBUSB_OPTION_WEAK_AUTHORITY // present in special proot android build.
+    libusb_set_option(NULL, LIBUSB_OPTION_WEAK_AUTHORITY);
+  #endif
   int err = libusb_init(context);
   if (err != 0) {
     LOGE("libusb initialization error");
@@ -72,6 +75,46 @@ fail:
   if (dev_list != NULL) {
     libusb_free_device_list(dev_list, 1);
   }
+  cleanup();
+  throw std::runtime_error("Error connecting to panda");
+}
+
+PandaUsbHandle::PandaUsbHandle(int fd) : PandaCommsHandle(fd) {
+  // init libusb
+  libusb_device *device = NULL;
+  int ret;
+  int err = init_usb_ctx(&ctx);
+  if (err != 0) { goto fail; }
+
+  // connect by file descriptor
+  ret = libusb_wrap_sys_device(ctx, (intptr_t) fd, &dev_handle);
+  if (dev_handle == NULL){
+    goto fail;
+  }
+
+  device = libusb_get_device(dev_handle);
+  libusb_device_descriptor desc;
+  libusb_get_device_descriptor(device, &desc);
+  if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+    unsigned char desc_serial[26] = { 0 };
+    ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+    if (ret < 0) { goto fail; }
+    hw_serial = std::string((char *)desc_serial, ret).c_str();
+  }
+  
+  if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
+    libusb_detach_kernel_driver(dev_handle, 0);
+  }
+
+  err = libusb_set_configuration(dev_handle, 1);
+  if (err != 0) { goto fail; }
+
+  err = libusb_claim_interface(dev_handle, 0);
+  if (err != 0) { goto fail; }
+
+  return;
+
+fail:
   cleanup();
   throw std::runtime_error("Error connecting to panda");
 }
@@ -199,7 +242,7 @@ int PandaUsbHandle::bulk_write(unsigned char endpoint, unsigned char* data, int 
     } else if (err != 0 || length != transferred) {
       handle_usb_issue(err, __func__);
     }
-  } while (err != 0 && connected);
+  } while(err != 0 && connected);
 
   return transferred;
 }
@@ -226,7 +269,7 @@ int PandaUsbHandle::bulk_read(unsigned char endpoint, unsigned char* data, int l
       handle_usb_issue(err, __func__);
     }
 
-  } while (err != 0 && connected);
+  } while(err != 0 && connected);
 
   return transferred;
 }

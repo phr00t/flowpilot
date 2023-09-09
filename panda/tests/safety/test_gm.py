@@ -14,13 +14,13 @@ class Buttons:
   CANCEL = 6
 
 
-class GmLongitudinalBase(common.PandaSafetyTest, common.LongitudinalGasBrakeSafetyTest):
+class GmLongitudinalBase(common.PandaSafetyTest):
   # pylint: disable=no-member,abstract-method
 
-  MAX_POSSIBLE_BRAKE = 2 ** 12
+  MAX_GAS = 0
+  MAX_REGEN = 0
+  INACTIVE_REGEN = 0
   MAX_BRAKE = 400
-
-  MAX_POSSIBLE_GAS = 2 ** 12
 
   PCM_CRUISE = False  # openpilot can control the PCM state if longitudinal
 
@@ -67,10 +67,28 @@ class GmLongitudinalBase(common.PandaSafetyTest, common.LongitudinalGasBrakeSafe
     self._rx(self._button_msg(Buttons.CANCEL))
     self.assertFalse(self.safety.get_controls_allowed())
 
+  def test_brake_safety_check(self):
+    for enabled in [0, 1]:
+      for b in range(0, 500):
+        self.safety.set_controls_allowed(enabled)
+        if abs(b) > self.MAX_BRAKE or (not enabled and b != 0):
+          self.assertFalse(self._tx(self._send_brake_msg(b)))
+        else:
+          self.assertTrue(self._tx(self._send_brake_msg(b)))
+
+  def test_gas_safety_check(self):
+    # Block if enabled and out of actuation range, disabled and not inactive regen, or if stock longitudinal
+    for enabled in [0, 1]:
+      for gas_regen in range(0, 2 ** 12 - 1):
+        self.safety.set_controls_allowed(enabled)
+        should_tx = ((enabled and self.MAX_REGEN <= gas_regen <= self.MAX_GAS) or
+                     gas_regen == self.INACTIVE_REGEN)
+        self.assertEqual(should_tx, self._tx(self._send_gas_msg(gas_regen)), (enabled, gas_regen))
+
 
 class TestGmSafetyBase(common.PandaSafetyTest, common.DriverTorqueSteeringSafetyTest):
   STANDSTILL_THRESHOLD = 10 * 0.0311
-  RELAY_MALFUNCTION_ADDR = 0x180
+  RELAY_MALFUNCTION_ADDR = 384
   RELAY_MALFUNCTION_BUS = 0
   BUTTONS_BUS = 0  # rx or tx
   BRAKE_BUS = 0  # tx only
@@ -131,7 +149,7 @@ class TestGmSafetyBase(common.PandaSafetyTest, common.DriverTorqueSteeringSafety
     return self.packer.make_can_msg_panda("PSCMStatus", 0, values)
 
   def _torque_cmd_msg(self, torque, steer_req=1):
-    values = {"LKASteeringCmd": torque, "LKASteeringCmdActive": steer_req}
+    values = {"LKASteeringCmd": torque}
     return self.packer.make_can_msg_panda("ASCMLKASteeringCmd", 0, values)
 
   def _button_msg(self, buttons):
@@ -140,17 +158,17 @@ class TestGmSafetyBase(common.PandaSafetyTest, common.DriverTorqueSteeringSafety
 
 
 class TestGmAscmSafety(GmLongitudinalBase, TestGmSafetyBase):
-  TX_MSGS = [[0x180, 0], [0x409, 0], [0x40A, 0], [0x2CB, 0], [0x370, 0],  # pt bus
-             [0xA1, 1], [0x306, 1], [0x308, 1], [0x310, 1],  # obs bus
-             [0x315, 2],  # ch bus
+  TX_MSGS = [[384, 0], [1033, 0], [1034, 0], [715, 0], [880, 0],  # pt bus
+             [161, 1], [774, 1], [776, 1], [784, 1],  # obs bus
+             [789, 2],  # ch bus
              [0x104c006c, 3], [0x10400060, 3]]  # gmlan
   FWD_BLACKLISTED_ADDRS: Dict[int, List[int]] = {}
   FWD_BUS_LOOKUP: Dict[int, int] = {}
   BRAKE_BUS = 2
 
   MAX_GAS = 3072
-  MIN_GAS = 1404 # maximum regen
-  INACTIVE_GAS = 1404
+  MAX_REGEN = 1404
+  INACTIVE_REGEN = 1404
 
   def setUp(self):
     self.packer = CANPackerPanda("gm_global_a_powertrain_generated")
@@ -177,9 +195,9 @@ class TestGmCameraSafetyBase(TestGmSafetyBase):
 
 
 class TestGmCameraSafety(TestGmCameraSafetyBase):
-  TX_MSGS = [[0x180, 0],  # pt bus
-             [0x184, 2]]  # camera bus
-  FWD_BLACKLISTED_ADDRS = {2: [0x180], 0: [0x184]}  # block LKAS message and PSCMStatus
+  TX_MSGS = [[384, 0],  # pt bus
+             [388, 2]]  # camera bus
+  FWD_BLACKLISTED_ADDRS = {2: [384], 0: [388]}  # block LKAS message and PSCMStatus
   BUTTONS_BUS = 2  # tx only
 
   def setUp(self):
@@ -205,14 +223,14 @@ class TestGmCameraSafety(TestGmCameraSafetyBase):
 
 
 class TestGmCameraLongitudinalSafety(GmLongitudinalBase, TestGmCameraSafetyBase):
-  TX_MSGS = [[0x180, 0], [0x315, 0], [0x2CB, 0], [0x370, 0],  # pt bus
-             [0x184, 2]]  # camera bus
-  FWD_BLACKLISTED_ADDRS = {2: [0x180, 0x2CB, 0x370, 0x315], 0: [0x184]}  # block LKAS, ACC messages and PSCMStatus
+  TX_MSGS = [[384, 0], [789, 0], [715, 0], [880, 0],  # pt bus
+             [388, 2]]  # camera bus
+  FWD_BLACKLISTED_ADDRS = {2: [384, 715, 880, 789], 0: [388]}  # block LKAS, ACC messages and PSCMStatus
   BUTTONS_BUS = 0  # rx only
 
   MAX_GAS = 3400
-  MIN_GAS = 1514 # maximum regen
-  INACTIVE_GAS = 1554
+  MAX_REGEN = 1514
+  INACTIVE_REGEN = 1554
 
   def setUp(self):
     self.packer = CANPackerPanda("gm_global_a_powertrain_generated")

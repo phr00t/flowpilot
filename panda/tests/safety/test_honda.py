@@ -64,24 +64,18 @@ class HondaButtonEnableBase(common.PandaSafetyTest):
     """
       Both SET and RES should enter controls allowed on their falling edge.
     """
-    for main_on in (True, False):
-      self._rx(self._acc_state_msg(main_on))
-      for btn_prev in range(8):
-        for btn_cur in range(8):
-          self._rx(self._button_msg(Btn.NONE))
-          self.safety.set_controls_allowed(0)
-          for _ in range(10):
-            self._rx(self._button_msg(btn_prev))
-            self.assertFalse(self.safety.get_controls_allowed())
+    for btn in (Btn.SET, Btn.RESUME):
+      for main_on in (True, False):
+        self._rx(self._acc_state_msg(main_on))
+        self.safety.set_controls_allowed(0)
 
-          # should enter controls allowed on falling edge and not transitioning to cancel or main
-          should_enable = (main_on and
-                           btn_cur != btn_prev and
-                           btn_prev in (Btn.RESUME, Btn.SET) and
-                           btn_cur not in (Btn.CANCEL, Btn.MAIN))
+        # nothing until falling edge
+        for _ in range(10):
+          self._rx(self._button_msg(btn, main_on=main_on))
+        self.assertFalse(self.safety.get_controls_allowed())
 
-          self._rx(self._button_msg(btn_cur))
-          self.assertEqual(should_enable, self.safety.get_controls_allowed(), msg=f"{main_on=} {btn_prev=} {btn_cur=}")
+        self._rx(self._button_msg(Btn.NONE, main_on=main_on))
+        self.assertEqual(main_on, self.safety.get_controls_allowed(), msg=f"{main_on=} {btn=}")
 
   def test_main_cancel_buttons(self):
     """
@@ -300,8 +294,8 @@ class TestHondaNidecSafetyBase(HondaBase):
   def test_acc_hud_safety_check(self):
     for controls_allowed in [True, False]:
       self.safety.set_controls_allowed(controls_allowed)
-      for pcm_gas in range(255):
-        for pcm_speed in range(100):
+      for pcm_gas in range(0, 255):
+        for pcm_speed in range(0, 100):
           send = (controls_allowed and pcm_gas <= self.MAX_GAS) or (pcm_gas == 0 and pcm_speed == 0)
           self.assertEqual(send, self._tx(self._send_acc_hud_msg(pcm_gas, pcm_speed)))
 

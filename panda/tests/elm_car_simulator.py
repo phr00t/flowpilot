@@ -2,15 +2,16 @@
 
 """Used to Reverse/Test ELM protocol auto detect and OBD message response without a car."""
 
-import os
 import sys
+import os
 import struct
 import binascii
 import time
 import threading
 from collections import deque
 
-from panda import Panda
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+from panda import Panda  # noqa: E402
 
 def lin_checksum(dat):
     return sum(dat) % 0x100

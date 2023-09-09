@@ -8,7 +8,7 @@ import hashlib
 import binascii
 import datetime
 import logging
-from functools import wraps, partial
+from functools import wraps
 from typing import Optional
 from itertools import accumulate
 
@@ -90,21 +90,35 @@ def unpack_can_buffer(dat):
 
   return (ret, dat)
 
-
-def ensure_version(desc, lib_field, panda_field, fn):
+def ensure_health_packet_version(fn):
   @wraps(fn)
   def wrapper(self, *args, **kwargs):
-    lib_version = getattr(self, lib_field)
-    panda_version = getattr(self, panda_field)
-    if lib_version != panda_version:
-      raise RuntimeError(f"{desc} packet version mismatch: panda's firmware v{panda_version}, library v{lib_version}. Reflash panda.")
+    if self.health_version < self.HEALTH_PACKET_VERSION:
+      raise RuntimeError("Panda firmware has outdated health packet definition. Reflash panda firmware.")
+    elif self.health_version > self.HEALTH_PACKET_VERSION:
+      raise RuntimeError("Panda python library has outdated health packet definition. Update panda python library.")
     return fn(self, *args, **kwargs)
   return wrapper
-ensure_can_packet_version = partial(ensure_version, "CAN", "CAN_PACKET_VERSION", "can_version")
-ensure_can_health_packet_version = partial(ensure_version, "CAN health", "CAN_HEALTH_PACKET_VERSION", "can_health_version")
-ensure_health_packet_version = partial(ensure_version, "health", "HEALTH_PACKET_VERSION", "health_version")
 
+def ensure_can_packet_version(fn):
+  @wraps(fn)
+  def wrapper(self, *args, **kwargs):
+    if self.can_version < self.CAN_PACKET_VERSION:
+      raise RuntimeError("Panda firmware has outdated CAN packet definition. Reflash panda firmware.")
+    elif self.can_version > self.CAN_PACKET_VERSION:
+      raise RuntimeError("Panda python library has outdated CAN packet definition. Update panda python library.")
+    return fn(self, *args, **kwargs)
+  return wrapper
 
+def ensure_can_health_packet_version(fn):
+  @wraps(fn)
+  def wrapper(self, *args, **kwargs):
+    if self.can_health_version < self.CAN_HEALTH_PACKET_VERSION:
+      raise RuntimeError("Panda firmware has outdated CAN health packet definition. Reflash panda firmware.")
+    elif self.can_health_version > self.CAN_HEALTH_PACKET_VERSION:
+      raise RuntimeError("Panda python library has outdated CAN health packet definition. Update panda python library.")
+    return fn(self, *args, **kwargs)
+  return wrapper
 
 def parse_timestamp(dat):
   a = struct.unpack("HBBBBBB", dat)
@@ -224,7 +238,6 @@ class Panda:
   FLAG_HYUNDAI_CANFD_HDA2 = 16
   FLAG_HYUNDAI_CANFD_ALT_BUTTONS = 32
   FLAG_HYUNDAI_ALT_LIMITS = 64
-  FLAG_HYUNDAI_CANFD_HDA2_ALT_STEERING = 128
 
   FLAG_TESLA_POWERTRAIN = 1
   FLAG_TESLA_LONG_CONTROL = 2
@@ -235,9 +248,6 @@ class Panda:
   FLAG_CHRYSLER_RAM_HD = 2
 
   FLAG_SUBARU_GEN2 = 1
-  FLAG_SUBARU_LONG = 2
-
-  FLAG_NISSAN_ALT_EPS_BUS = 1
 
   FLAG_GM_HW_CAM = 1
   FLAG_GM_HW_CAM_LONG = 2
@@ -269,8 +279,6 @@ class Panda:
     if self._handle_open:
       self._handle.close()
       self._handle_open = False
-      if self._context is not None:
-        self._context.close()
 
   def connect(self, claim=True, wait=False):
     self.close()
@@ -278,9 +286,9 @@ class Panda:
     self._handle = None
     while self._handle is None:
       # try USB first, then SPI
-      self._context, self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim)
+      self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim)
       if self._handle is None:
-        self._context, self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
+        self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
       if not wait:
         break
 
@@ -356,7 +364,7 @@ class Panda:
         err = f"panda protocol mismatch: expected {handle.PROTOCOL_VERSION}, got {spi_version}. reflash panda"
         raise PandaProtocolMismatch(err)
 
-    return None, handle, spi_serial, bootstub, None
+    return handle, spi_serial, bootstub, None
 
   @classmethod
   def usb_connect(cls, serial, claim=True):
@@ -398,10 +406,10 @@ class Panda:
     else:
       context.close()
 
-    return context, usb_handle, usb_serial, bootstub, bcd
+    return usb_handle, usb_serial, bootstub, bcd
 
   @classmethod
-  def list(cls): # noqa: A003
+  def list(cls):
     ret = cls.usb_list()
     ret += cls.spi_list()
     return list(set(ret))
@@ -427,7 +435,7 @@ class Panda:
 
   @classmethod
   def spi_list(cls):
-    _, _, serial, _, _ = cls.spi_connect(None, ignore_version=True)
+    _, serial, _, _ = cls.spi_connect(None, ignore_version=True)
     if serial is not None:
       return [serial, ]
     return []
@@ -458,7 +466,7 @@ class Panda:
 
     success = False
     # wait up to 15 seconds
-    for _ in range(15*10):
+    for _ in range(0, 15*10):
       try:
         self.connect()
         success = True

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import panda.tests.libpanda.libpanda_py as libpanda_py
 from panda import Panda
 
