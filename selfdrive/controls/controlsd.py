@@ -476,7 +476,7 @@ class Controls:
     #lp = self.sm['liveParameters']
 
     # if are lane lines are fuzzy, don't be so jerky with the steering
-    scale_stiffness = interp(lat_plan.dProb, [.05, .4], [1.0, 1.5])
+    scale_stiffness = interp(lat_plan.cProbDEPRECATED, [.05, .4], [1.0, 1.5])
     self.VM.update_params(scale_stiffness, 13.42)
 
     CC = car.CarControl.new_message()

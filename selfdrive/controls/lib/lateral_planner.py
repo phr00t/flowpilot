@@ -155,7 +155,7 @@ class LateralPlanner:
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
 
-    lateralPlan.dProb = min(self.LP.rll_std, self.LP.lll_std)
+    lateralPlan.cProbDEPRECATED = min(self.LP.rll_std, self.LP.lll_std)
     lateralPlan.desire = self.DH.desire
     lateralPlan.useLaneLines = True
     lateralPlan.laneChangeState = self.DH.lane_change_state
