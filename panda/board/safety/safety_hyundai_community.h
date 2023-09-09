@@ -16,7 +16,7 @@ bool HKG_forward_bus2 = true;
 int HKG_LKAS_bus0_cnt = 0;
 int HKG_Lcan_bus1_cnt = 0;
 
-const CanMsg HYUNDAI_COMMUNITY2_TX_MSGS[] = {
+const CanMsg HYUNDAI_COMMUNITY_TX_MSGS[] = {
   {832, 0, 8}, {832, 1, 8}, // LKAS11 Bus 0, 1
   {1265, 0, 4}, {1265, 1, 4}, {1265, 2, 4}, // CLU11 Bus 0, 1, 2
   {1157, 0, 4}, // LFAHDA_MFC Bus 0
@@ -33,22 +33,22 @@ const CanMsg HYUNDAI_COMMUNITY2_TX_MSGS[] = {
 };
 
 // older hyundai models have less checks due to missing counters and checksums
-AddrCheckStruct hyundai_community2_addr_checks[] = {
+AddrCheckStruct hyundai_community_addr_checks[] = {
   {.msg = {{608, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U},
            {881, 0, 8, .expected_timestep = 10000U}, { 0 }}},
   {.msg = {{902, 0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   // {.msg = {{916, 0, 8, .expected_timestep = 20000U}}}, some Santa Fe does not have this msg, need to find alternative
 };
 
-#define HYUNDAI_COMMUNITY2_ADDR_CHECK_LEN (sizeof(hyundai_community2_addr_checks) / sizeof(hyundai_community2_addr_checks[0]))
-addr_checks hyundai_community2_rx_checks = {hyundai_community2_addr_checks, HYUNDAI_COMMUNITY2_ADDR_CHECK_LEN};
+#define HYUNDAI_COMMUNITY_ADDR_CHECK_LEN (sizeof(hyundai_community_addr_checks) / sizeof(hyundai_community_addr_checks[0]))
+addr_checks hyundai_community_rx_checks = {hyundai_community_addr_checks, HYUNDAI_COMMUNITY_ADDR_CHECK_LEN};
 
-static int hyundai_community2_rx_hook(CANPacket_t *to_push) {
+static int hyundai_community_rx_hook(CANPacket_t *to_push) {
 
   int addr = GET_ADDR(to_push);
   int bus = GET_BUS(to_push);
 
-  bool valid = addr_safety_check(to_push, &hyundai_community2_rx_checks,
+  bool valid = addr_safety_check(to_push, &hyundai_community_rx_checks,
                             hyundai_get_checksum, hyundai_compute_checksum,
                             hyundai_get_counter, NULL);
 
@@ -127,13 +127,13 @@ static int hyundai_community2_rx_hook(CANPacket_t *to_push) {
   return valid;
 }
 
-static int hyundai_community2_tx_hook(CANPacket_t *to_send) {
+static int hyundai_community_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
-  tx = msg_allowed(to_send, HYUNDAI_COMMUNITY2_TX_MSGS, sizeof(HYUNDAI_COMMUNITY2_TX_MSGS)/sizeof(HYUNDAI_COMMUNITY2_TX_MSGS[0]));
+  tx = msg_allowed(to_send, HYUNDAI_COMMUNITY_TX_MSGS, sizeof(HYUNDAI_COMMUNITY_TX_MSGS)/sizeof(HYUNDAI_COMMUNITY_TX_MSGS[0]));
 
   // LKA STEER: safety check
   if (addr == 832) {
@@ -166,7 +166,7 @@ static int hyundai_community2_tx_hook(CANPacket_t *to_send) {
   return tx;
 }
 
-static int hyundai_community2_fwd_hook(int bus_num, int addr) {
+static int hyundai_community_fwd_hook(int bus_num, int addr) {
 
   int bus_fwd = -1;
   int fwd_to_bus1 = -1;
@@ -231,7 +231,7 @@ static int hyundai_community2_fwd_hook(int bus_num, int addr) {
   return bus_fwd;
 }
 
-static const addr_checks* hyundai_community2_init(uint16_t param) {
+static const addr_checks* hyundai_community_init(uint16_t param) {
   hyundai_common_init(param);
   controls_allowed = false;
   relay_malfunction_reset();
@@ -240,14 +240,14 @@ static const addr_checks* hyundai_community2_init(uint16_t param) {
   //   current_board->set_can_mode(CAN_MODE_OBD_CAN2);
   // }
 
-  hyundai_community2_rx_checks = (addr_checks){hyundai_community2_addr_checks, HYUNDAI_COMMUNITY2_ADDR_CHECK_LEN};
-  return &hyundai_community2_rx_checks;
+  hyundai_community_rx_checks = (addr_checks){hyundai_community_addr_checks, HYUNDAI_COMMUNITY_ADDR_CHECK_LEN};
+  return &hyundai_community_rx_checks;
 }
 
-const safety_hooks hyundai_community2_hooks = {
-  .init = hyundai_community2_init,
-  .rx = hyundai_community2_rx_hook,
-  .tx = hyundai_community2_tx_hook,
+const safety_hooks hyundai_community_hooks = {
+  .init = hyundai_community_init,
+  .rx = hyundai_community_rx_hook,
+  .tx = hyundai_community_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
-  .fwd = hyundai_community2_fwd_hook,
+  .fwd = hyundai_community_fwd_hook,
 };
