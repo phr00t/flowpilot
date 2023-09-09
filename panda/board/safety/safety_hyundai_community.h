@@ -105,7 +105,7 @@ static int hyundai_community_rx_hook(CANPacket_t *to_push) {
       int cruise_button = GET_BYTE(to_push, 0) & 0x7U;
       // enable on res+ or set- buttons press
       if (!controls_allowed && (cruise_button == 1 || cruise_button == 2)) {
-        hyundai_common_cruise_state_check(1);
+        controls_allowed = 1;
       }
       // disable on cancel press
       if (cruise_button == 4) {
