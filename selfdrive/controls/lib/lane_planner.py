@@ -98,9 +98,9 @@ class LanePlanner:
 
     # wait, if we are losing a lane, don't push us in the direction of that lane, as we are more likely to go over it
     if curve_prepare > 0 and self.rll_std > 0.5: # pushing right and losing right lane
-      curve_prepare *= clamp(1.0 - 2.0 * (self.rll_std - 0.5), 0.0, 1.0)
+      curve_prepare *= clamp(1.0 - 2.0 * (self.rll_std - 0.5), 0.25, 1.0)
     elif curve_prepare < -0 and self.lll_std > 0.5: # pushing left and losing left lane
-      curve_prepare *= clamp(1.0 - 2.0 * (self.lll_std - 0.5), 0.0, 1.0)
+      curve_prepare *= clamp(1.0 - 2.0 * (self.lll_std - 0.5), 0.25, 1.0)
 
     # debug
     sLogger.Send("vC" + "{:.2f}".format(vcurv) + " CP" + "{:.1f}".format(curve_prepare) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
