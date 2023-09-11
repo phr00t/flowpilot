@@ -81,8 +81,6 @@ public class CameraManager extends SensorInterface {
     Camera2CameraControl c2control;
     Camera2CameraInfo c2info;
     androidx.camera.core.Camera camera;
-    public long LastCamTimestamp = 0;
-    public boolean MissedFrame = false;
 
     public CameraSelector getCameraSelector(boolean  wide){
         if (wide) {
@@ -142,9 +140,6 @@ public class CameraManager extends SensorInterface {
                         @Override
                         public void analyze(@NonNull ImageProxy image) {
                             long startTimestamp = System.currentTimeMillis();
-                            if (LastCamTimestamp > 0)
-                                MissedFrame |= (startTimestamp - LastCamTimestamp) > 75;
-                            LastCamTimestamp = startTimestamp;
                             fillYUVBuffer(image, yuvBuffer);
 
                             ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
@@ -189,12 +184,25 @@ public class CameraManager extends SensorInterface {
                                         final int luminance = total / count;
                                         OnRoadScreen.CamExposure = luminance;
                                     }
-                                    // try to stay around 120
-                                    if (OnRoadScreen.CamExposure > 125 && OnRoadScreen.currentExposureIndex > -10)
-                                        OnRoadScreen.currentExposureIndex--;
-                                    else if(OnRoadScreen.CamExposure < 120 && OnRoadScreen.currentExposureIndex < 3)
-                                        OnRoadScreen.currentExposureIndex++;
-                                    cameraControl.setExposureCompensationIndex(OnRoadScreen.currentExposureIndex);
+                                    // try to stay around 115 and make bigger jumps if needed
+                                    int exposureDirection = 115 - OnRoadScreen.CamExposure;
+                                    int applyExposureDiff = 0;
+                                    if (exposureDirection >= 5) {
+                                        applyExposureDiff = 1;
+                                        exposureDirection -= 5;
+                                    }
+                                    else if (exposureDirection <= -5) {
+                                        applyExposureDiff = -1;
+                                        exposureDirection += 5;
+                                    }
+                                    applyExposureDiff += exposureDirection / 10;
+                                    int finalExposure = OnRoadScreen.currentExposureIndex + applyExposureDiff;
+                                    if (finalExposure > 3)
+                                        finalExposure = 3;
+                                    else if (finalExposure < -10)
+                                        finalExposure = -10;
+                                    cameraControl.setExposureCompensationIndex(finalExposure);
+                                    OnRoadScreen.currentExposureIndex = finalExposure;
                                 });
                             }
                         }
