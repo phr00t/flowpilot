@@ -100,8 +100,7 @@ public class OnRoadScreen extends ScreenAdapter {
     INDArray augmentRot = Nd4j.zeros(1, 3);
     INDArray augmentTrans = Nd4j.zeros(1, 3);
     int[] colorPath = {0, 162, 255};
-    int[] colorLanes = {220, 220, 220};
-    int[] colorEdges = {255, 0, 0};
+    int[] colorEdges = {255, 0, 255};
     int[] colorLead = {196, 196, 196};
     int[] colorBorder;
     float[] colorSettingsBar = {46f/255, 46f/255, 46f/255};
@@ -706,16 +705,34 @@ public class OnRoadScreen extends ScreenAdapter {
                 leadTriangle.getFloat(2, 0), leadTriangle.getFloat(2, 1));
     }
 
+    public int[] GetColorForProb(float prob) {
+        if (prob > 0.5f) {
+            prob = (prob - 0.5f) * 2f;
+            return new int[] {
+                Math.round(255 * (1f - prob)),
+                255,
+                0
+            };
+        } else {
+            prob *= 2f;
+            return new int[] {
+                255,
+                Math.round(255 * prob),
+                0
+            };
+        }
+    }
+
     public void drawModelOutputs() {
         appContext.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         appContext.shapeRenderer.setProjectionMatrix(cameraModel.combined);
         Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
         Gdx.gl.glBlendFunc(Gdx.gl.GL_SRC_ALPHA, Gdx.gl.GL_ONE_MINUS_SRC_ALPHA);
         drawStrip(path, colorPath, 0.7f, defaultDrawLength, drawResolution, 0);
-        drawStrip(lane0, colorLanes, parsed.laneLineProbs[0], defaultDrawLength, drawResolution, 2);
-        drawStrip(lane1, colorLanes, parsed.laneLineProbs[1], defaultDrawLength, drawResolution, 2);
-        drawStrip(lane2, colorLanes, parsed.laneLineProbs[2], defaultDrawLength, drawResolution, 2);
-        drawStrip(lane3, colorLanes, parsed.laneLineProbs[3], defaultDrawLength, drawResolution, 2);
+        drawStrip(lane0, GetColorForProb(parsed.laneLineProbs[0]), 0.9f, defaultDrawLength, drawResolution, 2);
+        drawStrip(lane1, GetColorForProb(parsed.laneLineProbs[1]), 0.9f, defaultDrawLength, drawResolution, 2);
+        drawStrip(lane2, GetColorForProb(parsed.laneLineProbs[2]), 0.9f, defaultDrawLength, drawResolution, 2);
+        drawStrip(lane3, GetColorForProb(parsed.laneLineProbs[3]), 0.9f, defaultDrawLength, drawResolution, 2);
         drawStrip(edge0, colorEdges, 0.9f, defaultDrawLength, drawResolution, 2);
         drawStrip(edge1, colorEdges, 0.9f, defaultDrawLength, drawResolution, 2);
 
