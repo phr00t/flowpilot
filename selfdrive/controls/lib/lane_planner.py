@@ -94,7 +94,7 @@ class LanePlanner:
     lane_distance = self.lane_width * 0.5
     use_min_distance = min(lane_distance, KEEP_MIN_DISTANCE_FROM_LANE)
     prepare_wiggle_room = lane_distance - use_min_distance
-    curve_prepare = clamp(0.7 * sigmoid(vcurv, 3.5, -0.5), -prepare_wiggle_room, prepare_wiggle_room) if prepare_wiggle_room > 0.0 else 0.0
+    curve_prepare = clamp(0.7 * sigmoid(vcurv, 4, -0.5), -prepare_wiggle_room, prepare_wiggle_room) if prepare_wiggle_room > 0.0 else 0.0
 
     # wait, if we are losing a lane, don't push us in the direction of that lane, as we are more likely to go over it
     if curve_prepare > 0 and self.rll_std > 0.5: # pushing right and losing right lane
