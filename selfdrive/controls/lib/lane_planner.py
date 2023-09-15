@@ -18,6 +18,10 @@ def clamp(num, min_value, max_value):
 def sigmoid(x, scale=1, offset=0):
   return (1 / (1 + math.exp(x*scale))) + offset
 
+def lerp(start, end, t):
+  t = clamp(t, 0.0, 1.0)
+  return (start * (1.0 - t)) + (end * t)
+
 class LanePlanner:
   def __init__(self):
     self.ll_t = np.zeros((TRAJECTORY_SIZE,))
@@ -68,50 +72,61 @@ class LanePlanner:
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # Reduce reliance on uncertain lanelines
-    # only give some credit to the model probabilities, rely more on stds and closeness
-    distance = self.rll_y[0] - self.lll_y[0]  # 2.8
-    right_ratio = self.rll_y[0] / distance  # 2/2.8 = 0.71 (closer to left example)
-    l_prob = (right_ratio         + self.lll_prob * 0.4) * interp(self.lll_std, [0, .8], [1.0, 0.01])
-    r_prob = ((1.0 - right_ratio) + self.rll_prob * 0.4) * interp(self.rll_std, [0, .8], [1.0, 0.01])
+    l_prob = interp(self.lll_std, [0, .8], [1.0, 0.01])
+    r_prob = interp(self.rll_std, [0, .8], [1.0, 0.01])
 
+    # normalize to 1
     total_prob = l_prob + r_prob
-    if total_prob < 0.01:
-      # we've completely lost lanes, we will just use the path, unfortunately
-      # this should be very unlikely (impossible even)
-      l_prob = 0
-      r_prob = 0
-    else:
-      l_prob = l_prob / total_prob             #normalize to 1
-      r_prob = r_prob / total_prob
+    l_prob = l_prob / total_prob
+    r_prob = r_prob / total_prob
 
     # Find current lanewidth
     current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), 2.6, 4.0)
     self.lane_width_estimate.update(current_lane_width)
     self.lane_width = min(self.lane_width_estimate.x, current_lane_width)
 
-    # ideally we are half distance of lane width
-    # but clamp lane distances to not push us over the current lane width
-    lane_distance = self.lane_width * 0.5
-    use_min_distance = min(lane_distance, KEEP_MIN_DISTANCE_FROM_LANE)
-    prepare_wiggle_room = lane_distance - use_min_distance
-    curve_prepare = clamp(0.7 * sigmoid(vcurv, 4, -0.5), -prepare_wiggle_room, prepare_wiggle_room) if prepare_wiggle_room > 0.0 else 0.0
-
-    # wait, if we are losing a lane, don't push us in the direction of that lane, as we are more likely to go over it
-    if curve_prepare > 0 and self.rll_std > 0.5: # pushing right and losing right lane
-      curve_prepare *= clamp(1.0 - 2.0 * (self.rll_std - 0.5), 0.25, 1.0)
-    elif curve_prepare < -0 and self.lll_std > 0.5: # pushing left and losing left lane
-      curve_prepare *= clamp(1.0 - 2.0 * (self.lll_std - 0.5), 0.25, 1.0)
+    # one path to rule them all
+    ultimate_path = []
+    # how much are we centered in our lane right now?
+    starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
+    # go through all points in our lanes...
+    for index in range(len(self.lll_y)):
+      # get the lane width for this point
+      lane_width = self.rll_y[index] - self.lll_y[index]
+      # how much do we trust this?
+      # if probabilities for both lanes are about equal, we are using both lanes about equally
+      width_trust = 1.0 - abs(l_prob - r_prob)
+      final_lane_width = lerp(self.lane_width, lane_width, width_trust)
+      # ok, get ideal point from each lane
+      ideal_left = self.lll_y[index] + final_lane_width * 0.5
+      ideal_right = self.rll_y[index] - final_lane_width * 0.5
+      # make sure these points are not going too close or through the other lane
+      ideal_left = clamp(ideal_left, self.lll_y[index] + KEEP_MIN_DISTANCE_FROM_LANE, self.rll_y[index] - KEEP_MIN_DISTANCE_FROM_LANE)
+      ideal_right = clamp(ideal_right, self.lll_y[index] + KEEP_MIN_DISTANCE_FROM_LANE, self.rll_y[index] - KEEP_MIN_DISTANCE_FROM_LANE)
+      # merge them to get an ideal center point, based on which value we want to prefer
+      ideal_point = lerp(ideal_left, ideal_right, r_prob)
+      # how much room do we have at this point to wiggle within the lane?
+      wiggle_room = final_lane_width * 0.5 - KEEP_MIN_DISTANCE_FROM_LANE
+      # how much do we want to shift at this point for upcoming and/or immediate curve?
+      shift = clamp(0.7 * sigmoid(vcurv, 4, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
+      # how much off are we now from our target shift?
+      # if we are shifted exactly how much we want, this should add to 0
+      shift_diff = starting_centering + shift
+      # so, if it was off, apply that post-shift to shift us further to correct our starting centering
+      shift += shift_diff
+      # apply that shift to our ideal point
+      ideal_point += shift
+      # finally do a sanity check that this point is still within the lane markings
+      ideal_point = clamp(ideal_point, self.lll_y[index] + KEEP_MIN_DISTANCE_FROM_LANE, self.rll_y[index] - KEEP_MIN_DISTANCE_FROM_LANE)
+      # add it to our ultimate path!
+      ultimate_path.append(ideal_point)
 
     # debug
-    sLogger.Send("vC" + "{:.2f}".format(vcurv) + " CP" + "{:.1f}".format(curve_prepare) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
-
-    path_from_left_lane = self.lll_y + lane_distance + curve_prepare
-    path_from_right_lane = self.rll_y - lane_distance + curve_prepare
+    sLogger.Send("vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
     safe_idxs = np.isfinite(self.ll_t)
     if safe_idxs[0] and l_prob + r_prob > 0.9:
-      lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane)
-      path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
+      path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], ultimate_path[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
     # apply camera offset after everything
     path_xyz[:, 1] += CAMERA_OFFSET
