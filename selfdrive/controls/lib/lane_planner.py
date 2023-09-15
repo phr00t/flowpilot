@@ -83,10 +83,15 @@ class LanePlanner:
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
-    # Reduce reliance on uncertain lanelines
-    l_prob = (self.lll_prob * 0.7 + 0.3) * interp(self.lll_std, [0, .8], [1.0, 0.05])
-    r_prob = (self.rll_prob * 0.7 + 0.3) * interp(self.rll_std, [0, .8], [1.0, 0.05])
-
+    # how visible is each lane?
+    l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, .8], [1.0, 0.05])
+    r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, .8], [1.0, 0.05])
+    # which lane are we closer to?
+    distance = self.rll_y[0] - self.lll_y[0]
+    right_ratio = self.rll_y[0] / distance
+    # give preference of lane by visibility and closeness, but make sure it is non-zero
+    l_prob = right_ratio * l_vis + 0.05
+    r_prob = (1.0 - right_ratio) * r_vis + 0.05
     # normalize to 1
     total_prob = l_prob + r_prob
     l_prob = l_prob / total_prob
@@ -95,7 +100,7 @@ class LanePlanner:
     # Find current lanewidth
     current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
     self.lane_width_estimate.update(current_lane_width)
-    self.lane_width = min(self.lane_width_estimate.x, current_lane_width)
+    self.lane_width = self.lane_width_estimate.x
 
     # how much are we centered in our lane right now?
     starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
@@ -104,9 +109,8 @@ class LanePlanner:
       # get the raw lane width for this point
       lane_width = self.rll_y[index] - self.lll_y[index]
       use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
-      # how much do we trust this?
-      # if probabilities for both lanes are about equal, we are using both lanes about equally
-      width_trust = 1.0 - abs(l_prob - r_prob)
+      # how much do we trust this? we want to be seeing both pretty well
+      width_trust = min(l_vis, r_vis)
       final_lane_width = lerp(self.lane_width, lane_width, width_trust)
       # ok, get ideal point from each lane
       ideal_left = self.lll_y[index] + final_lane_width * 0.5
