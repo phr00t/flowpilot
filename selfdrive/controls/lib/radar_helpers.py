@@ -138,26 +138,25 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Weights):
     # this data is a little noisy, let's smooth it out
     finalv = v_ego
     finald = 150.0
-    finalprob = 0.0
 
     if lead_msg.prob < 0.5:
       Dists.clear()
       vLeads.clear()
+      Weights.clear()
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0])
-      if len(Dists) > 5:
+      Weights.append(len(vLeads))
+      if len(Dists) > 10:
         Dists.pop(0)
         vLeads.pop(0)
-      finald = statistics.fmean(Dists)
-      finalv = statistics.fmean(vLeads)
-      # only consider lead if we've collected enough data on it
-      if len(vLeads) > 3:
-        finalprob = lead_msg.prob
+        Weights.pop(0)
+      finald = np.average(Dists, weights=Weights)
+      finalv = np.average(vLeads, weights=Weights)
 
     return {
       "dRel": float(finald - RADAR_TO_CAMERA),
@@ -168,7 +167,7 @@ class Cluster():
       "aLeadK": float(0),
       "aLeadTau": _LEAD_ACCEL_TAU,
       "fcw": False,
-      "modelProb": float(finalprob),
+      "modelProb": float(lead_msg.prob),
       "radar": False,
       "status": True
     }
