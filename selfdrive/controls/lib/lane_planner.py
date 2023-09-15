@@ -10,10 +10,21 @@ from common.logger import sLogger
 TRAJECTORY_SIZE = 33
 # positive numbers go right
 CAMERA_OFFSET = 0.08
-KEEP_MIN_DISTANCE_FROM_LANE = 1.3
+MIN_LANE_DISTANCE = 2.6
+MAX_LANE_DISTANCE = 4.0
+KEEP_MIN_DISTANCE_FROM_LANE = MIN_LANE_DISTANCE * 0.5
+KEEP_MAX_DISTANCE_FROM_LANE = MAX_LANE_DISTANCE * 0.5
 
 def clamp(num, min_value, max_value):
-  return max(min(num, max_value), min_value)
+  # weird broken case, do something reasonable
+  if min_value > num > max_value:
+    return (min_value + max_value) * 0.5
+  # ok, basic min/max below
+  if num < min_value:
+    return min_value
+  if num > max_value:
+    return max_value
+  return num
 
 def sigmoid(x, scale=1, offset=0):
   return (1 / (1 + math.exp(x*scale))) + offset
@@ -82,7 +93,7 @@ class LanePlanner:
     r_prob = r_prob / total_prob
 
     # Find current lanewidth
-    current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), 2.6, 4.0)
+    current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
     self.lane_width_estimate.update(current_lane_width)
     self.lane_width = min(self.lane_width_estimate.x, current_lane_width)
 
@@ -90,7 +101,7 @@ class LanePlanner:
     starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
     # go through all points in our lanes...
     for index in range(len(self.lll_y)):
-      # get the lane width for this point
+      # get the raw lane width for this point
       lane_width = self.rll_y[index] - self.lll_y[index]
       use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
       # how much do we trust this?
@@ -117,8 +128,9 @@ class LanePlanner:
         shift += shift_diff
       # apply that shift to our ideal point
       ideal_point += shift
-      # finally do a sanity check that this point is still within the lane markings
+      # finally do a sanity check that this point is still within the lane markings and our min/max values
       ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
+      ideal_point = clamp(ideal_point, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
       # add it to our ultimate path!
       self.ultimate_path[index] = ideal_point
 
