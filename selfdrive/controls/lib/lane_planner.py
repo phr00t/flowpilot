@@ -73,8 +73,8 @@ class LanePlanner:
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # Reduce reliance on uncertain lanelines
-    l_prob = interp(self.lll_std, [0, .8], [1.0, 0.01])
-    r_prob = interp(self.rll_std, [0, .8], [1.0, 0.01])
+    l_prob = (self.lll_prob * 0.7 + 0.3) * interp(self.lll_std, [0, .8], [1.0, 0.05])
+    r_prob = (self.rll_prob * 0.7 + 0.3) * interp(self.rll_std, [0, .8], [1.0, 0.05])
 
     # normalize to 1
     total_prob = l_prob + r_prob
@@ -92,6 +92,7 @@ class LanePlanner:
     for index in range(len(self.lll_y)):
       # get the lane width for this point
       lane_width = self.rll_y[index] - self.lll_y[index]
+      use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
       # how much do we trust this?
       # if probabilities for both lanes are about equal, we are using both lanes about equally
       width_trust = 1.0 - abs(l_prob - r_prob)
@@ -100,14 +101,14 @@ class LanePlanner:
       ideal_left = self.lll_y[index] + final_lane_width * 0.5
       ideal_right = self.rll_y[index] - final_lane_width * 0.5
       # make sure these points are not going too close or through the other lane
-      ideal_left = clamp(ideal_left, self.lll_y[index] + KEEP_MIN_DISTANCE_FROM_LANE, self.rll_y[index] - KEEP_MIN_DISTANCE_FROM_LANE)
-      ideal_right = clamp(ideal_right, self.lll_y[index] + KEEP_MIN_DISTANCE_FROM_LANE, self.rll_y[index] - KEEP_MIN_DISTANCE_FROM_LANE)
+      ideal_left = clamp(ideal_left, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
+      ideal_right = clamp(ideal_right, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
       # merge them to get an ideal center point, based on which value we want to prefer
       ideal_point = lerp(ideal_left, ideal_right, r_prob)
       # how much room do we have at this point to wiggle within the lane?
-      wiggle_room = final_lane_width * 0.5 - KEEP_MIN_DISTANCE_FROM_LANE
+      wiggle_room = final_lane_width * 0.5 - use_min_lane_distance
       # how much do we want to shift at this point for upcoming and/or immediate curve?
-      shift = clamp(0.7 * sigmoid(vcurv, 4, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
+      shift = clamp(0.7 * sigmoid(vcurv, 2.5, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
       # how much off are we now from our target shift?
       # if we are shifted exactly how much we want, this should add to 0
       shift_diff = starting_centering + shift
@@ -116,7 +117,7 @@ class LanePlanner:
       # apply that shift to our ideal point
       ideal_point += shift
       # finally do a sanity check that this point is still within the lane markings
-      ideal_point = clamp(ideal_point, self.lll_y[index] + KEEP_MIN_DISTANCE_FROM_LANE, self.rll_y[index] - KEEP_MIN_DISTANCE_FROM_LANE)
+      ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
       # add it to our ultimate path!
       self.ultimate_path[index] = ideal_point
 
