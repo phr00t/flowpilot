@@ -30,6 +30,7 @@ class LanePlanner:
     self.rll_y = np.zeros((TRAJECTORY_SIZE,))
     self.le_y = np.zeros((TRAJECTORY_SIZE,))
     self.re_y = np.zeros((TRAJECTORY_SIZE,))
+    self.ultimate_path = np.zeros((TRAJECTORY_SIZE,))
     self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
     self.lane_width = 3.2
     self.lane_change_multiplier = 1
@@ -85,8 +86,6 @@ class LanePlanner:
     self.lane_width_estimate.update(current_lane_width)
     self.lane_width = min(self.lane_width_estimate.x, current_lane_width)
 
-    # one path to rule them all
-    ultimate_path = []
     # how much are we centered in our lane right now?
     starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
     # go through all points in our lanes...
@@ -119,14 +118,14 @@ class LanePlanner:
       # finally do a sanity check that this point is still within the lane markings
       ideal_point = clamp(ideal_point, self.lll_y[index] + KEEP_MIN_DISTANCE_FROM_LANE, self.rll_y[index] - KEEP_MIN_DISTANCE_FROM_LANE)
       # add it to our ultimate path!
-      ultimate_path.append(ideal_point)
+      self.ultimate_path[index] = ideal_point
 
     # debug
     sLogger.Send("vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
     safe_idxs = np.isfinite(self.ll_t)
     if safe_idxs[0] and l_prob + r_prob > 0.9:
-      path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], ultimate_path[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
+      path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], self.ultimate_path[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
 
     # apply camera offset after everything
     path_xyz[:, 1] += CAMERA_OFFSET
