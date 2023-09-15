@@ -109,11 +109,12 @@ class LanePlanner:
       wiggle_room = final_lane_width * 0.5 - use_min_lane_distance
       # how much do we want to shift at this point for upcoming and/or immediate curve?
       shift = clamp(0.7 * sigmoid(vcurv, 2.5, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
-      # how much off are we now from our target shift?
-      # if we are shifted exactly how much we want, this should add to 0
-      shift_diff = starting_centering + shift
-      # so, if it was off, apply that post-shift to shift us further to correct our starting centering
-      shift += shift_diff
+      # if we are approaching a lane and off from the shift we want, account for that
+      if min(abs(self.lll_y[index]), abs(self.rll_y[index])) < use_min_lane_distance * 1.175:
+        # if we are shifted exactly how much we want, this should add to 0
+        shift_diff = starting_centering + shift
+        # so, if it was off, apply that post-shift to shift us further to correct our starting centering
+        shift += shift_diff
       # apply that shift to our ideal point
       ideal_point += shift
       # finally do a sanity check that this point is still within the lane markings
