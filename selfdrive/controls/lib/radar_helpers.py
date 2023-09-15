@@ -138,7 +138,7 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Weights):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists):
     # this data is a little noisy, let's smooth it out
     finalv = v_ego
     finald = 150.0
@@ -146,15 +146,13 @@ class Cluster():
     if lead_msg.prob < 0.5:
       Dists.clear()
       vLeads.clear()
-      Weights.clear()
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0])
-      Weights.append(len(vLeads))
       if len(Dists) > 10:
         Dists.pop(0)
         vLeads.pop(0)
-        Weights.pop(0)
+      Weights = list(range(1, len(Dists) + 1))
       finald = np.average(Dists, weights=Weights)
       finalv = np.average(vLeads, weights=Weights)
 
