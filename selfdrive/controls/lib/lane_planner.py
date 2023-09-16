@@ -134,7 +134,10 @@ class LanePlanner:
       ideal_point += shift
       # finally do a sanity check that this point is still within the lane markings and our min/max values
       ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
-      ideal_point = clamp(ideal_point, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
+      if l_prob > r_prob:
+        ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
+      else:
+        ideal_point = max(ideal_point, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE)
       # add it to our ultimate path!
       self.ultimate_path[index] = ideal_point
 
