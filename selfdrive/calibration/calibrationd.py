@@ -164,7 +164,7 @@ class Calibrator:
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if write_this_cycle:
-      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
+      self.params.put("CalibrationParams", self.get_msg().to_bytes())
       print("calibration saved")
 
   def handle_v_ego(self, v_ego: float) -> None:
