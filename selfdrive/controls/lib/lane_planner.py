@@ -12,8 +12,8 @@ TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 4.0
-KEEP_MIN_DISTANCE_FROM_LANE = MIN_LANE_DISTANCE * 0.5
-KEEP_MAX_DISTANCE_FROM_LANE = MAX_LANE_DISTANCE * 0.5
+KEEP_MIN_DISTANCE_FROM_LANE = 1.35
+KEEP_MAX_DISTANCE_FROM_LANE = 2.0
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -123,8 +123,8 @@ class LanePlanner:
       # how much room do we have at this point to wiggle within the lane?
       wiggle_room = final_lane_width * 0.5 - use_min_lane_distance
       # how much do we want to shift at this point for upcoming and/or immediate curve?
-      shift = clamp(0.7 * sigmoid(vcurv, 2.5, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
-      # if we are approaching a lane and off from the shift we want, account for that
+      shift = clamp(0.7 * sigmoid(vcurv, 1.75, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
+      # if we are approaching a lane, let's look at how we are doing with our dynamic curve shift...
       if min(abs(self.lll_y[index]), abs(self.rll_y[index])) < use_min_lane_distance * 1.175:
         # if we are shifted exactly how much we want, this should add to 0
         shift_diff = starting_centering + shift
