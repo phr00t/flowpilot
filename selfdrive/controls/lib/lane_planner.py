@@ -83,15 +83,17 @@ class LanePlanner:
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
-    # how visible is each lane?
-    l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, .8], [1.0, 0.05])
-    r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, .8], [1.0, 0.05])
+    # collect some info on lane visibility
+    l_std = interp(self.lll_std, [0, .8], [1.0, 0.05])
+    r_std = interp(self.rll_std, [0, .8], [1.0, 0.05])
+    l_vis = (self.lll_prob * 0.5 + 0.5) * l_std
+    r_vis = (self.rll_prob * 0.5 + 0.5) * r_std
     # which lane are we closer to?
     distance = self.rll_y[0] - self.lll_y[0]
     right_ratio = self.rll_y[0] / distance
     # give preference of lane by visibility and closeness, but make sure it is non-zero
-    l_prob = right_ratio * l_vis + 0.05
-    r_prob = (1.0 - right_ratio) * r_vis + 0.05
+    l_prob = (right_ratio         + self.lll_prob * 0.4) * l_std + 0.01
+    r_prob = ((1.0 - right_ratio) + self.rll_prob * 0.4) * r_std + 0.01
     # normalize to 1
     total_prob = l_prob + r_prob
     l_prob = l_prob / total_prob
@@ -107,7 +109,7 @@ class LanePlanner:
     # go through all points in our lanes...
     for index in range(len(self.lll_y)):
       # get the raw lane width for this point
-      lane_width = self.rll_y[index] - self.lll_y[index]
+      lane_width = clamp(self.rll_y[index] - self.lll_y[index], MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
       use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
       # how much do we trust this? we want to be seeing both pretty well
       width_trust = min(l_vis, r_vis)
@@ -115,9 +117,6 @@ class LanePlanner:
       # ok, get ideal point from each lane
       ideal_left = self.lll_y[index] + final_lane_width * 0.5
       ideal_right = self.rll_y[index] - final_lane_width * 0.5
-      # make sure these points are not going too close or through the other lane
-      ideal_left = clamp(ideal_left, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
-      ideal_right = clamp(ideal_right, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
       # merge them to get an ideal center point, based on which value we want to prefer
       ideal_point = lerp(ideal_left, ideal_right, r_prob)
       # how much room do we have at this point to wiggle within the lane?
@@ -131,11 +130,9 @@ class LanePlanner:
       # apply that shift to our ideal point
       ideal_point += shift
       # finally do a sanity check that this point is still within the lane markings and our min/max values
-      ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
-      if l_prob > r_prob:
-        ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
-      else:
-        ideal_point = max(ideal_point, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE)
+      ideal_point_left_clamp = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
+      ideal_point_right_clamp = clamp(ideal_point, self.rll_y[index] - use_min_lane_distance, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE)
+      ideal_point = lerp(ideal_point_left_clamp, ideal_point_right_clamp, r_prob)
       # add it to our ultimate path!
       self.ultimate_path[index] = ideal_point
 
