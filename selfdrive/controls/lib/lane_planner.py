@@ -123,7 +123,7 @@ class LanePlanner:
       # how much room do we have at this point to wiggle within the lane?
       wiggle_room = final_lane_width * 0.5 - use_min_lane_distance
       # how much do we want to shift at this point for upcoming and/or immediate curve?
-      shift = clamp(0.75 * sigmoid(vcurv, 2.0, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
+      shift = clamp(0.7 * sigmoid(vcurv, 3.0, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
       # if we are shifted exactly how much we want, this should add to 0
       shift_diff = starting_centering + shift
       # so, if it was off, apply some post-shift to shift us further to correct our starting centering
