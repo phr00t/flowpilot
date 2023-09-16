@@ -127,7 +127,7 @@ class LanePlanner:
       # if we are shifted exactly how much we want, this should add to 0
       shift_diff = starting_centering + shift
       # so, if it was off, apply some post-shift to shift us further to correct our starting centering
-      shift += shift_diff * 0.5
+      shift += shift_diff
       # apply that shift to our ideal point
       ideal_point += shift
       # finally do a sanity check that this point is still within the lane markings and our min/max values
