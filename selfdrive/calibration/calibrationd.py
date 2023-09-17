@@ -179,19 +179,19 @@ class Calibrator:
   def handle_cam_odom(self, trans: List[float],
                             rot: List[float],
                             wide_from_device_euler: List[float],
-                            trans_std: List[float],
-                            road_transform_trans: List[float],
-                            road_transform_trans_std: List[float]) -> Optional[np.ndarray]:
+                            trans_std: List[float])#,
+                            #road_transform_trans: List[float],
+                            #road_transform_trans_std: List[float]) -> Optional[np.ndarray]:
     self.old_rpy_weight = max(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
     angle_std_threshold = MAX_VEL_ANGLE_STD
     height_std_threshold = MAX_HEIGHT_STD
     rpy_certain = np.arctan2(trans_std[1], trans[0]) < angle_std_threshold
-    if len(road_transform_trans_std) == 3:
-      height_certain = road_transform_trans_std[2] < height_std_threshold
-    else:
-      height_certain = True
+    #if len(road_transform_trans_std) == 3:
+    #  height_certain = road_transform_trans_std[2] < height_std_threshold
+    #else:
+    height_certain = True
 
     certain_if_calib = (rpy_certain and height_certain) or (self.valid_blocks < INPUTS_NEEDED)
     if not (straight_and_fast and certain_if_calib):
@@ -208,10 +208,10 @@ class Calibrator:
     else:
       new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
 
-    if (len(road_transform_trans) == 3):
-      new_height = np.array([road_transform_trans[2]])
-    else:
-      new_height = HEIGHT_INIT
+    #if (len(road_transform_trans) == 3):
+    #  new_height = np.array([road_transform_trans[2]])
+    #else:
+    new_height = HEIGHT_INIT
 
     self.rpys[self.block_idx] = moving_avg_with_linear_decay(self.rpys[self.block_idx], new_rpy, self.idx, float(BLOCK_SIZE))
     self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx],
@@ -278,9 +278,9 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                            sm['cameraOdometry'].rot,
                                            sm['cameraOdometry'].wideFromDeviceEuler,
-                                           sm['cameraOdometry'].transStd,
-                                           sm['cameraOdometry'].roadTransformTrans,
-                                           sm['cameraOdometry'].roadTransformTransStd)
+                                           sm['cameraOdometry'].transStd)#,
+                                           #sm['cameraOdometry'].roadTransformTrans,
+                                           #sm['cameraOdometry'].roadTransformTransStd)
 
       if DEBUG and new_rpy is not None:
         print('got new rpy', new_rpy)

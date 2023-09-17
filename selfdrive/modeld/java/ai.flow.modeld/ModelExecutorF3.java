@@ -194,7 +194,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         inputShapeMap.put("desire", desireTensorShape);
         inputShapeMap.put("traffic_convention", trafficTensorShape);
         inputShapeMap.put("nav_features", navFeaturesTensorShape);
-        inputShapeMap.put("nav_instructions", navInstructionsTensorShape);
+        //inputShapeMap.put("nav_instructions", navInstructionsTensorShape);
         outputShapeMap.put("outputs", outputTensorShape);
 
         inputMap.put("features_buffer", featuresNDArr);

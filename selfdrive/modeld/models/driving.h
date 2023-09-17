@@ -245,7 +245,7 @@ struct ModelOutput {
   const ModelOutputPose pose;
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
   const ModelOutputTemporalPose temporal_pose;
-  const ModelOutputRoadTransform road_transform;
+  //const ModelOutputRoadTransform road_transform;
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
