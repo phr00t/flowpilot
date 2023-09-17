@@ -105,12 +105,20 @@ class LanePlanner:
       self.lane_width_estimate.update(current_lane_width)
       self.lane_width = self.lane_width_estimate.x
 
+      # track how wide the lanes are getting up ahead
+      max_lane_width_seen = current_lane_width
+      half_len = len(self.lll_y) // 2
+
       # how much are we centered in our lane right now?
       starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
         # get the raw lane width for this point
         lane_width = self.rll_y[index] - self.lll_y[index]
+        # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
+        # model path with very large lanes (that might be splitting into multiple lanes)
+        if lane_width > max_lane_width_seen and index <= half_len:
+          max_lane_width_seen = lane_width
         use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
         # how much do we trust this? we want to be seeing both pretty well
         width_trust = min(l_vis, r_vis)
@@ -151,7 +159,7 @@ class LanePlanner:
         self.ultimate_path[index] = ideal_point
 
       # do we want to mix in the model path a little bit if lanelines are going south?
-      final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0)
+      final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
 
       # debug
       sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
