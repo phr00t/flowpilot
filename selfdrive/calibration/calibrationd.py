@@ -179,7 +179,7 @@ class Calibrator:
   def handle_cam_odom(self, trans: List[float],
                             rot: List[float],
                             wide_from_device_euler: List[float],
-                            trans_std: List[float])#,
+                            trans_std: List[float]):
                             #road_transform_trans: List[float],
                             #road_transform_trans_std: List[float]) -> Optional[np.ndarray]:
     self.old_rpy_weight = max(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
