@@ -84,75 +84,83 @@ class LanePlanner:
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # how visible is each lane?
-    l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, .8], [1.0, 0.05])
-    r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, .8], [1.0, 0.05])
-    # which lane are we closer to?
-    distance = self.rll_y[0] - self.lll_y[0]
-    right_ratio = self.rll_y[0] / distance
-    # give preference of lane by visibility and closeness, but make sure it is non-zero
-    l_prob = right_ratio * l_vis + 0.05
-    r_prob = (1.0 - right_ratio) * r_vis + 0.05
-    # normalize to 1
-    total_prob = l_prob + r_prob
-    l_prob = l_prob / total_prob
-    r_prob = r_prob / total_prob
+    l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, 0.9], [1.0, 0.0])
+    r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, 0.9], [1.0, 0.0])
+    lane_trust = max(l_vis, r_vis)
+    # make sure we have something with lanelines to work with
+    # otherwise, we will default to laneless, unfortunately
+    if lane_trust > 0.025:
+      # which lane are we closer to?
+      distance = self.rll_y[0] - self.lll_y[0]
+      right_ratio = self.rll_y[0] / distance
+      # give preference of lane by visibility and closeness, but make sure it is non-zero
+      l_prob = right_ratio * l_vis
+      r_prob = (1.0 - right_ratio) * r_vis
+      total_prob = l_prob + r_prob
+      l_prob = l_prob / total_prob
+      r_prob = r_prob / total_prob
 
-    # Find current lanewidth
-    current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
-    self.lane_width_estimate.update(current_lane_width)
-    self.lane_width = self.lane_width_estimate.x
+      # Find current lanewidth
+      current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
+      self.lane_width_estimate.update(current_lane_width)
+      self.lane_width = self.lane_width_estimate.x
 
-    # how much are we centered in our lane right now?
-    starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
-    # go through all points in our lanes...
-    for index in range(len(self.lll_y)):
-      # get the raw lane width for this point
-      lane_width = self.rll_y[index] - self.lll_y[index]
-      use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
-      # how much do we trust this? we want to be seeing both pretty well
-      width_trust = min(l_vis, r_vis)
-      final_lane_width = lerp(self.lane_width, lane_width, width_trust)
-      # ok, get ideal point from each lane
-      ideal_left = self.lll_y[index] + final_lane_width * 0.5
-      ideal_right = self.rll_y[index] - final_lane_width * 0.5
-      # make sure these points are not going too close or through the other lane
-      ideal_left = clamp(ideal_left, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
-      ideal_right = clamp(ideal_right, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
-      # merge them to get an ideal center point, based on which value we want to prefer
-      ideal_point = lerp(ideal_left, ideal_right, r_prob)
-      # how much room do we have at this point to wiggle within the lane?
-      wiggle_room = final_lane_width * 0.5 - use_min_lane_distance
-      # how much do we want to shift at this point for upcoming and/or immediate curve?
-      shift = clamp(0.7 * sigmoid(vcurv, 3.0, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
-      # if we are shifted exactly how much we want, this should add to 0
-      shift_diff = starting_centering + shift
-      # so, if it was off, apply some post-shift to shift us further to correct our starting centering
-      shift += shift_diff
-      # apply that shift to our ideal point
-      ideal_point += shift
-      # finally do a sanity check that this point is still within the lane markings and our min/max values
-      if abs(self.lll_y[index] - ideal_point) > abs(self.rll_y[index] - ideal_point):
-        # point is closer to the right lane, apply right min lane distance clamp
-        # while letting us path a little closer to the left lane (which is further away)
-        ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance * 0.5, self.rll_y[index] - use_min_lane_distance)
-      else:
-        # point is closer to the left lane, apply left min lane distance clamp
-        # while letting us path a little closer to the right lane (which is further away)
-        ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance * 0.5)
-      # apply a max distance away from our preferred lane
-      if l_prob > r_prob:
-        ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
-      else:
-        ideal_point = max(ideal_point, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE)
-      # add it to our ultimate path!
-      self.ultimate_path[index] = ideal_point
+      # how much are we centered in our lane right now?
+      starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
+      # go through all points in our lanes...
+      for index in range(len(self.lll_y)):
+        # get the raw lane width for this point
+        lane_width = self.rll_y[index] - self.lll_y[index]
+        use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
+        # how much do we trust this? we want to be seeing both pretty well
+        width_trust = min(l_vis, r_vis)
+        final_lane_width = lerp(self.lane_width, lane_width, width_trust)
+        # ok, get ideal point from each lane
+        ideal_left = self.lll_y[index] + final_lane_width * 0.5
+        ideal_right = self.rll_y[index] - final_lane_width * 0.5
+        # make sure these points are not going too close or through the other lane
+        ideal_left = clamp(ideal_left, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
+        ideal_right = clamp(ideal_right, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
+        # merge them to get an ideal center point, based on which value we want to prefer
+        ideal_point = lerp(ideal_left, ideal_right, r_prob)
+        # how much room do we have at this point to wiggle within the lane?
+        wiggle_room = final_lane_width * 0.5 - use_min_lane_distance
+        # how much do we want to shift at this point for upcoming and/or immediate curve?
+        shift = clamp(0.7 * sigmoid(vcurv, 3.0, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
+        # if we are shifted exactly how much we want, this should add to 0
+        shift_diff = starting_centering + shift
+        # so, if it was off, apply some post-shift to shift us further to correct our starting centering
+        shift += shift_diff
+        # apply that shift to our ideal point
+        ideal_point += shift
+        # finally do a sanity check that this point is still within the lane markings and our min/max values
+        if abs(self.lll_y[index] - ideal_point) > abs(self.rll_y[index] - ideal_point):
+          # point is closer to the right lane, apply right min lane distance clamp
+          # while letting us path a little closer to the left lane (which is further away)
+          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance * 0.5, self.rll_y[index] - use_min_lane_distance)
+        else:
+          # point is closer to the left lane, apply left min lane distance clamp
+          # while letting us path a little closer to the right lane (which is further away)
+          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance * 0.5)
+        # apply a max distance away from our preferred lane
+        if l_prob > r_prob:
+          ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
+        else:
+          ideal_point = max(ideal_point, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE)
+        # add it to our ultimate path!
+        self.ultimate_path[index] = ideal_point
 
-    # debug
-    sLogger.Send("vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+      # do we want to mix in the model path a little bit if lanelines are going south?
+      final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0)
 
-    safe_idxs = np.isfinite(self.ll_t)
-    if safe_idxs[0] and l_prob + r_prob > 0.9:
-      path_xyz[:,1] = self.lane_change_multiplier * np.interp(path_t, self.ll_t[safe_idxs], self.ultimate_path[safe_idxs]) + (1 - self.lane_change_multiplier) * path_xyz[:,1]
+      # debug
+      sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+
+      safe_idxs = np.isfinite(self.ll_t)
+      if safe_idxs[0]:
+        path_xyz[:,1] = final_ultimate_path_mix * np.interp(path_t, self.ll_t[safe_idxs], self.ultimate_path[safe_idxs]) + (1 - final_ultimate_path_mix) * path_xyz[:,1]
+    else:
+      sLogger.Send("Lanes lost completely! Using model path entirely...")
 
     # apply camera offset after everything
     path_xyz[:, 1] += CAMERA_OFFSET
