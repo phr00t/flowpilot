@@ -141,12 +141,12 @@ class LateralPlanner:
     lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
     lateralPlan.curvatureRates = [float(x/self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
 
-    # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
+    # get biggest curve in the near future so we can use that for shifting wide through the turn
     curv_len = len(lateralPlan.curvatures)
     biggest_curve = 0.0
     if curv_len > 0:
-      curv_middle = math.floor((curv_len - 1)/2)
-      for x in range(curv_middle, curv_len):
+      curv_middle = curv_len//2
+      for x in range(curv_middle//2, curv_middle):
         acurval = abs(lateralPlan.curvatures[x])
         if acurval > biggest_curve:
           biggest_curve = acurval
