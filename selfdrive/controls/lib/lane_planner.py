@@ -152,12 +152,12 @@ class LanePlanner:
         # apply that shift to our ideal point
         ideal_point += shift
         # finally do a sanity check that this point is still within the lane markings and our min/max values
-        if vcurv < 0.0:
-          # left turn, give a little more space with left lane
-          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance + min(self.lll_std, 0.3), self.rll_y[index] - use_min_lane_distance * 0.6)
+        if vcurv < -0.03:
+          # left turn, give a little more space with left lane, as the model likes to hug and cut lefts
+          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance + min(self.lll_std, 0.3), self.rll_y[index] - use_min_lane_distance)
         else:
-          # right turn, give a little more space with right lane
-          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance * 0.6, self.rll_y[index] - use_min_lane_distance - min(self.rll_std, 0.3))
+          # right turn, use normal lane clipping as this model handles right turns better
+          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
