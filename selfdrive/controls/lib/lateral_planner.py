@@ -146,7 +146,7 @@ class LateralPlanner:
     biggest_curve = 0.0
     if curv_len > 0:
       curv_middle = curv_len//2
-      for x in range(0, curv_middle):
+      for x in range(1, curv_middle):
         acurval = abs(lateralPlan.curvatures[x])
         if acurval > biggest_curve:
           biggest_curve = acurval
