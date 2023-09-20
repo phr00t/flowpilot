@@ -124,7 +124,7 @@ class LanePlanner:
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
         # get the raw lane width for this point
-        lane_width = self.rll_y[index] - self.lll_y[index]
+        lane_width = min(self.rll_y[index], self.re_y[index]) - max(self.le_y[index], self.lll_y[index])
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
         # model path with very large lanes (that might be splitting into multiple lanes)
         if lane_width > max_lane_width_seen and index <= half_len:
@@ -132,7 +132,7 @@ class LanePlanner:
         use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
         # how much do we trust this? we want to be seeing both pretty well
         width_trust = min(l_vis, r_vis)
-        final_lane_width = lerp(self.lane_width, lane_width, width_trust)
+        final_lane_width = min(lane_width, lerp(self.lane_width, lane_width, width_trust))
         # ok, get ideal point from each lane
         ideal_left = self.lll_y[index] + final_lane_width * 0.5
         ideal_right = self.rll_y[index] - final_lane_width * 0.5
