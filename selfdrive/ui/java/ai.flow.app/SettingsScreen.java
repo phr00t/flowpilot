@@ -116,6 +116,8 @@ public class SettingsScreen extends ScreenAdapter {
         AdditionalToggles.add("UseDistSpeed");
         AdditionalToggles.add("More Sensitive Slower");
         AdditionalToggles.add("SensitiveSlow");
+        AdditionalToggles.add("Always Use Model Path");
+        AdditionalToggles.add("UseModelPath");
 
         stage = new Stage(new FitViewport(1280, 720));
         batch = new SpriteBatch();

@@ -6,6 +6,7 @@ from common.numpy_fast import interp
 from common.realtime import DT_MDL
 from system.swaglog import cloudlog
 from common.logger import sLogger
+from common.params import Params
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
@@ -45,6 +46,9 @@ class LanePlanner:
     self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
     self.lane_width = 3.2
     self.lane_change_multiplier = 1
+    self.Options = Params()
+    self.UseModelPath = self.Options.get_bool("UseModelPath")
+    self.updateOptions = 100
 
     self.lll_prob = 0.
     self.rll_prob = 0.
@@ -56,6 +60,12 @@ class LanePlanner:
     self.r_lane_change_prob = 0.
 
   def parse_model(self, md):
+
+    self.updateOptions -= 1
+    if self.updateOptions <= 0:
+      self.updateOptions = 100
+      self.UseModelPath = self.Options.get_bool("UseModelPath")
+
     lane_lines = md.laneLines
     edges = md.roadEdges
 
@@ -159,7 +169,7 @@ class LanePlanner:
         self.ultimate_path[index] = ideal_point
 
       # do we want to mix in the model path a little bit if lanelines are going south?
-      final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
+      final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
 
       # debug
       sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))

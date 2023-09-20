@@ -82,6 +82,7 @@ def main():
                         ("DisengageOnAccelerator", "0"),
                         ("HasAcceptedTerms", "1"),
                         ("UseAccel", "0"),
+                        ("UseModelPath", "0"),
                         ("UseDistSpeed", "0"),
                         ("SensitiveSlow", "1"),
                         ("WideCameraOnly", "1"),
