@@ -44,6 +44,7 @@ class LateralPlanner:
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros((TRAJECTORY_SIZE,))
     self.v_plan = np.zeros((TRAJECTORY_SIZE,))
+    self.model_plan = np.zeros((TRAJECTORY_SIZE, 4), dtype=np.float32)
     self.v_ego = 0.0
     self.l_lane_change_prob = 0.0
     self.r_lane_change_prob = 0.0
@@ -73,6 +74,9 @@ class LateralPlanner:
       car_speed = np.linalg.norm(self.velocity_xyz, axis=1) - get_speed_error(md, v_ego_car)
       self.v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
       self.v_ego = self.v_plan[0]
+
+    if len(md.lateralPlannerSolution) == TRAJECTORY_SIZE:
+      self.model_plan = np.column_stack([md.lateralPlannerSolution.x, md.lateralPlannerSolution.y, md.lateralPlannerSolution.yaw, md.lateralPlannerSolution.yawRate])
 
     # Lane change logic
     CS = sm['carState']
