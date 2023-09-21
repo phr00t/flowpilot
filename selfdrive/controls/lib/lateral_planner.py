@@ -75,7 +75,7 @@ class LateralPlanner:
       self.v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
       self.v_ego = self.v_plan[0]
 
-    if len(md.lateralPlannerSolution) == TRAJECTORY_SIZE:
+    if len(md.lateralPlannerSolution.x) == TRAJECTORY_SIZE:
       self.model_plan = np.column_stack([md.lateralPlannerSolution.x, md.lateralPlannerSolution.y, md.lateralPlannerSolution.yaw, md.lateralPlannerSolution.yawRate])
 
     # Lane change logic
