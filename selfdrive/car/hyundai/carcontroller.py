@@ -302,12 +302,12 @@ class CarController:
         # a lead car wants us to slow down, but how hard should we be braking?
         target_speed_ratio = clu11_speed / desired_speed
         target_accel = interp(target_speed_ratio, [0.0, 1.0, 1.2, 1.4, 1.6], [2.0, 0.0, -0.5, -1.25, -2.5])
-        if target_accel < CS.out.aEgo and target_accel < 0:
-          # we want to be decelerating faster than we are now, cancel cruise
-          desired_speed = 0
-        else:
+        if target_accel > 0 or target_accel > CS.out.aEgo:
           # we don't need to break this hard, re-enable cruise
           reenable_cruise_atspd = clu11_speed
+        elif target_accel < CS.out.aEgo - 0.4:
+          # we want to be decelerating significantly faster than we are now, cancel cruise
+          desired_speed = 0
 
     # sanity checks
     if desired_speed > max_speed_in_mph:
