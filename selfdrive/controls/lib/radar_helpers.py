@@ -142,6 +142,7 @@ class Cluster():
     # this data is a little noisy, let's smooth it out
     finalv = v_ego
     finald = 150.0
+    finalp = 0.0
 
     if lead_msg.prob < 0.5:
       Dists.clear()
@@ -155,6 +156,9 @@ class Cluster():
       Weights = list(range(1, len(Dists) + 1))
       finald = np.average(Dists, weights=Weights)
       finalv = np.average(vLeads, weights=Weights)
+      # only consider we've got a lead when we've collected some data on it
+      if len(vLeads) >= 3:
+        finalp = float(lead_msg.prob)
 
     return {
       "dRel": float(finald - RADAR_TO_CAMERA),
@@ -165,7 +169,7 @@ class Cluster():
       "aLeadK": float(0),
       "aLeadTau": _LEAD_ACCEL_TAU,
       "fcw": False,
-      "modelProb": float(lead_msg.prob),
+      "modelProb": finalp,
       "radar": False,
       "status": True
     }
