@@ -10,7 +10,7 @@ from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
 from common.logger import sLogger
 import numpy as np
-
+from common.numpy_fast import interp
 import statistics
 import datetime
 import math
@@ -257,11 +257,11 @@ class CarController:
         max_lead_adj = lead_speed + lead_time_ideal_offset
         # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
         # don't go much slower than the lead car, and cancel any sudden slowing that may be happening
-        fasterleadcar_imposed_speed_limit = max(clu11_speed - 2, lead_speed - 2.3)
+        fasterleadcar_imposed_speed_limit = max(clu11_speed - 2.0, lead_speed - 2.3)
         if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
           max_lead_adj = fasterleadcar_imposed_speed_limit # slowly make space between cars
-        elif dont_sudden_slow and max_lead_adj < clu11_speed * 0.875:
-          max_lead_adj = clu11_speed * 0.875 # slow down, but not aggresively
+        elif dont_sudden_slow and max_lead_adj < clu11_speed - 2.0:
+          max_lead_adj = clu11_speed - 2.0 # slow down, but not aggresively
         elif not leadcar_going_faster and self.lead_seen_counter < 150 and max_lead_adj > clu11_speed:
           max_lead_adj = clu11_speed # dont speed up if we see a new car and its not going faster than us
         # cap our desired_speed to this final max speed
@@ -271,6 +271,7 @@ class CarController:
       self.lead_seen_counter = 0
 
     reenable_cruise_atspd = desired_speed * 1.02 + 2.0
+    target_accel = 0.0
 
     # get option updates
     if self.frame % 100 == 0:
@@ -294,14 +295,19 @@ class CarController:
       # apply a spam overpress to amplify speed changes
       desired_speed += speed_diff * 0.6
 
-      slow_speed_factor = 1.42 if self.sensitiveSlow else 1.45
-      # this can trigger sooner than lead car slowing, because curve data is much less noisy
       if curve_speed_ratio > 1.125:
+        # we are taking a curve and need to slow down
         desired_speed = 0
-
-      # if we are going much faster than we want, disable cruise to trigger more intense regen braking
-      if clu11_speed > desired_speed * slow_speed_factor:
-        desired_speed = 0
+      elif desired_speed > 0:
+        # a lead car wants us to slow down, but how hard should we be braking?
+        target_speed_ratio = clu11_speed / desired_speed
+        target_accel = interp(target_speed_ratio, [0.0, 1.0, 1.2, 1.4, 1.6], [2.0, 0.0, -0.5, -1.25, -2.5])
+        if target_accel < CS.out.aEgo and target_accel < 0:
+          # we want to be decelerating faster than we are now, cancel cruise
+          desired_speed = 0
+        else:
+          # we don't need to break this hard, re-enable cruise
+          reenable_cruise_atspd = clu11_speed
 
     # sanity checks
     if desired_speed > max_speed_in_mph:
@@ -322,7 +328,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " v" + "{:.1f}".format(l0v * CV.MS_TO_MPH) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
