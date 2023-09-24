@@ -123,8 +123,10 @@ class LanePlanner:
       starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
+        right_anchor = min(self.rll_y[index] - self.rll_std * 0.25, self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * 0.25, self.le_y[index])
         # get the raw lane width for this point
-        lane_width = min(self.rll_y[index], self.re_y[index]) - max(self.le_y[index], self.lll_y[index])
+        lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
         # model path with very large lanes (that might be splitting into multiple lanes)
         if lane_width > max_lane_width_seen and index <= half_len:
@@ -134,8 +136,8 @@ class LanePlanner:
         width_trust = min(l_vis, r_vis)
         final_lane_width = min(lane_width, lerp(self.lane_width, lane_width, width_trust))
         # ok, get ideal point from each lane
-        ideal_left = self.lll_y[index] + final_lane_width * 0.5
-        ideal_right = self.rll_y[index] - final_lane_width * 0.5
+        ideal_left = left_anchor + final_lane_width * 0.5
+        ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
         # how much do we want to shift at this point for upcoming and/or immediate curve?
@@ -149,13 +151,13 @@ class LanePlanner:
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
-        ideal_point = clamp(ideal_point, self.lll_y[index] + clamp(l_prob * 2.0, 0.0, 1.0) * use_min_lane_distance,
-                                         self.rll_y[index] - clamp(r_prob * 2.0, 0.0, 1.0) * use_min_lane_distance)
+        ideal_point = clamp(ideal_point, left_anchor + clamp(l_prob * 2.0, 0.0, 1.0) * use_min_lane_distance,
+                                         right_anchor - clamp(r_prob * 2.0, 0.0, 1.0) * use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
-          ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
+          ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
         else:
-          ideal_point = max(ideal_point, self.rll_y[index] - KEEP_MAX_DISTANCE_FROM_LANE)
+          ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
 
