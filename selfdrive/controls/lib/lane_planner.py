@@ -136,15 +136,10 @@ class LanePlanner:
         # ok, get ideal point from each lane
         ideal_left = self.lll_y[index] + final_lane_width * 0.5
         ideal_right = self.rll_y[index] - final_lane_width * 0.5
-        # make sure these points are not going too close or through the other lane
-        ideal_left = clamp(ideal_left, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
-        ideal_right = clamp(ideal_right, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # how much room do we have at this point to wiggle within the lane?
-        wiggle_room = final_lane_width * 0.5 - use_min_lane_distance
         # how much do we want to shift at this point for upcoming and/or immediate curve?
-        shift = clamp(0.7 * sigmoid(vcurv, 3.25, -0.5), -wiggle_room, wiggle_room) if wiggle_room > 0.0 else 0.0
+        shift = 0.7 * sigmoid(vcurv, 3.25, -0.5)
         # if we are shifted exactly how much we want, this should add to 0
         shift_diff = starting_centering + shift
         # so, if it was off, apply some post-shift to shift us further to correct our starting centering
@@ -152,12 +147,7 @@ class LanePlanner:
         # apply that shift to our ideal point
         ideal_point += shift
         # finally do a sanity check that this point is still within the lane markings and our min/max values
-        if vcurv < -0.03:
-          # left turn, give a little more space with left lane, as the model likes to hug and cut lefts
-          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance + min(self.lll_std, 0.3), self.rll_y[index] - use_min_lane_distance)
-        else:
-          # right turn, use normal lane clipping as this model handles right turns better
-          ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
+        ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
