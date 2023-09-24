@@ -270,6 +270,7 @@ class CarController:
       self.lead_seen_counter = 0
 
     allow_reenable_cruise = False
+    target_accel = 0.0
 
     # get option updates
     if self.frame % 100 == 0:
