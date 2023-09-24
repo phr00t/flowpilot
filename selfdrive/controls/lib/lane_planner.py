@@ -147,7 +147,10 @@ class LanePlanner:
         # apply that shift to our ideal point
         ideal_point += shift
         # finally do a sanity check that this point is still within the lane markings and our min/max values
-        ideal_point = clamp(ideal_point, self.lll_y[index] + use_min_lane_distance, self.rll_y[index] - use_min_lane_distance)
+        # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
+        # with the lane we are preferring
+        ideal_point = clamp(ideal_point, self.lll_y[index] + clamp(l_prob * 2.0, 0.0, 1.0) * use_min_lane_distance,
+                                         self.rll_y[index] - clamp(r_prob * 2.0, 0.0, 1.0) * use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, self.lll_y[index] + KEEP_MAX_DISTANCE_FROM_LANE)
