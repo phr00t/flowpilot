@@ -119,6 +119,9 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
+      # nlp mixer, use a bit more nlp path in curves
+      nlp_mixer = interp(abs(vcurv), [0.2, 0.4, 1.0], [0.0, 0.3, 0.6])
+
       # how much are we centered in our lane right now?
       starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
       # go through all points in our lanes...
@@ -148,6 +151,8 @@ class LanePlanner:
         shift += shift_diff
         # apply that shift to our ideal point
         ideal_point += shift
+        # mix in our nlp path here, before our sanity checks
+        ideal_point = lerp(ideal_point, path_xyz[index, 1], nlp_mixer)
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
@@ -161,11 +166,8 @@ class LanePlanner:
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
 
-      # nlp mixer, use a bit more nlp path in curves
-      nlp_mixer = interp(abs(vcurv), [0.2, 0.4, 1.0], [1.0, 0.75, 0.5])
-
       # do we want to mix in the model path a little bit if lanelines are going south?
-      final_ultimate_path_mix = nlp_mixer * self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
+      final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
 
       # debug
       sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
