@@ -119,9 +119,6 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
-      # nlp mixer, use a bit more nlp path in curves
-      nlp_mixer = interp(abs(vcurv), [0.2, 0.4, 1.0], [0.0, 0.3, 0.6])
-
       # how much are we centered in our lane right now?
       starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
       # go through all points in our lanes...
@@ -143,8 +140,6 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # mix in our nlp path here, before our sanity checks
-        ideal_point = lerp(ideal_point, path_xyz[index, 1], nlp_mixer)
         # apply a centering force
         ideal_point += starting_centering
         # finally do a sanity check that this point is still within the lane markings and our min/max values
