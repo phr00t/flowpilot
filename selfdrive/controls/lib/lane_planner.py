@@ -143,16 +143,10 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # how much do we want to shift at this point for upcoming and/or immediate curve?
-        shift = 0.6 * sigmoid(vcurv, 3.0, -0.5)
-        # if we are shifted exactly how much we want, this should add to 0
-        shift_diff = starting_centering + shift
-        # so, if it was off, apply some post-shift to shift us further to correct our starting centering
-        shift += shift_diff
-        # apply that shift to our ideal point
-        ideal_point += shift
         # mix in our nlp path here, before our sanity checks
         ideal_point = lerp(ideal_point, path_xyz[index, 1], nlp_mixer)
+        # apply a centering force
+        ideal_point += starting_centering
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
