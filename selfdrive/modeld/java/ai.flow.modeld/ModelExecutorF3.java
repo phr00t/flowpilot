@@ -47,7 +47,7 @@ public class ModelExecutorF3 extends ModelExecutor {
     public static final int[] featureTensorShape = {1, CommonModelF3.FEATURE_LEN, CommonModelF3.HISTORY_BUFFER_LEN};
     public static final int[] outputTensorShape = {1, CommonModelF3.NET_OUTPUT_SIZE};
     public static final int[] navFeaturesTensorShape = {1, CommonModelF3.NAV_FEATURE_LEN};
-    public static final int[] navInstructionsTensorShape = {1, 150};
+    public static final int[] navInstructionsTensorShape = {1, CommonModelF3.NAV_INSTRUCTION_LEN};
 
     public static final Map<String, int[]> inputShapeMap = new HashMap<>();
     public static final Map<String, int[]> outputShapeMap = new HashMap<>();

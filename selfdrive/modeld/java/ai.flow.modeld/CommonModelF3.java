@@ -4,19 +4,13 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 public class CommonModelF3 {
-
-    public static final int LEAD_MHP_SELECTION = 3;
     public static final int TRAJECTORY_SIZE = 33;
-    public static final int FEATURE_LEN = 128;
+    public static final int FEATURE_LEN = 512;
     public static final int HISTORY_BUFFER_LEN = 99;
     public static final int DESIRE_LEN = 8;
-    public static final int DESIRE_PRED_LEN = 4;
-    public static final int NAV_INPUT_SIZE = 256*256;
     public static final int NAV_FEATURE_LEN = 256;
-    public static final int NAV_DESIRE_LEN = 32;
+    public static final int NAV_INSTRUCTION_LEN = 150;
     public static final int TRAFFIC_CONVENTION_LEN = 2;
-    public static final int DRIVING_STYLE_LEN = 12;
-    public static final int MODEL_FREQ = 20;
     public static final int OUTPUT_SIZE = 5978 + 12; // +12 from ModelOutputRoadTransform
     // Padding to final get output shape as multiple of 4
     public static final int PAD_SIZE = 2;
