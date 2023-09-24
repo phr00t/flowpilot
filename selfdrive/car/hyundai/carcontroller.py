@@ -302,7 +302,7 @@ class CarController:
       if target_accel >= 0 or target_accel > CS.out.aEgo:
         # we don't need to break this hard, re-enable cruise
         allow_reenable_cruise = True
-      elif target_accel < CS.out.aEgo - allow_difference:
+      elif target_accel < CS.out.aEgo - allow_difference and clu11_speed - 1.5 > desired_speed:
         # we want to be decelerating significantly faster than we are now, cancel cruise
         desired_speed = 0
 
