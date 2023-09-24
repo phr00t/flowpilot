@@ -221,7 +221,6 @@ class CarController:
     # also note how much of a speed difference we need for this turn
     vcurv_adj = 0.35 + (0.65 / (0.35 * vcurv + 1))
     desired_speed *= vcurv_adj
-    curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead worth making decisions on?
     if l0prob > 0.5:
@@ -270,8 +269,7 @@ class CarController:
     else:
       self.lead_seen_counter = 0
 
-    reenable_cruise_atspd = desired_speed * 1.02 + 2.0
-    target_accel = 0.0
+    allow_reenable_cruise = False
 
     # get option updates
     if self.frame % 100 == 0:
@@ -282,9 +280,8 @@ class CarController:
     if self.usingAccel and avg_accel < 8.0 and clu11_speed < 45:
       # stop sign or red light, stop!
       desired_speed = 0
-      #reenable_cruise_atspd = 0
-      #CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
-    else:
+      CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
+    elif desired_speed > 0:
       # does the model think we should be really slowing down?
       if self.usingAccel and avg_accel < clu11_speed * 0.5 and desired_speed > clu11_speed - 1:
         desired_speed = clu11_speed - 1
@@ -295,19 +292,16 @@ class CarController:
       # apply a spam overpress to amplify speed changes
       desired_speed += speed_diff * 0.6
 
-      if curve_speed_ratio > 1.125:
-        # we are taking a curve and need to slow down
+      # what is our speed to desired speed ratio?
+      target_speed_ratio = clu11_speed / desired_speed
+      target_accel = interp(target_speed_ratio, [0.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.6], [2.0, 0.0, -0.25, -0.6, -1.0, -1.6, -2.5])
+      allow_difference = 0.25 if self.sensitiveSlow else 0.35
+      if target_accel >= 0 or target_accel > CS.out.aEgo:
+        # we don't need to break this hard, re-enable cruise
+        allow_reenable_cruise = True
+      elif target_accel < CS.out.aEgo - allow_difference:
+        # we want to be decelerating significantly faster than we are now, cancel cruise
         desired_speed = 0
-      elif desired_speed > 0:
-        # a lead car wants us to slow down, but how hard should we be braking?
-        target_speed_ratio = clu11_speed / desired_speed
-        target_accel = interp(target_speed_ratio, [0.0, 1.0, 1.2, 1.4, 1.6], [2.0, 0.0, -0.5, -1.25, -2.5])
-        if target_accel > 0 or target_accel > CS.out.aEgo:
-          # we don't need to break this hard, re-enable cruise
-          reenable_cruise_atspd = clu11_speed
-        elif target_accel < CS.out.aEgo - 0.4:
-          # we want to be decelerating significantly faster than we are now, cancel cruise
-          desired_speed = 0
 
     # sanity checks
     if desired_speed > max_speed_in_mph:
@@ -352,7 +346,7 @@ class CarController:
         self.temp_disable_spamming = 3 # take a break
 
     # are we using the auto resume feature?
-    if CS.out.cruiseState.nonAdaptive and self.temp_disable_spamming <= 0 and clu11_speed <= reenable_cruise_atspd:
+    if CS.out.cruiseState.nonAdaptive and self.temp_disable_spamming <= 0 and allow_reenable_cruise:
       can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) # re-enable cruise at our current speed
       self.temp_disable_spamming = 5 # take a break
 
