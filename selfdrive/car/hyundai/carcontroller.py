@@ -294,7 +294,9 @@ class CarController:
 
       # what is our speed to desired speed ratio?
       target_speed_ratio = clu11_speed / desired_speed
-      target_accel = interp(target_speed_ratio, [0.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.6], [2.0, 0.0, -0.25, -0.6, -1.0, -1.6, -2.5])
+      target_accel = interp(target_speed_ratio,
+                            [0.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6],
+                            [2.0, 0.0, -0.35, -0.75, -1.2, -1.7, -2.25, -3.0])
       allow_difference = 0.25 if self.sensitiveSlow else 0.35
       if target_accel >= 0 or target_accel > CS.out.aEgo:
         # we don't need to break this hard, re-enable cruise
