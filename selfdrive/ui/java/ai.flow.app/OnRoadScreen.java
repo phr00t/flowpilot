@@ -5,6 +5,7 @@ import ai.flow.app.helpers.Utils;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.definitions.CarDefinitions.CarControl.HUDControl.AudibleAlert;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.CommonModelF3;
@@ -800,6 +801,7 @@ public class OnRoadScreen extends ScreenAdapter {
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
             appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,3,200);
+            appContext.font.draw(batch, utils.F2 ? "Medium Model" : "Big Model", Gdx.graphics.getWidth() - 450f, 300f);
             appContext.font.draw(batch, "v" + VERSION + ", E" + CamExposure + ":" + currentExposureIndex, Gdx.graphics.getWidth() - 450f, 225f);
             appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 450f, 150f);
             appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 450f, 75f);
