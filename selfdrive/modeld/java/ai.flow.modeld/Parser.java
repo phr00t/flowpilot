@@ -35,14 +35,13 @@ public class Parser {
     public SizeMapArrayPool pool = new SizeMapArrayPool();
 
     public Parser(){
-        net_outputs.put("plan", new float[LL_IDX - PLAN_IDX]);
-        net_outputs.put("laneLines", new float[LL_PROB_IDX - LL_IDX]);
-        net_outputs.put("laneLinesProb", new float[RE_IDX - LL_PROB_IDX]);
-        net_outputs.put("roadEdges", new float[LEAD_IDX - RE_IDX]);
-        net_outputs.put("lead", new float[LEAD_PROB_IDX - LEAD_IDX]);
-        net_outputs.put("leadProb", new float[DESIRE_STATE_IDX - LEAD_PROB_IDX]);
-        net_outputs.put("meta", new float[POSE_IDX - DESIRE_STATE_IDX]);
-        net_outputs.put("pose", new float[OUTPUT_SIZE - POSE_IDX]);
+        net_outputs.put("plan", new float[SIZE_ModelOutputPlans]);
+        net_outputs.put("laneLines", new float[SIZE_ModelOutputLaneLines]);
+        net_outputs.put("roadEdges", new float[SIZE_ModelOutputRoadEdges]);
+        net_outputs.put("lead", new float[SIZE_ModelOutputLeads]);
+        net_outputs.put("meta", new float[SIZE_ModelOutputMeta]);
+        net_outputs.put("pose", new float[SIZE_ModelOutputPose]);
+        net_outputs.put("stopLines", new float[SIZE_ModelOutputStopLines]);
         net_outputs.put("state", new float[TEMPORAL_SIZE]);
     }
 
@@ -261,11 +260,11 @@ public class Parser {
         pool.returnArray(temp_data);
     }
 
-    public void fill_lead_v3(LeadDataV3 lead, float[] lead_data, float[] prob, int t_offset, float prob_t)
+    public void fill_lead_v3(LeadDataV3 lead, float[] lead_data, int t_offset, float prob_t)
     {
 
         float[] data = get_lead_data(lead_data, t_offset);
-        lead.prob = sigmoid(prob[t_offset]);
+        lead.prob = sigmoid(lead_data[t_offset + LEAD_PROB_IDX]);
         lead.probTime = prob_t;
         float[] x_arr = lead.x;
         float[] y_arr = lead.y;
@@ -343,9 +342,8 @@ public class Parser {
     }
 
     public ParsedOutputs parser(float[] outs){
-        copyOfRange(outs, net_outputs.get("lead"), LEAD_IDX, LEAD_PROB_IDX);
-        copyOfRange(outs, net_outputs.get("leadProb"), LEAD_PROB_IDX, DESIRE_STATE_IDX);
-        copyOfRange(outs, net_outputs.get("meta"), DESIRE_STATE_IDX, POSE_IDX);
+        copyOfRange(outs, net_outputs.get("lead"), LEAD_IDX, LEAD_IDX + SIZE_ModelOutputLeads);
+        copyOfRange(outs, net_outputs.get("meta"), META_IDX, META_IDX + SIZE_ModelOutputMeta);
         copyOfRange(outs, net_outputs.get("pose"), POSE_IDX, OUTPUT_SIZE);
 
         getBestPlan(outs, best_plan, PLAN_IDX);
@@ -388,7 +386,7 @@ public class Parser {
         }
 
         for(int t_offset=0; t_offset < LEAD_MHP_SELECTION; t_offset++)
-            fill_lead_v3(leads.get(t_offset), net_outputs.get("lead"), net_outputs.get("leadProb"), t_offset, t_offsets[t_offset]);
+            fill_lead_v3(leads.get(t_offset), net_outputs.get("lead"), t_offset, t_offsets[t_offset]);
 
         copyOfRange(net_outputs.get("meta"), meta[0], 0, meta[0].length);
         copyOfRange(net_outputs.get("pose"), pose[0], 0, pose[0].length);
