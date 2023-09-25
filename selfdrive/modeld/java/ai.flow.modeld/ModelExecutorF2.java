@@ -241,8 +241,5 @@ public class ModelExecutorF2 extends ModelExecutor {
     public void stop() {
         stopped = true;
     }
-    public void start(){
-        init();
-        stopped = false;
-    }
+    public void start(){ stopped = false; }
 }
