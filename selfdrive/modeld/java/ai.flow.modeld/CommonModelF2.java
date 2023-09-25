@@ -30,8 +30,6 @@ public class CommonModelF2 {
     public static final int SIZE_ModelOutputLeadPrediction = 204 / 4;
     public static final int DESIRE_LEN = 8;
     public static final int TRAJECTORY_SIZE = 33;
-
-    public static final int DESIRE_PRED_LEN = 4;
     public static final int OTHER_META_SIZE = 32;
     public static final int NUM_META_INTERVALS = 5;
     public static final int META_STRIDE = 7;
@@ -53,7 +51,7 @@ public class CommonModelF2 {
 
     public static final int PLAN_IDX = 0;
     public static final int LL_IDX = SIZE_ModelOutputPlans;
-    public static final int LL_PROB_IDX = LL_IDX + 4*2*2*33;
+    public static final int LL_PROB_IDX = LL_IDX + SIZE_ModelOutputLinesXY * 2;
     public static final int RE_IDX = LL_IDX + SIZE_ModelOutputLaneLines;
     public static final int LEAD_IDX = RE_IDX + SIZE_ModelOutputRoadEdges;
     public static final int LEAD_PROB_IDX = LEAD_IDX + LEAD_MHP_N * SIZE_ModelOutputLeadPrediction;

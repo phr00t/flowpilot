@@ -133,7 +133,7 @@ public class ModelExecutorF2 extends ModelExecutor {
 
         // publish outputs
         end = System.currentTimeMillis();
-        msgModelDataV2.fill(outs, processStartTimestamp, frameData.getFrameId(), -1, 0f, end - start, -1);
+        msgModelDataV2.fill(outs, processStartTimestamp, frameData.getFrameId(), -1, 0f, end - start, parser.stopSignProb);
         msgCameraOdometery.fill(outs, processStartTimestamp, frameData.getFrameId());
 
         ph.publishBuffer("modelV2", msgModelDataV2.serialize(frameDrops < 1));

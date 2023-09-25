@@ -497,7 +497,8 @@ public class MsgModelDataV2 extends MessageBase {
         modelDataV2.setFrameAge(frameAge);
         modelDataV2.setFrameDropPerc(frameDropPerc);
         modelDataV2.setTimestampEof(timestamp);
-        modelDataV2.setGpuExecutionTime(gpuExecutionTime);
+        modelDataV2.setGpuExecutionTime(gpuExecutionTime); // this is actually stop sign prob
+        modelDataV2.setModelExecutionTime(modelExecutionTime);
 
         for (int i = 0; i < CommonModelF2.TRAJECTORY_SIZE; i++) {
             positionX.set(i, parsed.position.get(0)[i]);

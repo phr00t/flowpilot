@@ -31,6 +31,7 @@ public class Parser {
     public Map<String, float[]> net_outputs = new HashMap<String, float[]>();
     public float[] plan_t_arr = new float[TRAJECTORY_SIZE];
     public float[] best_plan = new float[PLAN_MHP_GROUP_SIZE];
+    public float stopSignProb;
 
     public SizeMapArrayPool pool = new SizeMapArrayPool();
 
@@ -244,22 +245,6 @@ public class Parser {
         get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, t_offset - LEAD_MHP_SELECTION, output);
     }
 
-    public void fill_lead_v2(LeadDataV2 lead, float[] lead_data, float[] prob, int t_offset, float t)
-    {
-        float[] xyva = lead.xyva;
-        float[] xyvaStd = lead.xyvaStd;
-        float[] temp_data = pool.getArray(LEAD_MHP_GROUP_SIZE);
-        get_lead_data(lead_data, t_offset, temp_data);
-        lead.prob = sigmoid(prob[t_offset]);
-
-        for(int i=0; i < LEAD_MHP_VALS; i++)
-        {
-            xyva[i] = temp_data[i];
-            xyvaStd[i] = (float)Math.exp(temp_data[LEAD_MHP_VALS + i]);
-        }
-        pool.returnArray(temp_data);
-    }
-
     public void fill_lead_v3(LeadDataV3 lead, float[] lead_data, int t_offset, float prob_t)
     {
 
@@ -288,7 +273,10 @@ public class Parser {
         }
     }
 
-    
+    public void fill_stopline(float[] data) {
+        stopSignProb = data[META_IDX - 1];
+    }
+
     public void fill_sigmoid(float[] input, float[] output, int offset, int len, int stride)
     {
         for (int i=0; i<len; i++)
@@ -347,6 +335,7 @@ public class Parser {
         copyOfRange(outs, net_outputs.get("pose"), POSE_IDX, OUTPUT_SIZE);
 
         getBestPlan(outs, best_plan, PLAN_IDX);
+        fill_stopline(outs);
 
         plan_t_arr[0] = 0.0f;
         for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
