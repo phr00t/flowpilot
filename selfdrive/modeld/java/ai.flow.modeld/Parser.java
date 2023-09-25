@@ -274,7 +274,7 @@ public class Parser {
     }
 
     public void fill_stopline(float[] data) {
-        stopSignProb = data[META_IDX - 1];
+        stopSignProb = data[STOP_SIGN_IDX + 204];
     }
 
     public void fill_sigmoid(float[] input, float[] output, int offset, int len, int stride)

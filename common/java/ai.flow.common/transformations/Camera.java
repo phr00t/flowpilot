@@ -10,15 +10,14 @@ public class Camera {
     // lots of important stuff calculated from this
     // current set to LG G8 wide camera
     public static final float
-        FocalX = utils.F2 ? 910f : 1600f, //1394.7081f,
-        FocalY = utils.F2 ? 910f : 1600f, //1394.7616f,
+        FocalX = utils.F2 ? 650f : 1600f, //1394.7081f,
+        FocalY = utils.F2 ? 650f : 1600f, //1394.7616f,
         CenterX = utils.F2 ? 900f : 952.62915f,
         CenterY = utils.F2 ? 514f : 517.53534f;
 
     // everything autocalculated below
-    public static final float eon_road_focal_length = 650.0f; // not sure where this is suppose to be used
     public static final float actual_cam_focal_length = (FocalX + FocalY) * 0.5f;
-    public static final float digital_zoom_apply = actual_cam_focal_length / Model.MEDMODEL_FL;
+    public static final float digital_zoom_apply = actual_cam_focal_length / (utils.F2 ? Model.MEDMODEL_F2_FL : Model.MEDMODEL_FL);
     public static final int[] frameSize = new int[]{1920, 1080};
     public static final float OffsetX = CenterX - (frameSize[0]*0.5f);
     public static final float OffsetY = CenterY - (frameSize[1]*0.5f);
