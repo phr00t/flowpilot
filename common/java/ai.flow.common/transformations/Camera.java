@@ -19,7 +19,7 @@ public class Camera {
     public static final float eon_road_focal_length = 650.0f; // not sure where this is suppose to be used
     public static final float actual_cam_focal_length = (FocalX + FocalY) * 0.5f;
     public static final float digital_zoom_apply = actual_cam_focal_length / Model.MEDMODEL_FL;
-    public static final int[] frameSize = utils.F2 ? new int[]{1280, 720} : new int[]{1920, 1080};
+    public static final int[] frameSize = new int[]{1920, 1080};
     public static final float OffsetX = CenterX - (frameSize[0]*0.5f);
     public static final float OffsetY = CenterY - (frameSize[1]*0.5f);
 

@@ -67,11 +67,11 @@ public class ModelExecutorF2 extends ModelExecutor {
     public int totalFrameDrops = 0;
     public int frameDrops = 0; // per iteration
     public ModelRunner modelRunner;
-    Definitions.FrameData.Reader frameData;
-    Definitions.FrameBuffer.Reader msgFrameBuffer;
+    Definitions.FrameData.Reader frameData, frameWideData;
+    Definitions.FrameBuffer.Reader msgFrameBuffer, msgFrameWideBuffer;
     public MsgCameraOdometery msgCameraOdometery = new MsgCameraOdometery();
     public MsgModelDataV2 msgModelDataV2 = new MsgModelDataV2();
-    ByteBuffer imgBuffer;
+    ByteBuffer imgBuffer, wideImgBuffer;
     int desire;
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
@@ -86,13 +86,15 @@ public class ModelExecutorF2 extends ModelExecutor {
 
     public void ExecuteModel(Definitions.FrameData.Reader roadData, Definitions.FrameBuffer.Reader roadBuf,
                              long processStartTimestamp) {
-        frameData = roadData;
-        msgFrameBuffer = roadBuf;
+
+        ModelExecutorF3.frameWideData = frameWideData = frameData = roadData;
+        ModelExecutorF3.msgFrameWideBuffer = msgFrameWideBuffer = msgFrameBuffer = roadBuf;
 
         if (stopped || initialized == false) return;
 
         start = System.currentTimeMillis();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
+        wideImgBuffer = updateImageBuffer(msgFrameWideBuffer, wideImgBuffer);
         if (sh.updated("lateralPlan")){
             desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
             if (desire >= 0 && desire < CommonModelF2.DESIRE_LEN)
@@ -114,11 +116,11 @@ public class ModelExecutorF2 extends ModelExecutor {
                 augmentRot.putScalar(i, rpy.get(i));
             }
             wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, false);
-            wrapWideMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, true);
+            wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, true);
         }
 
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
-        netInputWideBuffer = imagePrepare.prepare(imgBuffer, wrapWideMatrix);
+        netInputWideBuffer = imageWidePrepare.prepare(wideImgBuffer, wrapMatrixWide);
 
         try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "ModelD")) {
             // NCHW to NHWC
@@ -155,9 +157,11 @@ public class ModelExecutorF2 extends ModelExecutor {
         lastFrameID = frameData.getFrameId();
     }
 
-    INDArray wrapMatrix, wrapWideMatrix;
     INDArray netInputBuffer, netInputWideBuffer;
+    INDArray wrapMatrix;
+    INDArray wrapMatrixWide;
     ImagePrepare imagePrepare;
+    ImagePrepare imageWidePrepare;
 
     public void init() {
 
@@ -187,21 +191,28 @@ public class ModelExecutorF2 extends ModelExecutor {
         modelRunner.warmup();
 
         wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, false);
-        wrapWideMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, true);
+        wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, true);
 
-        // TODO:Clean this shit.
         boolean rgb;
         if (getUseGPU()){
             rgb = msgFrameBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
             imagePrepare = new ImagePrepareGPU(FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1], rgb, msgFrameBuffer.getYWidth(), msgFrameBuffer.getYHeight(),
                     msgFrameBuffer.getYPixelStride(), msgFrameBuffer.getUvWidth(), msgFrameBuffer.getUvHeight(), msgFrameBuffer.getUvPixelStride(),
                     msgFrameBuffer.getUOffset(), msgFrameBuffer.getVOffset(), msgFrameBuffer.getStride());
+            rgb = msgFrameWideBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
+            imageWidePrepare = new ImagePrepareGPU(FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1], rgb, msgFrameWideBuffer.getYWidth(), msgFrameWideBuffer.getYHeight(),
+                    msgFrameWideBuffer.getYPixelStride(), msgFrameWideBuffer.getUvWidth(), msgFrameWideBuffer.getUvHeight(), msgFrameWideBuffer.getUvPixelStride(),
+                    msgFrameWideBuffer.getUOffset(), msgFrameWideBuffer.getVOffset(), msgFrameWideBuffer.getStride());
         }
         else{
             rgb = msgFrameBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
             imagePrepare = new ImagePrepareCPU(FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1], rgb, msgFrameBuffer.getYWidth(), msgFrameBuffer.getYHeight(),
                     msgFrameBuffer.getYPixelStride(), msgFrameBuffer.getUvWidth(), msgFrameBuffer.getUvHeight(), msgFrameBuffer.getUvPixelStride(),
                     msgFrameBuffer.getUOffset(), msgFrameBuffer.getVOffset(), msgFrameBuffer.getStride());
+            rgb = msgFrameWideBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
+            imageWidePrepare = new ImagePrepareCPU(FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1], rgb, msgFrameWideBuffer.getYWidth(), msgFrameWideBuffer.getYHeight(),
+                    msgFrameWideBuffer.getYPixelStride(), msgFrameWideBuffer.getUvWidth(), msgFrameWideBuffer.getUvHeight(), msgFrameWideBuffer.getUvPixelStride(),
+                    msgFrameWideBuffer.getUOffset(), msgFrameWideBuffer.getVOffset(), msgFrameWideBuffer.getStride());
         }
 
         lastFrameID = frameData.getFrameId();

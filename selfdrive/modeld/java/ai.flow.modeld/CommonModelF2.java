@@ -5,14 +5,15 @@ package ai.flow.modeld;
 public class CommonModelF2 {
 
     /* NUCLEAR GRADE MODEL OUTPUT
-    ModelOutputPlans: 19820
-    ModelOutputLaneLines: 2144
-    ModelOutputRoadEdges: 1056
-    ModelOutputLeads: 420
-    ModelOutputStopLines: 208
-    ModelOutputMeta: 352
-    ModelOutputPose: 48
-    Total: 24048
+        ModelOutputPlans: 19820, Offset: 0
+        ModelOutputLaneLines: 2144, Offset 19820
+        ModelOutputRoadEdges: 1056, Offset 21964
+        ModelOutputLeads: 420, Offset 23020
+        ModelOutputStopLines: 208, Offset 23440
+        ModelOutputMeta: 352, Offset 23648
+        ModelOutputPose: 48, Offset 24000
+        Total: 24048
+
      */
 
 

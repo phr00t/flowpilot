@@ -245,11 +245,11 @@ public class Parser {
         get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, t_offset - LEAD_MHP_SELECTION, output);
     }
 
-    public void fill_lead_v3(LeadDataV3 lead, float[] lead_data, int t_offset, float prob_t)
+    public void fill_lead_v3(LeadDataV3 lead, float[] lead_data, float[] alldata, int t_offset, float prob_t)
     {
 
         float[] data = get_lead_data(lead_data, t_offset);
-        lead.prob = sigmoid(lead_data[t_offset + LEAD_PROB_IDX]);
+        lead.prob = sigmoid(alldata[t_offset + LEAD_PROB_IDX]);
         lead.probTime = prob_t;
         float[] x_arr = lead.x;
         float[] y_arr = lead.y;
@@ -332,7 +332,7 @@ public class Parser {
     public ParsedOutputs parser(float[] outs){
         copyOfRange(outs, net_outputs.get("lead"), LEAD_IDX, LEAD_IDX + SIZE_ModelOutputLeads);
         copyOfRange(outs, net_outputs.get("meta"), META_IDX, META_IDX + SIZE_ModelOutputMeta);
-        copyOfRange(outs, net_outputs.get("pose"), POSE_IDX, OUTPUT_SIZE);
+        copyOfRange(outs, net_outputs.get("pose"), POSE_IDX, POSE_IDX + SIZE_ModelOutputPose);
 
         getBestPlan(outs, best_plan, PLAN_IDX);
         fill_stopline(outs);
@@ -374,8 +374,8 @@ public class Parser {
             roadEdgeStds[i] = (float) Math.exp(outs[RE_IDX + 2*TRAJECTORY_SIZE*(2+i)]);
         }
 
-        for(int t_offset=0; t_offset < LEAD_MHP_SELECTION; t_offset++)
-            fill_lead_v3(leads.get(t_offset), net_outputs.get("lead"), t_offset, t_offsets[t_offset]);
+        for(int t_offset=0; t_offset < LEAD_MHP_N; t_offset++)
+            fill_lead_v3(leads.get(t_offset), net_outputs.get("lead"), outs, t_offset, t_offsets[t_offset]);
 
         copyOfRange(net_outputs.get("meta"), meta[0], 0, meta[0].length);
         copyOfRange(net_outputs.get("pose"), pose[0], 0, pose[0].length);
