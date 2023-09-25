@@ -95,6 +95,8 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		params.put("DeviceManufacturer", Build.MANUFACTURER);
 		params.put("DeviceModel", Build.MODEL);
 
+		utils.F2 = !params.getBool("F3");
+
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
 		CameraManager cameraManager, cameraManagerWide = null;
 		SensorManager sensorManager = new SensorManager(appContext, 100);
