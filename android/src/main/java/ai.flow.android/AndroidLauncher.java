@@ -100,7 +100,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
 		CameraManager cameraManager, cameraManagerWide = null;
 		SensorManager sensorManager = new SensorManager(appContext, 100);
-		cameraManager = new CameraManager(getApplication().getApplicationContext(), utils.F2 ? Camera.CAMERA_TYPE_ROAD : Camera.CAMERA_TYPE_WIDE);
+		cameraManager = new CameraManager(getApplication().getApplicationContext(), utils.F2 || Camera.FORCE_TELE_CAM_F3 ? Camera.CAMERA_TYPE_ROAD : Camera.CAMERA_TYPE_WIDE);
 		CameraManager finalCameraManager = cameraManager; // stupid java
 		sensors = new HashMap<String, SensorInterface>() {{
 			put("roadCamera", finalCameraManager);

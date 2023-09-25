@@ -7,11 +7,13 @@ import ai.flow.common.utils;
 
 public class Camera {
 
+    public static final boolean FORCE_TELE_CAM_F3 = true;
+
     // lots of important stuff calculated from this
     // current set to LG G8 wide camera
     public static final float
-        FocalX = utils.F2 ? 650f : 1600f, //1394.7081f,
-        FocalY = utils.F2 ? 650f : 1600f, //1394.7616f,
+        FocalX = utils.F2 ? 1672.33f : (FORCE_TELE_CAM_F3 ? 910f : 1600f), //1394.7081f,
+        FocalY = utils.F2 ? 1672.33f : (FORCE_TELE_CAM_F3 ? 910f : 1600f), //1394.7616f,
         CenterX = utils.F2 ? 900f : 952.62915f,
         CenterY = utils.F2 ? 514f : 517.53534f;
 

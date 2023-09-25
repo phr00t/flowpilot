@@ -14,6 +14,14 @@ public class CommonModelF2 {
         ModelOutputPose: 48, Offset 24000
         Total: 24048
 
+        TODO:
+            - calibration gets lost in turns.. the current python calibrator was not designed for
+              this model. It tries to update calibration in the middle of turns...
+            - stopline probability is still wacky, what the heck is going on there? the offset seems
+              right?
+              - actually, looks like i will need to find the highest probability in ModelOutputStopLinePrediction
+                array, then take that. The prob in ModelOutputStopLines is not what I want
+
      */
 
 
