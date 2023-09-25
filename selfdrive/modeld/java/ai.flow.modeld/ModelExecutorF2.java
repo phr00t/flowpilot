@@ -113,17 +113,21 @@ public class ModelExecutorF2 extends ModelExecutor {
             for (int i = 0; i < 3; i++) {
                 augmentRot.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, false);
+            wrapWideMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, true);
         }
 
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
+        netInputWideBuffer = imagePrepare.prepare(imgBuffer, wrapWideMatrix);
 
         try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "ModelD")) {
             // NCHW to NHWC
             netInputBuffer = netInputBuffer.permute(0, 2, 3, 1).dup();
+            netInputWideBuffer = netInputWideBuffer.permute(0, 2, 3, 1).dup();
         }
 
         inputMap.put("input_imgs", netInputBuffer);
+        inputMap.put("big_input_imgs", netInputWideBuffer);
         modelRunner.run(inputMap, outputMap);
 
         outs = parser.parser(netOutputs);
@@ -151,8 +155,8 @@ public class ModelExecutorF2 extends ModelExecutor {
         lastFrameID = frameData.getFrameId();
     }
 
-    INDArray wrapMatrix;
-    INDArray netInputBuffer;
+    INDArray wrapMatrix, wrapWideMatrix;
+    INDArray netInputBuffer, netInputWideBuffer;
     ImagePrepare imagePrepare;
 
     public void init() {
@@ -167,6 +171,7 @@ public class ModelExecutorF2 extends ModelExecutor {
         ph.createPublishers(Arrays.asList("modelV2", "cameraOdometry"));
         sh.createSubscribers(Arrays.asList("roadCameraState", "roadCameraBuffer", "lateralPlan", "liveCalibration"));
 
+        inputShapeMap.put("big_input_imgs", imgTensorShape);
         inputShapeMap.put("input_imgs", imgTensorShape);
         inputShapeMap.put("initial_state", stateTensorShape);
         inputShapeMap.put("desire", desireTensorShape);
@@ -182,6 +187,7 @@ public class ModelExecutorF2 extends ModelExecutor {
         modelRunner.warmup();
 
         wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, false);
+        wrapWideMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, true);
 
         // TODO:Clean this shit.
         boolean rgb;
