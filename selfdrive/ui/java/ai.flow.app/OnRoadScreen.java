@@ -583,15 +583,15 @@ public class OnRoadScreen extends ScreenAdapter {
                 parsed.roadEdges.get(0).get(0)[i] = Math.max(parsed.roadEdges.get(0).get(0)[i], minZ);
                 parsed.roadEdges.get(1).get(0)[i] = Math.max(parsed.roadEdges.get(1).get(0)[i], minZ);
             }
-            path = Draw.getLaneCameraFrame(parsed.position, Camera.wide_intrinsics, RtPath, 0.9f);
-            lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), Camera.wide_intrinsics, Rt, 0.07f);
-            lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), Camera.wide_intrinsics, Rt, 0.05f);
-            lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), Camera.wide_intrinsics, Rt, 0.05f);
-            lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), Camera.wide_intrinsics, Rt, 0.07f);
-            edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), Camera.wide_intrinsics, Rt, 0.1f);
-            edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), Camera.wide_intrinsics, Rt, 0.1f);
+            path = Draw.getLaneCameraFrame(parsed.position, Camera.cam_intrinsics, RtPath, 0.9f);
+            lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), Camera.cam_intrinsics, Rt, 0.07f);
+            lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), Camera.cam_intrinsics, Rt, 0.05f);
+            lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), Camera.cam_intrinsics, Rt, 0.05f);
+            lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), Camera.cam_intrinsics, Rt, 0.07f);
+            edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), Camera.cam_intrinsics, Rt, 0.1f);
+            edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), Camera.cam_intrinsics, Rt, 0.1f);
 
-            lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), Camera.wide_intrinsics, Rt, leadDrawScale);
+            lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), Camera.cam_intrinsics, Rt, leadDrawScale);
             //lead2s = Draw.getTriangleCameraFrame(parsed.leads.get(1), K, Rt, leadDrawScale);
             //lead3s = Draw.getTriangleCameraFrame(parsed.leads.get(2), K, Rt, leadDrawScale);
         }

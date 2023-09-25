@@ -98,7 +98,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
 		CameraManager cameraManager, cameraManagerWide = null;
 		SensorManager sensorManager = new SensorManager(appContext, 100);
-		cameraManager = new CameraManager(getApplication().getApplicationContext(), Camera.CAMERA_TYPE_WIDE);
+		cameraManager = new CameraManager(getApplication().getApplicationContext(), utils.F2 ? Camera.CAMERA_TYPE_ROAD : Camera.CAMERA_TYPE_WIDE);
 		CameraManager finalCameraManager = cameraManager; // stupid java
 		sensors = new HashMap<String, SensorInterface>() {{
 			put("roadCamera", finalCameraManager);
@@ -115,7 +115,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		model = new SNPEModelRunner(getApplication(), modelPath, useGPU);
 
 		ModelExecutor modelExecutor;
-		modelExecutor = new ModelExecutorF3(model);
+		modelExecutor = utils.F2 ? new ModelExecutorF2(model) : new ModelExecutorF3(model);
 		Launcher launcher = new Launcher(sensors, modelExecutor);
 
 		ErrorReporter ACRAreporter = ACRA.getErrorReporter();

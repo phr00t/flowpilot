@@ -2,12 +2,17 @@ package ai.flow.modeld;
 
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.messages.MsgCameraOdometery;
 import ai.flow.modeld.messages.MsgModelDataV2;
 import messaging.ZMQPubHandler;
 import messaging.ZMQSubHandler;
 import org.capnproto.PrimitiveList;
+import org.nd4j.linalg.api.memory.MemoryWorkspace;
+import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
+import org.nd4j.linalg.api.memory.enums.AllocationPolicy;
+import org.nd4j.linalg.api.memory.enums.LearningPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.opencv.core.Core;
@@ -21,22 +26,19 @@ import static ai.flow.common.SystemUtils.getUseGPU;
 import static ai.flow.common.utils.numElements;
 import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
-public class ModelExecutorF2 extends ModelExecutor implements Runnable{
+public class ModelExecutorF2 extends ModelExecutor {
 
     public boolean stopped = true;
-    boolean exit = false;
-    public Thread thread;
-    public final String threadName = "modeld";
     public boolean initialized = false;
     public ParsedOutputs outs;
     public long timePerIt = 0;
     public long iterationNum = 1;
 
-    public static final int[] imgTensorShape = {1, 12, 128, 256};
+    public static int[] imgTensorShape = {1, 12, 128, 256};
     public static final int[] desireTensorShape = {1, 8};
     public static final int[] trafficTensorShape = {1, 2};
     public static final int[] stateTensorShape = {1, 512};
-    public static final int[] outputTensorShape = {1, 6609};
+    public static final int[] outputTensorShape = {1, 6524}; // nuclear grade model output size
 
     public static final Map<String, int[]> inputShapeMap = new HashMap<>();
     public static final Map<String, int[]> outputShapeMap = new HashMap<>();
@@ -71,23 +73,96 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
     public MsgModelDataV2 msgModelDataV2 = new MsgModelDataV2();
     ByteBuffer imgBuffer;
     int desire;
+    final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
+            .policyAllocation(AllocationPolicy.STRICT)
+            .policyLearning(LearningPolicy.FIRST_LOOP)
+            .build();
 
 
     public ModelExecutorF2(ModelRunner modelRunner){
         this.modelRunner = modelRunner;
+        ModelExecutorF3.instance = this;
     }
 
-    public void updateCameraState(){
-        frameData = sh.recv("roadCameraState").getRoadCameraState();
-        msgFrameBuffer = sh.recv("roadCameraBuffer").getRoadCameraBuffer();
+    public void ExecuteModel(Definitions.FrameData.Reader roadData, Definitions.FrameBuffer.Reader roadBuf,
+                             long processStartTimestamp) {
+        frameData = roadData;
+        msgFrameBuffer = roadBuf;
+
+        if (stopped || initialized == false) return;
+
+        start = System.currentTimeMillis();
         imgBuffer = updateImageBuffer(msgFrameBuffer, imgBuffer);
+        if (sh.updated("lateralPlan")){
+            desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
+            if (desire >= 0 && desire < CommonModelF2.DESIRE_LEN)
+                desireIn[desire] = 1.0f;
+        }
+
+        for (int i=1; i<CommonModelF2.DESIRE_LEN; i++){
+            if (desireIn[i] - prevDesire[i] > 0.99f)
+                desireNDArr.put(0, i, desireIn[i]);
+            else
+                desireNDArr.put(0, i, 0.0f);
+            prevDesire[i] = desireIn[i];
+        }
+
+        if (sh.updated("liveCalibration")) {
+            liveCalib = sh.recv("liveCalibration").getLiveCalibration();
+            PrimitiveList.Float.Reader rpy = liveCalib.getRpyCalib();
+            for (int i = 0; i < 3; i++) {
+                augmentRot.putScalar(i, rpy.get(i));
+            }
+            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+        }
+
+        netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
+
+        try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "ModelD")) {
+            // NCHW to NHWC
+            netInputBuffer = netInputBuffer.permute(0, 2, 3, 1).dup();
+        }
+
+        inputMap.put("input_imgs", netInputBuffer);
+        modelRunner.run(inputMap, outputMap);
+
+        outs = parser.parser(netOutputs);
+
+        for (int i=0; i<outs.state[0].length; i++)
+            stateNDArr.put(0, i, outs.state[0][i]);
+
+        // publish outputs
+        end = System.currentTimeMillis();
+        msgModelDataV2.fill(outs, processStartTimestamp, frameData.getFrameId(), -1, 0f, end - start, -1);
+        msgCameraOdometery.fill(outs, processStartTimestamp, frameData.getFrameId());
+
+        ph.publishBuffer("modelV2", msgModelDataV2.serialize(frameDrops < 1));
+        ph.publishBuffer("cameraOdometry", msgCameraOdometery.serialize(frameDrops < 1));
+
+        // compute runtime stats every 10 runs
+        timePerIt += end - processStartTimestamp;
+        iterationNum++;
+        if (iterationNum > 10) {
+            ModelExecutorF3.AvgIterationTime = timePerIt / iterationNum;
+            iterationNum = 0;
+            timePerIt = 0;
+        }
+
+        lastFrameID = frameData.getFrameId();
     }
 
-    public void run(){
-        Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+    INDArray wrapMatrix;
+    INDArray netInputBuffer;
+    ImagePrepare imagePrepare;
+
+    public void init() {
+
+        if (initialized)
+            return;
+
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-        INDArray netInputBuffer;
+        imgTensorShape = new int[]{1, 128, 256, 12}; // SNPE only supports NHWC input.
 
         ph.createPublishers(Arrays.asList("modelV2", "cameraOdometry"));
         sh.createSubscribers(Arrays.asList("roadCameraState", "roadCameraBuffer", "lateralPlan", "liveCalibration"));
@@ -106,12 +181,9 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        INDArray wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
-
-        updateCameraState();
+        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, false);
 
         // TODO:Clean this shit.
-        ImagePrepare imagePrepare;
         boolean rgb;
         if (getUseGPU()){
             rgb = msgFrameBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;
@@ -130,97 +202,7 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
 
         initialized = true;
         params.putBool("ModelDReady", true);
-        while (!exit) {
-            if (stopped){
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                continue;
-            }
-
-            updateCameraState();
-            start = System.currentTimeMillis();
-
-            if (sh.updated("lateralPlan")){
-                desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
-                if (desire >= 0 && desire < CommonModelF2.DESIRE_LEN)
-                    desireIn[desire] = 1.0f;
-            }
-
-            for (int i=1; i<CommonModelF2.DESIRE_LEN; i++){
-                if (desireIn[i] - prevDesire[i] > 0.99f)
-                    desireNDArr.put(0, i, desireIn[i]);
-                else
-                    desireNDArr.put(0, i, 0.0f);
-                prevDesire[i] = desireIn[i];
-            }
-
-            if (sh.updated("liveCalibration")) {
-                liveCalib = sh.recv("liveCalibration").getLiveCalibration();
-                PrimitiveList.Float.Reader rpy = liveCalib.getRpyCalib();
-                for (int i = 0; i < 3; i++) {
-                    augmentRot.putScalar(i, rpy.get(i));
-                }
-                wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
-            }
-
-            netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
-
-            inputMap.put("input_imgs", netInputBuffer);
-            modelRunner.run(inputMap, outputMap);
-
-            outs = parser.parser(netOutputs);
-
-            for (int i=0; i<outs.state[0].length; i++)
-                stateNDArr.put(0, i, outs.state[0][i]);
-
-            // publish outputs
-            timestamp = System.currentTimeMillis();
-            serializeAndPublish();
-
-            end = System.currentTimeMillis();
-            // compute runtime stats.
-            // skip 1st 10 reading to let it warm up.
-            if (iterationNum > 10) {
-                timePerIt += end - start;
-                totalFrameDrops += (frameData.getFrameId() - lastFrameID) - 1;
-            } else {
-                firstFrameID = lastFrameID;
-            }
-
-            frameDrops = frameData.getFrameId() - lastFrameID - 1;
-            lastFrameID = frameData.getFrameId();
-            iterationNum++;
-        }
-
-        // dispose
-        wrapMatrix.close();
-
-        for (String inputName : inputMap.keySet()) {
-            inputMap.get(inputName).close();
-        }
-        modelRunner.dispose();
-        imagePrepare.dispose();
-        ph.releaseAll();
     }
-
-    public void init() {
-        if (thread == null) {
-            thread = new Thread(this, threadName);
-            thread.setDaemon(false);
-            thread.start();
-        }
-    }
-
-    public void serializeAndPublish(){
-        msgModelDataV2.fill(outs, timestamp, frameData.getFrameId(), -1, getFrameDropPercent(), getIterationRate(), -1);
-        msgCameraOdometery.fill(outs, timestamp, frameData.getFrameId());
-
-        ph.publishBuffer("modelV2", msgModelDataV2.serialize(frameDrops < 1));
-        ph.publishBuffer("cameraOdometry", msgCameraOdometery.serialize(frameDrops < 1));
-    };
 
     public long getIterationRate() {
         return timePerIt/iterationNum;
@@ -239,15 +221,22 @@ public class ModelExecutorF2 extends ModelExecutor implements Runnable{
     }
 
     public void dispose(){
-        exit = true;
+        // dispose
+        wrapMatrix.close();
+
+        for (String inputName : inputMap.keySet()) {
+            inputMap.get(inputName).close();
+        }
+        modelRunner.dispose();
+        imagePrepare.dispose();
+        ph.releaseAll();
     }
 
     public void stop() {
         stopped = true;
     }
     public void start(){
-        if (thread == null)
-            init();
+        init();
         stopped = false;
     }
 }
