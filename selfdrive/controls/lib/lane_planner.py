@@ -123,8 +123,8 @@ class LanePlanner:
       starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.25, 1.0]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv, [-2.0, 0.0], [1.0, 0.25]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 0.9]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv, [-2.0, 0.0], [0.9, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -140,8 +140,14 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # apply a centering force
-        ideal_point += starting_centering
+        # how much do we want to shift at this point for upcoming and/or immediate curve?
+        shift = 0.5 * sigmoid(vcurv, 2.5, -0.5)
+        # if we are shifted exactly how much we want, this should add to 0
+        shift_diff = starting_centering + shift
+        # so, if it was off, apply some post-shift to shift us further to correct our starting centering
+        shift += shift_diff
+        # apply that shift to our ideal point
+        ideal_point += shift
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
