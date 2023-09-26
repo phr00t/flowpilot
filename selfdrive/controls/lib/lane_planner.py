@@ -120,11 +120,11 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # how much are we centered in our lane right now?
-      starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
+      starting_centering = 5.0 * (self.rll_y[0] + self.lll_y[0]) ** 3.0
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 0.9]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv, [-2.0, 0.0], [0.9, 0.2]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 1.0]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv, [-2.0, 0.0], [1.0, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -140,19 +140,13 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # how much do we want to shift at this point for upcoming and/or immediate curve?
-        shift = 0.5 * sigmoid(vcurv, 2.5, -0.5)
-        # if we are shifted exactly how much we want, this should add to 0
-        shift_diff = starting_centering + shift
-        # so, if it was off, apply some post-shift to shift us further to correct our starting centering
-        shift += shift_diff
-        # apply that shift to our ideal point
-        ideal_point += shift
+        # apply a centering force
+        ideal_point += starting_centering
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
-        ideal_point = clamp(ideal_point, left_anchor + clamp(l_prob * 2.5, 0.0, 1.0) * use_min_lane_distance,
-                                         right_anchor - clamp(r_prob * 2.5, 0.0, 1.0) * use_min_lane_distance)
+        ideal_point = clamp(ideal_point, left_anchor + clamp(3 * (l_prob - 0.25), 0.0, 1.0) * use_min_lane_distance,
+                                         right_anchor - clamp(3 * (r_prob - 0.25), 0.0, 1.0) * use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
