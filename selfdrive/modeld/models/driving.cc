@@ -307,6 +307,9 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   // confidence
   fill_confidence(framed);
 
+  // debug
+  printf("Filling updated model...\n");
+
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   std::array<float, LEAD_MHP_SELECTION> t_offsets = {0.0, 2.0, 4.0};
