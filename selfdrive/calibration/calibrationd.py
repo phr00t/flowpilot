@@ -273,7 +273,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
 
     calibrator.not_car = sm['carParams'].notCar
 
-    if sm.updated['cameraOdometry'] and self.cal_status != log.LiveCalibrationData.Status.calibrated:
+    if sm.updated['cameraOdometry'] and calibrator.cal_status != log.LiveCalibrationData.Status.calibrated:
       calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                            sm['cameraOdometry'].rot,
