@@ -7,7 +7,7 @@ import ai.flow.common.utils;
 
 public class Camera {
 
-    public static final boolean FORCE_TELE_CAM_F3 = true;
+    public static final boolean FORCE_TELE_CAM_F3 = false;
 
     // lots of important stuff calculated from this
     // current set to LG G8 wide camera

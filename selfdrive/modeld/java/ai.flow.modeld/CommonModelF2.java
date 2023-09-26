@@ -15,8 +15,12 @@ public class CommonModelF2 {
         Total: 24048
 
         TODO:
+            - F3 is broken. the model never seems to update from the changing cam image
+              - try rolling back to non-inflatable and see if that works
+                - if it does, optimus prime model is whack.. try a different SNPE SDK?
+                - if it doesn't, revert all the FORCE_TELE_F3 stuff...?
             - calibration gets lost in turns.. the current python calibrator was not designed for
-              this model. It tries to update calibration in the middle of turns... *FIX NEEDS TESTING*
+              this model. It tries to update calibration in the middle of turns...
             - stopline probability is still wacky, what the heck is going on there? the offset seems
               right? *FIX NEEDS TESTING*
               - actually, looks like i will need to find the highest probability in ModelOutputStopLinePrediction
