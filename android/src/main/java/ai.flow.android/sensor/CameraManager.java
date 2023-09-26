@@ -3,6 +3,7 @@ package ai.flow.android.sensor;
 import ai.flow.app.OnRoadScreen;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.ModelExecutorF3;
 import ai.flow.modeld.messages.MsgFrameData;
@@ -100,7 +101,7 @@ public class CameraManager extends SensorInterface {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.context = context;
         this.cameraType = cameraType;
-        if (cameraType == Camera.CAMERA_TYPE_WIDE){
+        if (cameraType == Camera.CAMERA_TYPE_WIDE || !utils.F2 && Camera.FORCE_TELE_CAM_F3){
             this.frameDataTopic = "wideRoadCameraState";
             this.frameBufferTopic = "wideRoadCameraBuffer";
             this.intName = "WideCameraMatrix";
