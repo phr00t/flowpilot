@@ -70,10 +70,11 @@ class Controls:
       self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
                                      'carControl', 'carEvents', 'carParams'])
 
-    if self.params.get_bool("F3", block=True):
-      self.camera_packets = ["wideRoadCameraState", "roadCameraState"]
-    else:
-      self.camera_packets = ["roadCameraState"]
+    #if self.params.get_bool("F3", block=True):
+    #  self.camera_packets = ["wideRoadCameraState", "roadCameraState"]
+    #else:
+    #  self.camera_packets = ["roadCameraState"]
+    self.camera_packets = []
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -293,12 +294,6 @@ class Controls:
     not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
     if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       self.events.add(EventName.processNotRunning)
-    else:
-      if not SIMULATION and not self.rk.lagging:
-        if not self.sm.all_alive(self.camera_packets):
-          self.events.add(EventName.cameraMalfunction)
-        elif not self.sm.all_freq_ok(self.camera_packets):
-          self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
     if len(self.sm['radarState'].radarErrors):
