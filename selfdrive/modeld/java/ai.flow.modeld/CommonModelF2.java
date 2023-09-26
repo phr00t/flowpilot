@@ -16,9 +16,9 @@ public class CommonModelF2 {
 
         TODO:
             - calibration gets lost in turns.. the current python calibrator was not designed for
-              this model. It tries to update calibration in the middle of turns...
+              this model. It tries to update calibration in the middle of turns... *FIX NEEDS TESTING*
             - stopline probability is still wacky, what the heck is going on there? the offset seems
-              right?
+              right? *FIX NEEDS TESTING*
               - actually, looks like i will need to find the highest probability in ModelOutputStopLinePrediction
                 array, then take that. The prob in ModelOutputStopLines is not what I want
 
@@ -33,11 +33,13 @@ public class CommonModelF2 {
     public static final int SIZE_ModelOutputMeta = 352 / 4;
     public static final int SIZE_ModelOutputPose = 48 / 4;
     public static final int SIZE_ModelOutputLinesXY = 1056 / 4;
+    public static final int SIZE_ModelOutputStopLinePrediction = 68 / 4;
     public static final int SIZE_Total = SIZE_ModelOutputPlans + SIZE_ModelOutputLaneLines + SIZE_ModelOutputRoadEdges +
                                          SIZE_ModelOutputLeads + SIZE_ModelOutputStopLines + SIZE_ModelOutputMeta +
                                          SIZE_ModelOutputPose;
     public static final int SIZE_ModelOutputLeadPrediction = 204 / 4;
     public static final int DESIRE_LEN = 8;
+    public static final int STOP_LINE_MHP_N = 3;
     public static final int TRAJECTORY_SIZE = 33;
     public static final int OTHER_META_SIZE = 32;
     public static final int NUM_META_INTERVALS = 5;

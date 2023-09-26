@@ -274,7 +274,12 @@ public class Parser {
     }
 
     public void fill_stopline(float[] data) {
-        stopSignProb = data[STOP_SIGN_IDX + 51];
+        stopSignProb = 0;
+        for (int i = 0; i<STOP_LINE_MHP_N; i++) {
+            float prob = data[(STOP_SIGN_IDX + SIZE_ModelOutputStopLinePrediction * (i + 1)) - 1];
+            if (prob > stopSignProb)
+                stopSignProb = prob;
+        }
     }
 
     public void fill_sigmoid(float[] input, float[] output, int offset, int len, int stride)
