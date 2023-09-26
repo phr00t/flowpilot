@@ -146,6 +146,9 @@ class CarController:
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
     long_plan = sm['longitudinalPlan']
+    model_out = sm['modelV2']
+
+    stoplinesp = model_out.gpuExecutionTime
 
     max_speed_in_mph = vcruise * 0.621371
     driver_doing_speed = CS.out.brakeLightsDEPRECATED or CS.out.gasPressed
@@ -278,7 +281,7 @@ class CarController:
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
       self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
-    if self.usingAccel and avg_accel < 8.0 and clu11_speed < 45:
+    if self.usingAccel and (avg_accel < 8.0 or stoplinesp > 0.7) and clu11_speed < 45:
       # stop sign or red light, stop!
       desired_speed = 0
       CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
@@ -325,7 +328,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " lp" + "{:.1f}".format(l0prob) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " lvd" + "{:.1f}".format(lead_vdiff_mph) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " stp" + "{:.2f}".format(stoplinesp) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?

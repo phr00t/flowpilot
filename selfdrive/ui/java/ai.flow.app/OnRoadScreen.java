@@ -5,6 +5,7 @@ import ai.flow.app.helpers.Utils;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.definitions.CarDefinitions.CarControl.HUDControl.AudibleAlert;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.CommonModelF3;
@@ -67,7 +68,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class OnRoadScreen extends ScreenAdapter {
     // avoid GC triggers.
-    static final String VERSION = "41";
+    static final String VERSION = "47";
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -583,15 +584,15 @@ public class OnRoadScreen extends ScreenAdapter {
                 parsed.roadEdges.get(0).get(0)[i] = Math.max(parsed.roadEdges.get(0).get(0)[i], minZ);
                 parsed.roadEdges.get(1).get(0)[i] = Math.max(parsed.roadEdges.get(1).get(0)[i], minZ);
             }
-            path = Draw.getLaneCameraFrame(parsed.position, Camera.wide_intrinsics, RtPath, 0.9f);
-            lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), Camera.wide_intrinsics, Rt, 0.07f);
-            lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), Camera.wide_intrinsics, Rt, 0.05f);
-            lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), Camera.wide_intrinsics, Rt, 0.05f);
-            lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), Camera.wide_intrinsics, Rt, 0.07f);
-            edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), Camera.wide_intrinsics, Rt, 0.1f);
-            edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), Camera.wide_intrinsics, Rt, 0.1f);
+            path = Draw.getLaneCameraFrame(parsed.position, Camera.cam_intrinsics, RtPath, 0.9f);
+            lane0 = Draw.getLaneCameraFrame(parsed.laneLines.get(0), Camera.cam_intrinsics, Rt, 0.07f);
+            lane1 = Draw.getLaneCameraFrame(parsed.laneLines.get(1), Camera.cam_intrinsics, Rt, 0.05f);
+            lane2 = Draw.getLaneCameraFrame(parsed.laneLines.get(2), Camera.cam_intrinsics, Rt, 0.05f);
+            lane3 = Draw.getLaneCameraFrame(parsed.laneLines.get(3), Camera.cam_intrinsics, Rt, 0.07f);
+            edge0 = Draw.getLaneCameraFrame(parsed.roadEdges.get(0), Camera.cam_intrinsics, Rt, 0.1f);
+            edge1 = Draw.getLaneCameraFrame(parsed.roadEdges.get(1), Camera.cam_intrinsics, Rt, 0.1f);
 
-            lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), Camera.wide_intrinsics, Rt, leadDrawScale);
+            lead1s = Draw.getTriangleCameraFrame(parsed.leads.get(0), Camera.cam_intrinsics, Rt, leadDrawScale);
             //lead2s = Draw.getTriangleCameraFrame(parsed.leads.get(1), K, Rt, leadDrawScale);
             //lead3s = Draw.getTriangleCameraFrame(parsed.leads.get(2), K, Rt, leadDrawScale);
         }
@@ -800,6 +801,7 @@ public class OnRoadScreen extends ScreenAdapter {
             batch.begin();
             appContext.font.setColor(1, 1, 1, 1);
             appContext.font.draw(batch, "L1: " + Line1 + "\nL2: " + Line2,3,200);
+            appContext.font.draw(batch, utils.F2 ? "Medium Model" : "Big Model", Gdx.graphics.getWidth() - 450f, 300f);
             appContext.font.draw(batch, "v" + VERSION + ", E" + CamExposure + ":" + currentExposureIndex, Gdx.graphics.getWidth() - 450f, 225f);
             appContext.font.draw(batch, tempStr + ", " + ModelExecutorF3.AvgIterationTime + "ms", Gdx.graphics.getWidth() - 450f, 150f);
             appContext.font.draw(batch, IPstring, Gdx.graphics.getWidth() - 450f, 75f);

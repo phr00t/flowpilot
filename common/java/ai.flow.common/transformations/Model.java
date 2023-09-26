@@ -6,6 +6,7 @@ import org.nd4j.linalg.factory.Nd4j;
 public class Model {
     public static final float MEDMODEL_CY = 47.6f;
     public static final float MEDMODEL_FL = 910.0f;
+    public static final float MEDMODEL_F2_FL = 1672.33f; // calculated from testing
     public static final float SBIGMODEL_FL = 455.0f;
     public static final int[] modelInputSize = new int[]{512, 256};
     public static final INDArray medmodel_intrinsics = Nd4j.createFromArray(new float[][]{

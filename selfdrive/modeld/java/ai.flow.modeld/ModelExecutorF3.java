@@ -2,7 +2,6 @@ package ai.flow.modeld;
 
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
-import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.messages.MsgModelRaw;
 import messaging.ZMQPubHandler;
@@ -29,7 +28,7 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class ModelExecutorF3 extends ModelExecutor {
 
-    public static ModelExecutorF3 instance;
+    public static ModelExecutor instance;
     public boolean stopped = true;
     public boolean initialized = false;
     public long timePerIt = 0;
@@ -136,8 +135,8 @@ public class ModelExecutorF3 extends ModelExecutor {
             for (int i = 0; i < 3; i++) {
                 augmentRot.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
-            wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, true);
+            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+            wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
         }
 
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
@@ -205,8 +204,8 @@ public class ModelExecutorF3 extends ModelExecutor {
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, false);
-        wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.wide_intrinsics, Camera.wide_intrinsics, true, true);
+        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+        wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
 
         // TODO:Clean this shit.
         boolean rgb;

@@ -7,7 +7,7 @@ public class CommonModelF3 {
 
     public static final int LEAD_MHP_SELECTION = 3;
     public static final int TRAJECTORY_SIZE = 33;
-    public static final int FEATURE_LEN = 128;
+    public static final int FEATURE_LEN = 512;
     public static final int HISTORY_BUFFER_LEN = 99;
     public static final int DESIRE_LEN = 8;
     public static final int DESIRE_PRED_LEN = 4;
@@ -17,7 +17,8 @@ public class CommonModelF3 {
     public static final int TRAFFIC_CONVENTION_LEN = 2;
     public static final int DRIVING_STYLE_LEN = 12;
     public static final int MODEL_FREQ = 20;
-    public static final int OUTPUT_SIZE = 5978 + 12; // +12 from ModelOutputRoadTransform
+    public static final int OUTPUT_SIZE = 5978 + 12; // + (4 * TRAJECTORY_SIZE * 2); // +12 from ModelOutputRoadTransform
+                                                         // +4*... from LateralPlannerOutput in NLP
     // Padding to final get output shape as multiple of 4
     public static final int PAD_SIZE = 2;
     public static final int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;

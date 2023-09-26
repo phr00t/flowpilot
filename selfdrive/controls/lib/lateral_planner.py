@@ -44,6 +44,7 @@ class LateralPlanner:
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros((TRAJECTORY_SIZE,))
     self.v_plan = np.zeros((TRAJECTORY_SIZE,))
+    self.model_plan = np.zeros((TRAJECTORY_SIZE, 4), dtype=np.float32)
     self.v_ego = 0.0
     self.l_lane_change_prob = 0.0
     self.r_lane_change_prob = 0.0
@@ -73,6 +74,9 @@ class LateralPlanner:
       car_speed = np.linalg.norm(self.velocity_xyz, axis=1) - get_speed_error(md, v_ego_car)
       self.v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
       self.v_ego = self.v_plan[0]
+
+    if len(md.lateralPlannerSolution.x) == TRAJECTORY_SIZE:
+      self.model_plan = np.column_stack([md.lateralPlannerSolution.x, md.lateralPlannerSolution.y, md.lateralPlannerSolution.yaw, md.lateralPlannerSolution.yawRate])
 
     # Lane change logic
     CS = sm['carState']
@@ -141,10 +145,16 @@ class LateralPlanner:
     lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
     lateralPlan.curvatureRates = [float(x/self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
 
-    # get our immediate curve to see if we should be shifting in response to it
+    # get biggest curve in the near future so we can use that for shifting wide through the turn
     curv_len = len(lateralPlan.curvatures)
+    biggest_curve = 0.0
     if curv_len > 0:
-      self.vcurv = lateralPlan.curvatures[1] * 100
+      curv_middle = curv_len//2
+      for x in range(1, curv_middle):
+        acurval = abs(lateralPlan.curvatures[x])
+        if acurval > biggest_curve:
+          biggest_curve = acurval
+          self.vcurv = lateralPlan.curvatures[x] * 100
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time

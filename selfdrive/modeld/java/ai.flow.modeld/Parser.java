@@ -31,18 +31,18 @@ public class Parser {
     public Map<String, float[]> net_outputs = new HashMap<String, float[]>();
     public float[] plan_t_arr = new float[TRAJECTORY_SIZE];
     public float[] best_plan = new float[PLAN_MHP_GROUP_SIZE];
+    public float stopSignProb;
 
     public SizeMapArrayPool pool = new SizeMapArrayPool();
 
     public Parser(){
-        net_outputs.put("plan", new float[LL_IDX - PLAN_IDX]);
-        net_outputs.put("laneLines", new float[LL_PROB_IDX - LL_IDX]);
-        net_outputs.put("laneLinesProb", new float[RE_IDX - LL_PROB_IDX]);
-        net_outputs.put("roadEdges", new float[LEAD_IDX - RE_IDX]);
-        net_outputs.put("lead", new float[LEAD_PROB_IDX - LEAD_IDX]);
-        net_outputs.put("leadProb", new float[DESIRE_STATE_IDX - LEAD_PROB_IDX]);
-        net_outputs.put("meta", new float[POSE_IDX - DESIRE_STATE_IDX]);
-        net_outputs.put("pose", new float[OUTPUT_SIZE - POSE_IDX]);
+        net_outputs.put("plan", new float[SIZE_ModelOutputPlans]);
+        net_outputs.put("laneLines", new float[SIZE_ModelOutputLaneLines]);
+        net_outputs.put("roadEdges", new float[SIZE_ModelOutputRoadEdges]);
+        net_outputs.put("lead", new float[SIZE_ModelOutputLeads]);
+        net_outputs.put("meta", new float[SIZE_ModelOutputMeta]);
+        net_outputs.put("pose", new float[SIZE_ModelOutputPose]);
+        net_outputs.put("stopLines", new float[SIZE_ModelOutputStopLines]);
         net_outputs.put("state", new float[TEMPORAL_SIZE]);
     }
 
@@ -245,27 +245,11 @@ public class Parser {
         get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, t_offset - LEAD_MHP_SELECTION, output);
     }
 
-    public void fill_lead_v2(LeadDataV2 lead, float[] lead_data, float[] prob, int t_offset, float t)
-    {
-        float[] xyva = lead.xyva;
-        float[] xyvaStd = lead.xyvaStd;
-        float[] temp_data = pool.getArray(LEAD_MHP_GROUP_SIZE);
-        get_lead_data(lead_data, t_offset, temp_data);
-        lead.prob = sigmoid(prob[t_offset]);
-
-        for(int i=0; i < LEAD_MHP_VALS; i++)
-        {
-            xyva[i] = temp_data[i];
-            xyvaStd[i] = (float)Math.exp(temp_data[LEAD_MHP_VALS + i]);
-        }
-        pool.returnArray(temp_data);
-    }
-
-    public void fill_lead_v3(LeadDataV3 lead, float[] lead_data, float[] prob, int t_offset, float prob_t)
+    public void fill_lead_v3(LeadDataV3 lead, float[] lead_data, float[] alldata, int t_offset, float prob_t)
     {
 
         float[] data = get_lead_data(lead_data, t_offset);
-        lead.prob = sigmoid(prob[t_offset]);
+        lead.prob = sigmoid(alldata[t_offset + LEAD_PROB_IDX]);
         lead.probTime = prob_t;
         float[] x_arr = lead.x;
         float[] y_arr = lead.y;
@@ -289,7 +273,15 @@ public class Parser {
         }
     }
 
-    
+    public void fill_stopline(float[] data) {
+        stopSignProb = 0;
+        for (int i = 0; i<STOP_LINE_MHP_N; i++) {
+            float prob = data[(STOP_SIGN_IDX + SIZE_ModelOutputStopLinePrediction * (i + 1)) - 1];
+            if (prob > stopSignProb)
+                stopSignProb = prob;
+        }
+    }
+
     public void fill_sigmoid(float[] input, float[] output, int offset, int len, int stride)
     {
         for (int i=0; i<len; i++)
@@ -343,12 +335,12 @@ public class Parser {
     }
 
     public ParsedOutputs parser(float[] outs){
-        copyOfRange(outs, net_outputs.get("lead"), LEAD_IDX, LEAD_PROB_IDX);
-        copyOfRange(outs, net_outputs.get("leadProb"), LEAD_PROB_IDX, DESIRE_STATE_IDX);
-        copyOfRange(outs, net_outputs.get("meta"), DESIRE_STATE_IDX, POSE_IDX);
-        copyOfRange(outs, net_outputs.get("pose"), POSE_IDX, OUTPUT_SIZE);
+        copyOfRange(outs, net_outputs.get("lead"), LEAD_IDX, LEAD_IDX + SIZE_ModelOutputLeads);
+        copyOfRange(outs, net_outputs.get("meta"), META_IDX, META_IDX + SIZE_ModelOutputMeta);
+        copyOfRange(outs, net_outputs.get("pose"), POSE_IDX, POSE_IDX + SIZE_ModelOutputPose);
 
         getBestPlan(outs, best_plan, PLAN_IDX);
+        fill_stopline(outs);
 
         plan_t_arr[0] = 0.0f;
         for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
@@ -387,8 +379,8 @@ public class Parser {
             roadEdgeStds[i] = (float) Math.exp(outs[RE_IDX + 2*TRAJECTORY_SIZE*(2+i)]);
         }
 
-        for(int t_offset=0; t_offset < LEAD_MHP_SELECTION; t_offset++)
-            fill_lead_v3(leads.get(t_offset), net_outputs.get("lead"), net_outputs.get("leadProb"), t_offset, t_offsets[t_offset]);
+        for(int t_offset=0; t_offset < LEAD_MHP_N; t_offset++)
+            fill_lead_v3(leads.get(t_offset), net_outputs.get("lead"), outs, t_offset, t_offsets[t_offset]);
 
         copyOfRange(net_outputs.get("meta"), meta[0], 0, meta[0].length);
         copyOfRange(net_outputs.get("pose"), pose[0], 0, pose[0].length);

@@ -110,6 +110,8 @@ public class SettingsScreen extends ScreenAdapter {
         this.appContext = appContext;
 
         // easy toggles here. Pairs of string entries, first being display name and second being the parameter that gets set
+        AdditionalToggles.add("Use Big Model");
+        AdditionalToggles.add("F3");
         AdditionalToggles.add("Stop Sign/Red Lights");
         AdditionalToggles.add("UseAccel");
         AdditionalToggles.add("Use DistSpeed Estimator");

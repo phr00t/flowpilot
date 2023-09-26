@@ -88,8 +88,10 @@ public class CameraManager extends SensorInterface {
             OnRoadScreen.CamSelected = 2;
             return availableCamerasInfo.get(OnRoadScreen.CamSelected).getCameraSelector();
         }
-        else
+        else {
+            OnRoadScreen.CamSelected = 0;
             return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
+        }
     }
 
     public CameraManager(Context context, int cameraType){
