@@ -43,6 +43,7 @@ class LanePlanner:
     self.le_y = np.zeros((TRAJECTORY_SIZE,))
     self.re_y = np.zeros((TRAJECTORY_SIZE,))
     self.ultimate_path = np.zeros((TRAJECTORY_SIZE,))
+    self.straight_path = np.zeros((TRAJECTORY_SIZE,))
     self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
     self.lane_width = 3.2
     self.lane_change_multiplier = 1
@@ -156,6 +157,12 @@ class LanePlanner:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
+
+      # if we are using the bigmodel, and our centering is off, and we are turning left, straighten us out
+      # as we are probably overcompensating this turn
+      if starting_centering > 0 and vcurv < 0:
+        straight_amount = abs(2.0 * starting_centering * vcurv)
+        self.ultimate_path = lerp(self.ultimate_path, self.straight_path, straight_amount)
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
