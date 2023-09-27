@@ -161,7 +161,7 @@ class LanePlanner:
       # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
       if vcurv < 0 and self.BigModel:
         left_turn_rate = -vcurv * v_ego
-        self.ultimate_path = lerp(self.ultimate_path, self.straight_path, left_turn_rate / 200.0)
+        self.ultimate_path = lerp(self.ultimate_path, self.straight_path, left_turn_rate / 165.0)
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
