@@ -159,7 +159,7 @@ class LanePlanner:
       sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
       safe_idxs = np.isfinite(self.ll_t)
-      if safe_idxs[0]:
+      if safe_idxs[0] and final_ultimate_path_mix > 0.0:
         path_xyz[:,1] = final_ultimate_path_mix * np.interp(path_t, self.ll_t[safe_idxs], self.ultimate_path[safe_idxs]) + (1 - final_ultimate_path_mix) * path_xyz[:,1]
     else:
       sLogger.Send("Lanes lost completely! Using model path entirely...")
