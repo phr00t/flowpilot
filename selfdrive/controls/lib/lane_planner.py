@@ -48,6 +48,7 @@ class LanePlanner:
     self.lane_change_multiplier = 1
     self.Options = Params()
     self.UseModelPath = self.Options.get_bool("UseModelPath")
+    self.BigModel = self.Options.get_bool("F3")
     self.updateOptions = 100
 
     self.lll_prob = 0.
@@ -120,7 +121,8 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # how much are we centered in our lane right now?
-      starting_centering = 5.0 * (self.rll_y[0] + self.lll_y[0]) ** 3.0
+      starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5 if self.BigModel else 0.0
+
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
         right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 1.0]), self.re_y[index])
@@ -145,8 +147,8 @@ class LanePlanner:
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
-        ideal_point = clamp(ideal_point, left_anchor + clamp(3 * (l_prob - 0.25), 0.0, 1.0) * use_min_lane_distance,
-                                         right_anchor - clamp(3 * (r_prob - 0.25), 0.0, 1.0) * use_min_lane_distance)
+        ideal_point = clamp(ideal_point, left_anchor + clamp(l_prob * 2.0, 0.0, 1.0) * use_min_lane_distance,
+                                         right_anchor - clamp(r_prob * 2.0, 0.0, 1.0) * use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
