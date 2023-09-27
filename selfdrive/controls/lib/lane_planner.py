@@ -101,7 +101,7 @@ class LanePlanner:
     lane_trust = max(l_vis, r_vis)
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless, unfortunately
-    if lane_trust > 0.025:
+    if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
       # normalize to 1
       total_prob = l_vis + r_vis
       l_prob = l_vis / total_prob
