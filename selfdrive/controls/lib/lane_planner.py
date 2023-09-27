@@ -102,12 +102,7 @@ class LanePlanner:
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless, unfortunately
     if lane_trust > 0.025:
-      # which lane are we closer to?
-      distance = self.rll_y[0] - self.lll_y[0]
-      right_ratio = self.rll_y[0] / distance
-      # give preference of lane by visibility and closeness, but make sure it is non-zero
-      l_prob = right_ratio * l_vis
-      r_prob = (1.0 - right_ratio) * r_vis
+      # normalize to 1
       total_prob = l_prob + r_prob
       l_prob = l_prob / total_prob
       r_prob = r_prob / total_prob
@@ -121,10 +116,16 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
+      # how much are we centered in our lane right now?
+      centering_force = (self.rll_y[0] + self.lll_y[0]) * 0.5 if self.BigModel else 0.0
+      # don't apply centering forces that increase corner cutting
+      if centering_force > 0 and vcurv[0] > 0.2 or centering_force < 0 and vcurv[0] < -0.2:
+        centering_force = 0.0
+
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 0.9]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv, [-2.0, 0.0], [0.9, 0.2]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 1.75], [0.2, 1.0]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-1.75, 0.0], [1.0, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -140,6 +141,8 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
+        # apply centering force, if any
+        ideal_point += centering_force
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
@@ -156,7 +159,7 @@ class LanePlanner:
       final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
 
       # debug
-      sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+      sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
       safe_idxs = np.isfinite(self.ll_t)
       if safe_idxs[0] and final_ultimate_path_mix > 0.0:

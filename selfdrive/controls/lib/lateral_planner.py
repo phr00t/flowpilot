@@ -48,7 +48,7 @@ class LateralPlanner:
     self.v_ego = 0.0
     self.l_lane_change_prob = 0.0
     self.r_lane_change_prob = 0.0
-    self.vcurv = 0.0
+    self.vcurv = []
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
@@ -144,17 +144,7 @@ class LateralPlanner:
 
     lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
     lateralPlan.curvatureRates = [float(x/self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
-
-    # get biggest curve in the near future so we can use that for shifting wide through the turn
-    curv_len = len(lateralPlan.curvatures)
-    biggest_curve = 0.0
-    if curv_len > 0:
-      curv_middle = curv_len//2
-      for x in range(1, curv_middle):
-        acurval = abs(lateralPlan.curvatures[x])
-        if acurval > biggest_curve:
-          biggest_curve = acurval
-          self.vcurv = lateralPlan.curvatures[x] * 100
+    self.vcurv = (100 * self.lat_mpc.x_sol[:, 3]/self.v_ego).tolist()
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
