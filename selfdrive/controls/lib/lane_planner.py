@@ -43,7 +43,6 @@ class LanePlanner:
     self.le_y = np.zeros((TRAJECTORY_SIZE,))
     self.re_y = np.zeros((TRAJECTORY_SIZE,))
     self.ultimate_path = np.zeros((TRAJECTORY_SIZE,))
-    self.straight_path = np.zeros((TRAJECTORY_SIZE,))
     self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
     self.lane_width = 3.2
     self.lane_change_multiplier = 1
@@ -98,7 +97,7 @@ class LanePlanner:
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, 0.9], [1.0, 0.0])
     r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, 0.9], [1.0, 0.0])
-    lane_trust = max(l_vis, r_vis)
+    lane_trust = clamp(1.1 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless, unfortunately
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
@@ -124,8 +123,8 @@ class LanePlanner:
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 1.75], [0.2, 1.0]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-1.75, 0.0], [1.0, 0.2]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 1.0]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [1.0, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -152,11 +151,16 @@ class LanePlanner:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
         else:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
+        # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
+        # by applying a straightening (0) point
+        if vcurv[index] < 0 and self.BigModel:
+          left_turn_rate = -vcurv[index] * v_ego
+          ideal_point = lerp(ideal_point, 0.0, (left_turn_rate ** 1.1) / 200.0)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
 
       # do we want to mix in the model path a little bit if lanelines are going south?
-      final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
+      final_ultimate_path_mix = self.lane_change_multiplier * lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
 
       # debug
       sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
