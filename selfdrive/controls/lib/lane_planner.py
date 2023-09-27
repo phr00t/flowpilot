@@ -103,9 +103,9 @@ class LanePlanner:
     # otherwise, we will default to laneless, unfortunately
     if lane_trust > 0.025:
       # normalize to 1
-      total_prob = l_prob + r_prob
-      l_prob = l_prob / total_prob
-      r_prob = r_prob / total_prob
+      total_prob = l_vis + r_vis
+      l_prob = l_vis / total_prob
+      r_prob = r_vis / total_prob
 
       # Find current lanewidth
       current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
