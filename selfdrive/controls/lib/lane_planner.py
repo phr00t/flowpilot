@@ -121,9 +121,6 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
-      # how much are we centered in our lane right now?
-      starting_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5 if self.BigModel else 0.0
-
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
         right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 0.9]), self.re_y[index])
@@ -143,13 +140,10 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # apply a centering force
-        ideal_point += starting_centering
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
-        ideal_point = clamp(ideal_point, left_anchor + clamp(l_prob * 2.0, 0.0, 1.0) * use_min_lane_distance,
-                                         right_anchor - clamp(r_prob * 2.0, 0.0, 1.0) * use_min_lane_distance)
+        ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
@@ -157,11 +151,6 @@ class LanePlanner:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
-
-      # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
-      if vcurv < 0 and self.BigModel:
-        left_turn_rate = -vcurv * v_ego
-        self.ultimate_path = lerp(self.ultimate_path, self.straight_path, (left_turn_rate ** 1.4) / 160.0)
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
