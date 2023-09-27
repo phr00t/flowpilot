@@ -126,8 +126,8 @@ class LanePlanner:
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 1.0]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv, [-2.0, 0.0], [1.0, 0.2]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv, [0.0, 2.0], [0.2, 0.9]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv, [-2.0, 0.0], [0.9, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -158,11 +158,10 @@ class LanePlanner:
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
 
-      # if we are using the bigmodel, and our centering is off, and we are turning left, straighten us out
-      # as we are probably overcompensating this turn
-      if starting_centering > 0 and vcurv < 0:
-        straight_amount = abs(2.0 * starting_centering * vcurv)
-        self.ultimate_path = lerp(self.ultimate_path, self.straight_path, straight_amount)
+      # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
+      if vcurv < 0 and self.BigModel:
+        left_turn_rate = -vcurv * v_ego
+        self.ultimate_path = lerp(self.ultimate_path, self.straight_path, left_turn_rate / 200.0)
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * clamp(lane_trust * 1.4, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
