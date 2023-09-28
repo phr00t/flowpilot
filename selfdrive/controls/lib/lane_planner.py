@@ -116,7 +116,7 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # how much are we centered in our lane right now?
-      centering_force = (self.rll_y[0] + self.lll_y[0]) * 0.5 if self.BigModel else 0.0
+      centering_force = (self.rll_y[0] + self.lll_y[0]) * 0.666 if self.BigModel else 0.0
       # don't apply centering forces that increase corner cutting
       if centering_force > 0 and vcurv[0] > 0.2 or centering_force < 0 and vcurv[0] < -0.2:
         centering_force = 0.0
@@ -128,8 +128,8 @@ class LanePlanner:
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 1.0]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [1.0, 0.2]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.1, 0.8]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.8, 0.1]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
