@@ -183,12 +183,14 @@ class CarController:
     l0d = radarState.leadOne.dRel
     l0v = radarState.leadOne.vRel
     l0vstd = radarState.leadOne.vLeadK
-    lead_vdiff_mph = l0v * 2.23694
 
-    # if our lead speed is fuzzy and far away, cap big numbers more and more the fuzzier it gets
-    if l0vstd > 1.5 and l0d > 75:
-      clamp_amount = clamp(15 - (l0vstd - 1.5) * 20, 5, 15)
-      lead_vdiff_mph = clamp(lead_vdiff_mph, -clamp_amount, clamp_amount)
+    # generally add l0vstd to our speed, as its nearly universally wrong in the slow direction, unless lead
+    # is detected as significantly slowing, then we will consider the devation smoothly in the negative direction
+    # we consider this point to be around -2.666m/s lead difference
+    l0vstd_multiplier = 2 * (1 + exp(-1.5*l0v - 4)) - 1.0
+
+    # finally calculate the final mph diff to use, considering l0vstd multipler above
+    lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd * 0.8) * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
     l0v_distval_mph = 0
