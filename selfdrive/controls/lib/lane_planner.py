@@ -97,7 +97,7 @@ class LanePlanner:
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, 0.9], [1.0, 0.0])
     r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, 0.9], [1.0, 0.0])
-    lane_trust = clamp(1.1 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
+    lane_trust = clamp(1.2 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless, unfortunately
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
@@ -120,6 +120,11 @@ class LanePlanner:
       # don't apply centering forces that increase corner cutting
       if centering_force > 0 and vcurv[0] > 0.2 or centering_force < 0 and vcurv[0] < -0.2:
         centering_force = 0.0
+
+      # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
+      # by applying a straightening (0) point
+      left_turn_rate = -vcurv[0] * v_ego if vcurv[0] < 0 and self.BigModel else 0.0
+      apply_straightening = (left_turn_rate ** 1.1) / 200.0 if left_turn_rate > 0 else 0.0
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
@@ -146,16 +151,13 @@ class LanePlanner:
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
         ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
+        # apply the straightening here
+        ideal_point = lerp(ideal_point, 0.0, apply_straightening)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
         else:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
-        # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
-        # by applying a straightening (0) point
-        if vcurv[index] < 0 and self.BigModel:
-          left_turn_rate = -vcurv[index] * v_ego
-          ideal_point = lerp(ideal_point, 0.0, (left_turn_rate ** 1.1) / 200.0)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
 
