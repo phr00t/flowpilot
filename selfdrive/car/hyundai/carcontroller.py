@@ -187,10 +187,10 @@ class CarController:
     # generally add l0vstd to our speed, as its nearly universally wrong in the slow direction, unless lead
     # is detected as significantly slowing, then we will consider the devation smoothly in the negative direction
     # we consider this point to be around -2.666m/s lead difference
-    l0vstd_multiplier = 2 / (1 + math.exp(-1.5*l0v - 4)) - 1.0
+    l0vstd_multiplier = 2 / (1 + math.exp(-l0v - 2.5)) - 1.0
 
     # finally calculate the final mph diff to use, considering l0vstd multipler above
-    lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd * 0.8) * 2.23694
+    lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
     l0v_distval_mph = 0
@@ -226,6 +226,7 @@ class CarController:
     # also note how much of a speed difference we need for this turn
     vcurv_adj = 0.35 + (0.65 / (0.35 * vcurv + 1))
     desired_speed *= vcurv_adj
+    curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead worth making decisions on?
     if l0prob > 0.5:
@@ -300,15 +301,19 @@ class CarController:
 
       # what is our speed to desired speed ratio?
       target_speed_ratio = clu11_speed / desired_speed
-      target_accel = interp(target_speed_ratio,
+      target_accel_lead = interp(target_speed_ratio,
                             [0.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6],
-                            [2.0, 0.0, -0.35, -0.75, -1.2, -1.7, -2.25, -3.0])
-      allow_difference = 0.25 if self.sensitiveSlow else 0.35
+                            [2.0, 0.0, -0.3, -0.7, -1.2, -1.8, -2.5, -3.0])
+      target_accel_curv = interp(curve_speed_ratio,
+                            [0.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6],
+                            [2.0, 0.0, -0.3, -0.7, -1.2, -1.8, -2.5, -3.0])
+      target_accel = min(target_accel_curv, target_accel_lead)
       if target_accel >= 0 or target_accel > CS.out.aEgo:
-        # we don't need to break this hard, re-enable cruise
+        # we don't need to break this hard for any case, re-enable cruise
         allow_reenable_cruise = True
-      elif target_accel < CS.out.aEgo - allow_difference and clu11_speed - 1.5 > desired_speed:
+      elif target_accel_lead < CS.out.aEgo - (0.4 if self.sensitiveSlow else 0.6) or target_accel_curv < CS.out.aEgo - 0.225:
         # we want to be decelerating significantly faster than we are now, cancel cruise
+        # we can decel more for curves, which are less noisy
         desired_speed = 0
 
     # sanity checks
