@@ -124,12 +124,12 @@ class LanePlanner:
       # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
       # by applying a straightening (0) point
       left_turn_rate = -vcurv[0] * v_ego if vcurv[0] < 0 and self.BigModel else 0.0
-      apply_straightening = (left_turn_rate ** 1.1) / 200.0 if left_turn_rate > 0 else 0.0
+      apply_straightening = (left_turn_rate ** 1.1) / 165.0 if left_turn_rate > 0 else 0.0
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.1, 0.75]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.75, 0.1]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 0.6]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.6, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
