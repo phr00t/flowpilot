@@ -13,7 +13,7 @@ TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 4.0
-KEEP_MIN_DISTANCE_FROM_LANE = 1.3
+KEEP_MIN_DISTANCE_FROM_LANE = 1.35
 KEEP_MAX_DISTANCE_FROM_LANE = 2.0
 
 def clamp(num, min_value, max_value):
@@ -172,12 +172,6 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
-      # how much are we centered in our lane right now?
-      centering_force = (self.rll_y[0] + self.lll_y[0]) * 0.75
-      # don't apply centering forces that increase corner cutting
-      if centering_force > 0 and vcurv[0] > 0.2 or centering_force < 0 and vcurv[0] < -0.2:
-        centering_force = 0.0
-
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
         vcurv_current = vcurv[index]
@@ -200,8 +194,6 @@ class LanePlanner:
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
         # wait, if we have a good path from nlp and on a curve, let's use that
         ideal_point = lerp(ideal_point, path_xyz[index,1], abs(vcurv_current) * 4.0)
-        # apply centering force, if any
-        ideal_point += centering_force
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
