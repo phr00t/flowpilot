@@ -172,18 +172,12 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
-      # if we are getting dangerously close to a lane, apply a shift away from it
-      lane_shift_away = 0.0
-      if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
-        lane_shift_away = (self.lll_y[0] + KEEP_MIN_DISTANCE_FROM_LANE) * 2.0
-      elif self.rll_y[0] < KEEP_MIN_DISTANCE_FROM_LANE:
-        lane_shift_away = (KEEP_MIN_DISTANCE_FROM_LANE - self.rll_y[0]) * 2.0
-
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        vcurv_current = vcurv[index]
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv_current, [0.0, 2], [0.2, 0.5]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv_current, [-2, 0.0], [0.5, 0.2]), self.le_y[index])
+        # the sharper we turn, the more fuzzy the inside lanes will be, and we want to keep away from that
+        # nlp usually cuts left turns much more than right, so let's adjust for that here
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 0.5]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[0], [-2, -0.4, 0.0], [1.0, 0.75, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -200,9 +194,7 @@ class LanePlanner:
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
         # wait, if we have a good path from nlp and on a curve, let's use that
-        ideal_point = lerp(ideal_point, path_xyz[index,1], abs(vcurv_current) * 4.0)
-        # apply any lane shift away
-        ideal_point += clamp(lane_shift_away, -0.75, 0.75)
+        ideal_point = lerp(ideal_point, path_xyz[index,1], abs(vcurv[index]) * 4.0)
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
