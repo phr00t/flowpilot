@@ -55,6 +55,7 @@ class LanePlanner:
     self.lll_prob = 0.
     self.rll_prob = 0.
     self.d_prob = 0.
+    self.left_curve_fear = 0.0
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -172,12 +173,19 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
+      # if we are turning left, slowly add up how much "left" we are going
+      # we will scale a shift away from the left lane to compensate model's left lane cutting
+      if vcurv[0] < 0:
+        self.left_curve_fear -= (self.left_curve_fear + vcurv[0]) * 0.05
+        self.left_curve_fear = clamp(self.left_curve_fear, 0.0, self.lane_width * 0.25)
+      else:
+        self.left_curve_fear = 0.0
+
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
         # the sharper we turn, the more fuzzy the inside lanes will be, and we want to keep away from that
-        # nlp usually cuts left turns much more than right, so let's adjust for that here
         right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 0.5]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[0], [-2, -0.4, 0.0], [1.0, 0.75, 0.2]), self.le_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.5, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -198,7 +206,7 @@ class LanePlanner:
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
-        ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
+        ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance + self.left_curve_fear, right_anchor - use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
@@ -211,7 +219,7 @@ class LanePlanner:
       final_ultimate_path_mix = self.lane_change_multiplier * lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
 
       # debug
-      sLogger.Send("Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+      sLogger.Send("Lf" + "{:.2f}".format(self.left_curve_fear) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
       safe_idxs = np.isfinite(self.ll_t)
       if safe_idxs[0] and final_ultimate_path_mix > 0.0:
