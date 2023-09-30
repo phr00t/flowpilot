@@ -143,9 +143,9 @@ class LanePlanner:
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     if self.BigModel:
-      return get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
+      return self.get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
 
-    return get_stock_path(CS, v_ego, path_t, path_xyz, vcurv)
+    return self.get_stock_path(CS, v_ego, path_t, path_xyz, vcurv)
 
   def get_nlp_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # how visible is each lane?
