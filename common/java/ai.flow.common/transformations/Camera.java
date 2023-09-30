@@ -11,7 +11,7 @@ public class Camera {
 
     // lots of important stuff calculated from this
     // current set to LG G8 wide camera
-    public static final float
+    public static float
         FocalX = utils.F2 ? 1672.33f : (FORCE_TELE_CAM_F3 ? 910f : 1600f), //1394.7081f,
         FocalY = utils.F2 ? 1672.33f : (FORCE_TELE_CAM_F3 ? 910f : 1600f), //1394.7616f,
         CenterX = utils.F2 ? 900f : 952.62915f,

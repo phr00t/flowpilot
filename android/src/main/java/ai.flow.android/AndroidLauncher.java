@@ -42,6 +42,10 @@ import org.acra.data.StringFormat;
 import org.acra.sender.HttpSender;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 
@@ -50,6 +54,32 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 	public static Map<String, SensorInterface> sensors;
 	public static Context appContext;
 	public static ParamsInterface params;
+
+	public void LoadIntrinsicsFromFile() {
+		File file = new File(Path.getFlowPilotRoot(), utils.F2 ? "camerainfo.medium.txt" : "camerainfo.big.txt");
+		if (file.exists() == false) return;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String line;
+
+			float[] numbers = new float[4];
+			int i = 0;
+
+			while ((line = br.readLine()) != null && i < 4) {
+				numbers[i] = Float.parseFloat(line);
+				i++;
+			}
+			br.close();
+
+			Camera.FocalX = numbers[0];
+			Camera.FocalY = numbers[1];
+			Camera.CenterX = numbers[2];
+			Camera.CenterY = numbers[3];
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@SuppressLint("HardwareIds")
 	@Override
@@ -96,6 +126,9 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		params.put("DeviceModel", Build.MODEL);
 
 		utils.F2 = !params.getBool("F3");
+
+		// get camera intrinsics from file if they exist
+		LoadIntrinsicsFromFile();
 
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
 		CameraManager cameraManager, cameraManagerWide = null;
