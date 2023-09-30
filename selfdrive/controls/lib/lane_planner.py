@@ -178,11 +178,14 @@ class LanePlanner:
       # track the last curve seen
       last_curve = vcurv[len(self.lll_y) - 1]
 
+      # centering force, if needed
+      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.5
+
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
         # the sharper we turn, the more fuzzy the inside lanes will be, and we want to keep away from that
-        right_anchor = min(self.rll_y[index] - self.rll_std * 0.3, self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * 0.3, self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 0.5]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.5, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -200,9 +203,8 @@ class LanePlanner:
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
         # wait, if we have a good path from nlp and on a curve, let's use that
         ideal_point = lerp(ideal_point, path_xyz[index,1], abs(vcurv[index]) * 4.0)
-        # do an upcoming lane shift based on curvature, if we are turning left
-        if last_curve < 0:
-          ideal_point -= clamp(last_curve, -lane_width * 0.125, 0.0)
+        # apply centering force
+        ideal_point += centering_force
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
@@ -212,6 +214,8 @@ class LanePlanner:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
         else:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
+        # if we were part of a curve, blend in the nlp path which is usually pretty good
+        ideal_point = lerp(ideal_point, path_xyz[index, 1], abs(last_curve))
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
         # calculate curve for the next iteration
