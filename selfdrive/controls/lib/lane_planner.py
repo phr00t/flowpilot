@@ -181,8 +181,8 @@ class LanePlanner:
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
         # the sharper we turn, the more fuzzy the inside lanes will be, and we want to keep away from that
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 0.5]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.5, 0.2]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * 0.3, self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * 0.3, self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -202,7 +202,7 @@ class LanePlanner:
         ideal_point = lerp(ideal_point, path_xyz[index,1], abs(vcurv[index]) * 4.0)
         # do an upcoming lane shift based on curvature, if we are turning left
         if last_curve < 0:
-          ideal_point -= clamp(last_curve, -lane_width * 0.25, 0.0)
+          ideal_point -= clamp(last_curve, -lane_width * 0.125, 0.0)
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
