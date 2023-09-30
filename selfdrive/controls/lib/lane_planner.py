@@ -13,7 +13,7 @@ TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 4.0
-KEEP_MIN_DISTANCE_FROM_LANE = 1.35
+KEEP_MIN_DISTANCE_FROM_LANE = 1.3
 KEEP_MAX_DISTANCE_FROM_LANE = 2.0
 
 def clamp(num, min_value, max_value):
@@ -44,6 +44,7 @@ class LanePlanner:
     self.re_y = np.zeros((TRAJECTORY_SIZE,))
     self.ultimate_path = np.zeros((TRAJECTORY_SIZE,))
     self.lane_width_estimate = FirstOrderFilter(3.2, 9.95, DT_MDL)
+    self.lane_width_certainty = FirstOrderFilter(1.0, 0.95, DT_MDL)
     self.lane_width = 3.2
     self.lane_change_multiplier = 1
     self.Options = Params()
@@ -53,6 +54,7 @@ class LanePlanner:
 
     self.lll_prob = 0.
     self.rll_prob = 0.
+    self.d_prob = 0.
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -93,7 +95,59 @@ class LanePlanner:
       self.l_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeLeft]
       self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
 
+  def get_stock_path(self, CS, v_ego, path_t, path_xyz, vcurv):
+    # Reduce reliance on lanelines that are too far apart or
+    # will be in a few seconds
+    l_prob, r_prob = self.lll_prob, self.rll_prob
+    width_pts = self.rll_y - self.lll_y
+    prob_mods = []
+    for t_check in (0.0, 1.5, 3.0):
+      width_at_t = interp(t_check * (v_ego + 7), self.ll_x, width_pts)
+      prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
+    mod = min(prob_mods)
+    l_prob *= mod
+    r_prob *= mod
+
+    # Reduce reliance on uncertain lanelines
+    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
+    l_prob *= l_std_mod
+    r_prob *= r_std_mod
+
+    # Find current lanewidth
+    self.lane_width_certainty.update(l_prob * r_prob)
+    current_lane_width = abs(self.rll_y[0] - self.lll_y[0])
+    self.lane_width_estimate.update(current_lane_width)
+    speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
+    self.lane_width = self.lane_width_certainty.x * self.lane_width_estimate.x + \
+                      (1 - self.lane_width_certainty.x) * speed_lane_width
+
+    clipped_lane_width = min(4.0, self.lane_width)
+    path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
+    path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
+
+    self.d_prob = l_prob + r_prob - l_prob * r_prob
+    self.d_prob *= self.lane_change_multiplier
+    lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
+    safe_idxs = np.isfinite(self.ll_t)
+    if safe_idxs[0]:
+      lane_path_y_interp = np.interp(path_t, self.ll_t[safe_idxs], lane_path_y[safe_idxs])
+      path_xyz[:,1] = self.d_prob * lane_path_y_interp + (1.0 - self.d_prob) * path_xyz[:,1]
+
+    # debug
+    sLogger.Send("vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+
+    path_xyz[:, 1] += CAMERA_OFFSET
+
+    return path_xyz
+
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
+    if self.BigModel:
+      return get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
+
+    return get_stock_path(CS, v_ego, path_t, path_xyz, vcurv)
+
+  def get_nlp_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, 0.9], [1.0, 0.0])
     r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, 0.9], [1.0, 0.0])
@@ -116,20 +170,16 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # how much are we centered in our lane right now?
-      centering_force = (self.rll_y[0] + self.lll_y[0]) * 0.666 if self.BigModel else 0.0
+      centering_force = (self.rll_y[0] + self.lll_y[0]) * 0.75
       # don't apply centering forces that increase corner cutting
       if centering_force > 0 and vcurv[0] > 0.2 or centering_force < 0 and vcurv[0] < -0.2:
         centering_force = 0.0
 
-      # if we are using the bigmodel, and turning left, compensate for left turn sharpening on high left curves here
-      # by applying a straightening (0) point
-      left_turn_rate = -vcurv[0] * v_ego if vcurv[0] < 0 and self.BigModel else 0.0
-      apply_straightening = (left_turn_rate ** 1.1) / 165.0 if left_turn_rate > 0 else 0.0
-
       # go through all points in our lanes...
       for index in range(len(self.lll_y)):
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 0.5]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.5, 0.2]), self.le_y[index])
+        vcurv_current = vcurv[index]
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv_current, [0.0, 2], [0.2, 0.5]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv_current, [-2, 0.0], [0.5, 0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -145,14 +195,14 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
+        # wait, if we have a good path from nlp and on a curve, let's use that
+        ideal_point = lerp(ideal_point, path_xyz[index,1], abs(vcurv_current) * 4.0)
         # apply centering force, if any
         ideal_point += centering_force
         # finally do a sanity check that this point is still within the lane markings and our min/max values
         # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
         # with the lane we are preferring
         ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
-        # apply the straightening here
-        ideal_point = lerp(ideal_point, 0.0, apply_straightening)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
