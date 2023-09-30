@@ -8,6 +8,7 @@ from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
+from common.params import Params
 
 Ecu = car.CarParams.Ecu
 ButtonType = car.CarState.ButtonEvent.Type
@@ -24,6 +25,9 @@ class CarInterface(CarInterfaceBase):
 
     # 2019 Kona EV non-SCC model has no radar
     ret.radarUnavailable = True #RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
+
+    Options = Params()
+    BigModel = Options.get_bool("F3")
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -107,7 +111,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743.}.get(candidate, 1275.) + STD_CARGO_KG
       ret.wheelbase = 2.6
       ret.steerRatio = 13.42
-      tire_stiffness_factor = 0.5
+      tire_stiffness_factor = 0.5 if BigModel else 0.385
       #ret.lateralTuning.torque.kf = 0.9
       #ret.lateralTuning.torque.kp = 0.9
     elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019, CAR.IONIQ_HEV_2022, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV):
