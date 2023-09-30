@@ -84,15 +84,13 @@ public class CameraManager extends SensorInterface {
     androidx.camera.core.Camera camera;
 
     public CameraSelector getCameraSelector(boolean  wide){
-        if (wide) {
+        OnRoadScreen.CamSelected = Camera.UseCameraID;
+        if (wide || Camera.UseCameraID != 0) {
             List<CameraInfo> availableCamerasInfo = cameraProvider.getAvailableCameraInfos();
-            OnRoadScreen.CamSelected = 2;
             return availableCamerasInfo.get(OnRoadScreen.CamSelected).getCameraSelector();
         }
-        else {
-            OnRoadScreen.CamSelected = 0;
-            return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
-        }
+
+        return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
     }
 
     public CameraManager(Context context, int cameraType){
@@ -175,7 +173,9 @@ public class CameraManager extends SensorInterface {
 
                             // make sure we keep our zoom level and monitor brightness
                             if (frameID % 6 == 0) {
-                                cameraControl.setZoomRatio(Camera.digital_zoom_apply);
+                                try {
+                                    cameraControl.setZoomRatio(Camera.digital_zoom_apply);
+                                } catch (Exception e) { }
                                 // evaluate luminosity in another low priority thread
                                 threadpool.submit(() -> {
                                     Thread.currentThread().setPriority(Thread.NORM_PRIORITY - 1);

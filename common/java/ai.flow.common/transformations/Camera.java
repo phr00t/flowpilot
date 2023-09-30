@@ -17,6 +17,8 @@ public class Camera {
         CenterX = utils.F2 ? 900f : 952.62915f,
         CenterY = utils.F2 ? 514f : 517.53534f;
 
+    public static int UseCameraID = utils.F2 ? 0 : 2;
+
     // everything autocalculated below
     public static final float actual_cam_focal_length = (FocalX + FocalY) * 0.5f;
     public static final float digital_zoom_apply = actual_cam_focal_length / (utils.F2 ? Model.MEDMODEL_F2_FL : Model.MEDMODEL_FL);

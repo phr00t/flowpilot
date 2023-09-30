@@ -62,10 +62,10 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String line;
 
-			float[] numbers = new float[4];
+			float[] numbers = new float[5];
 			int i = 0;
 
-			while ((line = br.readLine()) != null && i < 4) {
+			while ((line = br.readLine()) != null && i < 5) {
 				numbers[i] = Float.parseFloat(line);
 				i++;
 			}
@@ -75,6 +75,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			Camera.FocalY = numbers[1];
 			Camera.CenterX = numbers[2];
 			Camera.CenterY = numbers[3];
+			Camera.UseCameraID = (int)numbers[4];
 
 		} catch (IOException e) {
 			e.printStackTrace();
