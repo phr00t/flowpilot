@@ -166,6 +166,12 @@ class LanePlanner:
       l_prob = l_vis / total_prob
       r_prob = r_vis / total_prob
 
+      # for purposes of mixing nlp, we don't need to mix it as much if we have strong lane lines to work with
+      strict_l_vis = self.lll_prob * interp(self.lll_std, [0.15, 0.3], [1.0, 0.0])
+      strict_r_vis = self.rll_prob * interp(self.rll_std, [0.15, 0.3], [1.0, 0.0])
+      strict_lane_trust = min(strict_l_vis, strict_r_vis)
+      nlp_mixer = 1.0 - strict_lane_trust * 0.5
+
       # Find current lanewidth
       current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
       self.lane_width_estimate.update(current_lane_width)
@@ -201,8 +207,6 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # wait, if we have a good path from nlp and on a curve, let's use that
-        ideal_point = lerp(ideal_point, path_xyz[index,1], abs(vcurv[index]) * 4.0)
         # apply centering force
         ideal_point += centering_force
         # finally do a sanity check that this point is still within the lane markings and our min/max values
@@ -215,7 +219,7 @@ class LanePlanner:
         else:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
         # if we were part of a curve, blend in the nlp path which is usually pretty good
-        ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve))
+        ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve) * nlp_mixer)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
         # calculate curve for the next iteration
