@@ -161,10 +161,15 @@ class LanePlanner:
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless, unfortunately
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
-      # normalize to 1
-      total_prob = l_vis + r_vis
-      l_prob = l_vis / total_prob
-      r_prob = r_vis / total_prob
+      # which lane are we closer to?
+      distance = self.rll_y[0] - self.lll_y[0]
+      right_ratio = self.rll_y[0] / distance
+      # give preference of lane by visibility and closeness, but make sure it is non-zero
+      l_prob = right_ratio * l_vis
+      r_prob = (1.0 - right_ratio) * r_vis
+      total_prob = l_prob + r_prob
+      l_prob = l_prob / total_prob
+      r_prob = r_prob / total_prob
 
       # for purposes of mixing nlp, we don't need to mix it as much if we have strong lane lines to work with
       strict_l_vis = self.lll_prob * interp(self.lll_std, [0.15, 0.3], [1.0, 0.0])
