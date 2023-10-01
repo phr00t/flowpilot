@@ -109,8 +109,8 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.6
       ret.steerRatio = 13.42
       tire_stiffness_factor = 0.5
-      ret.lateralTuning.torque.kf = 0.875
-      ret.lateralTuning.torque.kp = 0.925
+      ret.lateralTuning.torque.kf = 0.8
+      ret.lateralTuning.torque.kp = 0.8
     elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019, CAR.IONIQ_HEV_2022, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV):
       ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
