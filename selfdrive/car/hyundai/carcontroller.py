@@ -74,6 +74,7 @@ class CarController:
     self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
     self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
+    self.lead_accel_accum = 0.0
     self.accel_last = 0
     self.accels = []
     self.apply_steer_last = 0
@@ -81,6 +82,9 @@ class CarController:
     self.last_button_frame = 0
     self.lkas11_cnt = 0
     self.mdpsBus = 0
+
+    self.speed_ratios =  [0.0, 1.0,  1.1,  1.2,  1.3,  1.4,  1.5,  1.6]
+    self.target_accels = [2.0, 0.0, -0.3, -0.7, -1.2, -1.8, -2.5, -3.0]
 
     self.lead_distance_hist = []
     self.lead_distance_times = []
@@ -301,20 +305,30 @@ class CarController:
 
       # what is our speed to desired speed ratio?
       target_speed_ratio = clu11_speed / desired_speed
-      target_accel_lead = interp(target_speed_ratio,
-                            [0.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6],
-                            [2.0, 0.0, -0.3, -0.7, -1.2, -1.8, -2.5, -3.0])
-      target_accel_curv = interp(curve_speed_ratio,
-                            [0.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6],
-                            [2.0, 0.0, -0.3, -0.7, -1.2, -1.8, -2.5, -3.0])
+      target_accel_lead = interp(target_speed_ratio, self.speed_ratios, self.target_accels)
+      target_accel_curv = interp(curve_speed_ratio, self.speed_ratios, self.target_accels)
       target_accel = min(target_accel_curv, target_accel_lead)
       if target_accel >= 0 or target_accel > CS.out.aEgo:
         # we don't need to break this hard for any case, re-enable cruise
         allow_reenable_cruise = True
-      elif target_accel_lead < CS.out.aEgo - (0.4 if self.sensitiveSlow else 0.6) or target_accel_curv < CS.out.aEgo - 0.25 and clu11_speed - desired_speed > 1.5:
-        # we want to be decelerating significantly faster than we are now, cancel cruise
-        # we can decel more for curves, which are less noisy
+        self.lead_accel_accum = 0.0
+      elif target_accel_curv < CS.out.aEgo - 0.25 and clu11_speed - desired_speed > 1.5:
+        # easy check to slow down for a curve
         desired_speed = 0
+      else:
+        # we might want to slow for a lead car infront of us, but we don't want to make quick small brakes
+        # lets see if we should be braking enough before doing so
+        lead_accel_diff = (target_accel_lead - CS.out.aEgo) + 0.3
+        if lead_accel_diff < 0:
+          self.lead_accel_accum += lead_accel_diff
+        else:
+          self.lead_accel_accum = 0.0
+        # if it seems like we should be slowing down enough over time, kill cruise to brake harder
+        if self.lead_accel_accum < (-0.6 if self.sensitiveSlow else -0.8):
+          desired_speed = 0
+    else:
+      # we are stopping for some other reason, clear our lead accumulator
+      self.lead_accel_accum = 0.0
 
     # sanity checks
     if desired_speed > max_speed_in_mph:
@@ -335,7 +349,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " v" + "{:.1f}".format(l0v) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " vS" + "{:.2f}".format(l0vstd) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " v" + "{:.1f}".format(l0v) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " la" + "{:.2f}".format(self.lead_accel_accum) + " vS" + "{:.2f}".format(l0vstd) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
