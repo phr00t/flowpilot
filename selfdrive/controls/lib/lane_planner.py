@@ -215,9 +215,15 @@ class LanePlanner:
         # apply centering force
         ideal_point += centering_force
         # finally do a sanity check that this point is still within the lane markings and our min/max values
-        # if we are not preferring a lane, don't enforce its minimum distance so much to give us more room to work
-        # with the lane we are preferring
-        ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
+        # do it in an order to emphasize lane cut avoidance
+        if vcurv[index] > 0:
+          # turning right, make sure we don't cut the right corner last
+          ideal_point = max(ideal_point, left_anchor + use_min_lane_distance)
+          ideal_point = min(ideal_point, right_anchor - use_min_lane_distance)
+        else:
+          # turning left, make sure we don't cut the left corner last
+          ideal_point = min(ideal_point, right_anchor - use_min_lane_distance)
+          ideal_point = max(ideal_point, left_anchor + use_min_lane_distance)
         # apply a max distance away from our preferred lane
         if l_prob > r_prob:
           ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
