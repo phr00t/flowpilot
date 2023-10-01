@@ -215,7 +215,7 @@ class LanePlanner:
         else:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
         # if we were part of a curve, blend in the nlp path which is usually pretty good
-        ideal_point = lerp(ideal_point, path_xyz[index, 1], abs(last_curve))
+        ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve))
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
         # calculate curve for the next iteration
