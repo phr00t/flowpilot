@@ -184,8 +184,8 @@ class LanePlanner:
       # track the last curve seen
       last_curve = vcurv[len(self.lll_y) - 1]
 
-      # centering force, if needed
-      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.5
+      # additional centering force, if needed
+      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.25
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
@@ -207,9 +207,7 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # apply centering force
-        ideal_point += centering_force
-        # finally do a sanity check that this point is still within the lane markings and our min/max values
+        # do a sanity check that this point is still within the lane markings and our min/max values
         # do it in an order to emphasize lane cut avoidance
         if vcurv[index] > 0:
           # turning right, make sure we don't cut the right corner last
@@ -226,6 +224,10 @@ class LanePlanner:
           ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
         # if we were part of a curve, blend in the nlp path which is usually pretty good
         ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve) * nlp_mixer)
+        # apply a late centering force within limits of our current lane
+        wiggle_room = (final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
+        if wiggle_room > 0:
+          ideal_point += clamp(centering_force, -wiggle_room, wiggle_room)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
         # calculate curve for the next iteration
