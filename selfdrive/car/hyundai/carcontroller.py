@@ -301,7 +301,8 @@ class CarController:
       speed_diff = desired_speed - clu11_speed
 
       # apply a spam overpress to amplify speed changes
-      desired_speed += speed_diff * 0.6
+      # make sure we don't go negative here (or zero)
+      desired_speed = clamp(desired_speed + speed_diff * 0.6, 0.001, max_speed_in_mph)
 
       # what is our speed to desired speed ratio?
       target_speed_ratio = clu11_speed / desired_speed
@@ -324,7 +325,7 @@ class CarController:
         else:
           self.lead_accel_accum = 0.0
         # if it seems like we should be slowing down enough over time, kill cruise to brake harder
-        if self.lead_accel_accum < (-1.0 if self.sensitiveSlow else -1.3):
+        if self.lead_accel_accum < (-1.5 if self.sensitiveSlow else -2.0):
           desired_speed = 0
     else:
       # we are stopping for some other reason, clear our lead accumulator
@@ -349,7 +350,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " v" + "{:.1f}".format(l0v) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " la" + "{:.2f}".format(self.lead_accel_accum) + " vS" + "{:.2f}".format(l0vstd) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " la" + "{:.2f}".format(self.lead_accel_accum) + " vS" + "{:.2f}".format(l0vstd) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
