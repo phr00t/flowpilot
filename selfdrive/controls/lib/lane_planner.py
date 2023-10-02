@@ -190,8 +190,8 @@ class LanePlanner:
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
         # the sharper we turn, the more fuzzy the inside lanes will be, and we want to keep away from that
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0, 2], [0.2, 0.5]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index], [-2, 0.0], [0.5, 0.2]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0,  0.5,   2], [0.1,  0.5, 0.75]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index],  [ -2, -0.5, 0.0], [0.75, 0.5,  0.1]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
