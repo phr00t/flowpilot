@@ -192,9 +192,12 @@ class CarController:
     # is detected as significantly slowing, then we will consider the devation smoothly in the negative direction
     # we consider this point to be around -2.666m/s lead difference
     l0vstd_multiplier = 2 / (1 + math.exp(-l0v - 2.5)) - 1.0
+    # if we are saying the car is going faster, reduce that a little
+    if l0vstd_multiplier > 0:
+      l0vstd_multiplier *= 0.8
 
     # finally calculate the final mph diff to use, considering l0vstd multipler above
-    lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd * 0.8) * 2.23694
+    lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
     l0v_distval_mph = 0
