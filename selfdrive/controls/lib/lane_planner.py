@@ -185,7 +185,10 @@ class LanePlanner:
       last_curve = vcurv[len(self.lll_y) - 1]
 
       # additional centering force, if needed
-      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.25
+      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.3
+      # remove centering forces that try to increase corner cutting
+      if vcurv[0] > 0.2 and centering_force > 0 or vcurv[0] < -0.2 and centering_force < 0:
+        centering_force = 0
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
