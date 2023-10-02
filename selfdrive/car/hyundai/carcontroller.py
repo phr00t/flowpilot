@@ -320,11 +320,11 @@ class CarController:
         # lets see if we should be braking enough before doing so
         lead_accel_diff = (target_accel_lead - CS.out.aEgo) + 0.3
         if lead_accel_diff < 0:
-          self.lead_accel_accum += lead_accel_diff
+          self.lead_accel_accum += lead_accel_diff * (20/100) # based off of 20 fps model and this function @ 100hz
         else:
           self.lead_accel_accum = 0.0
         # if it seems like we should be slowing down enough over time, kill cruise to brake harder
-        if self.lead_accel_accum < (-0.6 if self.sensitiveSlow else -0.8):
+        if self.lead_accel_accum < (-1.0 if self.sensitiveSlow else -1.3):
           desired_speed = 0
     else:
       # we are stopping for some other reason, clear our lead accumulator
