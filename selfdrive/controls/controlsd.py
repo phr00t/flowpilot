@@ -184,12 +184,6 @@ class Controls:
     self.experimental_mode = False
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
-    self.timer1 = 0.
-    self.timer2 = 0.
-    self.timer3 = 0.
-    self.timer4 = 0.
-    self.timer5 = 0.
-
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
     self.can_log_mono_time = 0
@@ -730,23 +724,18 @@ class Controls:
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    self.timer1 = max(self.timer1, sec_since_boot() - start_time)
 
     self.update_events(CS)
-    self.timer2 = max(self.timer2, sec_since_boot() - start_time)
 
     if not self.read_only and self.initialized:
       # Update control state
       self.state_transition(CS)
-      self.timer3 = max(self.timer3, sec_since_boot() - start_time)
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
-    self.timer4 = max(self.timer4, sec_since_boot() - start_time)
 
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
-    self.timer5 = max(self.timer5, sec_since_boot() - start_time)
 
     self.CS_prev = CS
 
@@ -764,11 +753,6 @@ class Controls:
         print('enabled:', self.enabled)
         print('current alerts:', self.current_alert)
         print('timer_now:', sec_since_boot())
-        print('timer1:', self.timer1)
-        print('timer2:', self.timer2)
-        print('timer3:', self.timer3)
-        print('timer4:', self.timer4)
-        print('timer5:', self.timer5)
         print("---------------")
       self.i += 1
 
