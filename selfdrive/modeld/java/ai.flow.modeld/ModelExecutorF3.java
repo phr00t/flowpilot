@@ -2,6 +2,7 @@ package ai.flow.modeld;
 
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.messages.MsgModelRaw;
 import messaging.ZMQPubHandler;
@@ -80,7 +81,6 @@ public class ModelExecutorF3 extends ModelExecutor {
     public static Definitions.FrameBuffer.Reader msgFrameWideBuffer;
     ByteBuffer imgBuffer;
     ByteBuffer wideImgBuffer;
-    boolean snpe;
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()
             .policyAllocation(AllocationPolicy.STRICT)
             .policyLearning(LearningPolicy.FIRST_LOOP)
@@ -142,7 +142,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
         netInputWideBuffer = imageWidePrepare.prepare(wideImgBuffer, wrapMatrixWide);
 
-        if (snpe){
+        if (utils.SNPE){
             try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "ModelD")) {
                 // NCHW to NHWC
                 netInputBuffer = netInputBuffer.permute(0, 2, 3, 1).dup();
@@ -180,8 +180,7 @@ public class ModelExecutorF3 extends ModelExecutor {
         if (initialized) return;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-        snpe = true;
-        if (snpe)
+        if (utils.SNPE)
             imgTensorShape = new int[]{1, 128, 256, 12}; // SNPE only supports NHWC input.
 
         ph.createPublishers(Arrays.asList("modelRaw"));

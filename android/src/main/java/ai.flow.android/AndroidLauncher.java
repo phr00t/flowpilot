@@ -2,6 +2,7 @@ package ai.flow.android;
 
 import ai.flow.android.sensor.CameraManager;
 import ai.flow.android.sensor.SensorManager;
+import ai.flow.android.vision.ONNXModelRunner;
 import ai.flow.android.vision.SNPEModelRunner;
 import ai.flow.app.FlowUI;
 import ai.flow.common.ParamsInterface;
@@ -13,7 +14,6 @@ import ai.flow.launcher.Launcher;
 import ai.flow.modeld.*;
 import ai.flow.sensor.SensorInterface;
 import android.annotation.SuppressLint;
-import android.app.Application;
 import android.content.Context;
 import android.os.Process;
 import android.os.*;
@@ -21,7 +21,6 @@ import android.provider.Settings;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,13 +32,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.AndroidFragmentApplication;
 import org.acra.ACRA;
-import org.acra.BuildConfig;
 import org.acra.ErrorReporter;
-import org.acra.config.CoreConfigurationBuilder;
-import org.acra.config.HttpSenderConfigurationBuilder;
-import org.acra.config.ToastConfigurationBuilder;
-import org.acra.data.StringFormat;
-import org.acra.sender.HttpSender;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -148,7 +141,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 
 		ModelRunner model;
 		boolean useGPU = true; // always use gpus on android phones.
-		model = new SNPEModelRunner(getApplication(), modelPath, useGPU);
+		model = utils.SNPE ? new ONNXModelRunner(modelPath, useGPU) : new SNPEModelRunner(getApplication(), modelPath, useGPU);
 
 		ModelExecutor modelExecutor;
 		modelExecutor = utils.F2 ? new ModelExecutorF2(model) : new ModelExecutorF3(model);

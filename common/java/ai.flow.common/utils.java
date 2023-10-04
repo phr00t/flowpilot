@@ -8,7 +8,7 @@ import java.util.Queue;
 
 public class utils {
 
-    public static boolean F2 = true;
+    public static boolean F2 = true, SNPE = false;
     public static boolean getBoolEnvVar(String key) {
         String val = System.getenv(key);
         boolean ret = false;
