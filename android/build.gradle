@@ -114,7 +114,7 @@ dependencies {
 	implementation "org.bytedeco:openblas:$rootProject.openblas_version-$rootProject.javacpp_version:android-arm64"
 	implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
 	implementation(name: 'snpe-release', ext:'aar')
-	implementation(name: 'onnxruntime-mobile-1.16.0', ext:'aar')
+	implementation(name: 'onnxruntime-android-1.16.0', ext:'aar')
 	implementation "org.capnproto:runtime:0.1.13"
 	implementation ('com.termux.termux-app:termux-shared:0.117'){
 		exclude ((HashMap) [group: 'com.google.code.findbugs', module: 'annotations'])

@@ -37,7 +37,7 @@ public class ONNXModelRunner extends ModelRunner {
             if (useGPU) {
                 opts.addNnapi();
             }
-            session = env.createSession(modelPath + ".ort", opts);
+            session = env.createSession(modelPath + ".onnx", opts);
             } catch (OrtException e) {
                 throw new RuntimeException(e);
         }
