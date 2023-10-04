@@ -13,7 +13,7 @@ TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 4.0
-KEEP_MIN_DISTANCE_FROM_LANE = 1.35
+KEEP_MIN_DISTANCE_FROM_LANE = 1.4
 KEEP_MAX_DISTANCE_FROM_LANE = 2.0
 
 def clamp(num, min_value, max_value):
@@ -179,7 +179,11 @@ class LanePlanner:
       last_curve = vcurv[len(self.lll_y) - 1]
 
       # additional centering force, if needed
-      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.5
+      centering_force = 0.0
+      if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
+        centering_force += self.lll_y[0] + KEEP_MIN_DISTANCE_FROM_LANE
+      if self.lll_y[0] < KEEP_MIN_DISTANCE_FROM_LANE:
+        centering_force -= KEEP_MIN_DISTANCE_FROM_LANE - self.rll_y[0]
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
@@ -212,9 +216,9 @@ class LanePlanner:
           # turning left, make sure we don't cut the left corner
           ideal_point = max(ideal_point, left_anchor + use_min_lane_distance)
         # apply a late centering force within limits of our current lane
-        wiggle_room = (final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
+        wiggle_room = (final_lane_width * 0.5) - use_min_lane_distance
         if wiggle_room > 0:
-          ideal_point += clamp(centering_force, -wiggle_room, wiggle_room)
+          ideal_point += clamp(centering_force, -wiggle_room if vcurv[index] > 0 else 0.0, wiggle_room if vcurv[index] <= 0 else 0.0)
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
         # calculate curve for the next iteration
