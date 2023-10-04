@@ -260,7 +260,7 @@ struct ModelOutput {
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
   const ModelOutputTemporalPose temporal_pose;
   const ModelOutputRoadTransform road_transform;
-  const LateralPlannerOutput lateral_planner_solution; // NLP thing
+  //const LateralPlannerOutput lateral_planner_solution; // NLP thing
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
