@@ -166,12 +166,6 @@ class LanePlanner:
       l_prob = l_vis / total_prob
       r_prob = r_vis / total_prob
 
-      # for purposes of mixing nlp, we don't need to mix it as much if we have strong lane lines to work with
-      strict_l_vis = self.lll_prob * interp(self.lll_std, [0.15, 0.3], [1.0, 0.0])
-      strict_r_vis = self.rll_prob * interp(self.rll_std, [0.15, 0.3], [1.0, 0.0])
-      strict_lane_trust = min(strict_l_vis, strict_r_vis)
-      nlp_mixer = 1.0 - strict_lane_trust * 0.5
-
       # Find current lanewidth
       current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
       self.lane_width_estimate.update(current_lane_width)
@@ -185,10 +179,7 @@ class LanePlanner:
       last_curve = vcurv[len(self.lll_y) - 1]
 
       # additional centering force, if needed
-      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.3
-      # remove centering forces that try to increase corner cutting
-      if vcurv[0] > 0 and centering_force > 0 or vcurv[0] < 0 and centering_force < 0:
-        centering_force *= interp(abs(vcurv[0]), [0.1, 0.3], [1.0, 0.0])
+      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.5
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
@@ -210,23 +201,16 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
+        # if we were part of a curve, blend in the nlp path which is usually pretty good
+        ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve))
         # do a sanity check that this point is still within the lane markings and our min/max values
         # do it in an order to emphasize lane cut avoidance
         if vcurv[index] > 0:
-          # turning right, make sure we don't cut the right corner last
-          ideal_point = max(ideal_point, left_anchor + use_min_lane_distance)
+          # turning right, make sure we don't cut a right turn
           ideal_point = min(ideal_point, right_anchor - use_min_lane_distance)
         else:
-          # turning left, make sure we don't cut the left corner last
-          ideal_point = min(ideal_point, right_anchor - use_min_lane_distance)
+          # turning left, make sure we don't cut the left corner
           ideal_point = max(ideal_point, left_anchor + use_min_lane_distance)
-        # apply a max distance away from our preferred lane
-        if l_prob > r_prob:
-          ideal_point = min(ideal_point, left_anchor + KEEP_MAX_DISTANCE_FROM_LANE)
-        else:
-          ideal_point = max(ideal_point, right_anchor - KEEP_MAX_DISTANCE_FROM_LANE)
-        # if we were part of a curve, blend in the nlp path which is usually pretty good
-        ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve) * nlp_mixer)
         # apply a late centering force within limits of our current lane
         wiggle_room = (final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
         if wiggle_room > 0:
