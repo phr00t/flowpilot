@@ -31,7 +31,7 @@ android {
 
 	defaultConfig {
 		applicationId 'ai.flow.android'
-		minSdkVersion 31
+		minSdkVersion 30
 		targetSdkVersion 30
 		versionCode 1
 

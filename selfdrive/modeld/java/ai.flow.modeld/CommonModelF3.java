@@ -7,7 +7,7 @@ public class CommonModelF3 {
 
     public static final int LEAD_MHP_SELECTION = 3;
     public static final int TRAJECTORY_SIZE = 33;
-    public static final int FEATURE_LEN = 128;
+    public static final int FEATURE_LEN = 512;
     public static final int HISTORY_BUFFER_LEN = 99;
     public static final int DESIRE_LEN = 8;
     public static final int DESIRE_PRED_LEN = 4;
