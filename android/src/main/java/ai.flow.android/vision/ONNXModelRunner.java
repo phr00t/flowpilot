@@ -4,6 +4,8 @@ import ai.flow.modeld.ModelRunner;
 import ai.onnxruntime.*;
 import onnx.Onnx;
 
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.buffer.util.DataTypeUtil;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.nio.ByteBuffer;
@@ -37,7 +39,7 @@ public class ONNXModelRunner extends ModelRunner {
             if (useGPU) {
                 opts.addNnapi();
             }
-            session = env.createSession(modelPath + ".onnx", opts);
+            session = env.createSession(modelPath + ".ort", opts);
             } catch (OrtException e) {
                 throw new RuntimeException(e);
         }
