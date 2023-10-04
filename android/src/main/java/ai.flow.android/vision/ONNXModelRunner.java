@@ -2,6 +2,7 @@ package ai.flow.android.vision;
 
 import ai.flow.modeld.ModelRunner;
 import ai.onnxruntime.*;
+import ai.onnxruntime.providers.NNAPIFlags;
 import onnx.Onnx;
 
 import org.nd4j.linalg.api.buffer.DataType;
@@ -10,6 +11,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,14 +33,7 @@ public class ONNXModelRunner extends ModelRunner {
     public void init(Map<String, int[]> shapes, Map<String, int[]> outputShapes) {
         try {
             OrtSession.SessionOptions opts = new OrtSession.SessionOptions();
-            opts.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
-            opts.setInterOpNumThreads(8);
-            opts.setIntraOpNumThreads(4);
-            opts.setExecutionMode(OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL);
-
-            if (useGPU) {
-                opts.addNnapi();
-            }
+            opts.addNnapi();
             session = env.createSession(modelPath + ".ort", opts);
             } catch (OrtException e) {
                 throw new RuntimeException(e);

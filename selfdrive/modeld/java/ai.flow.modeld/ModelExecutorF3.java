@@ -39,15 +39,21 @@ public class ModelExecutorF3 extends ModelExecutor {
     public static long AvgIterationTime = 0;
     public long iterationNum = 1;
 
-    public final INDArrayIndex[] featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), };
+    //public final INDArrayIndex[] featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), NDArrayIndex.all() };
+    //public final INDArrayIndex[] featureRotateSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN), NDArrayIndex.all() };
+    //public final INDArrayIndex[] desireFeatureSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN), NDArrayIndex.all() };
+    //public final INDArrayIndex[] desireFeatureSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN+1), NDArrayIndex.all() };
+    public final INDArrayIndex[] featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), }; // SNPE
     public final INDArrayIndex[] featureRotateSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN) };
     public final INDArrayIndex[] desireFeatureSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN) };
     public final INDArrayIndex[] desireFeatureSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN+1) };
 
     public static int[] imgTensorShape = {1, 12, 128, 256};
+    public static final int[] featureTensorShape = {1, CommonModelF3.FEATURE_LEN, CommonModelF3.HISTORY_BUFFER_LEN}; // SNPE swap
     public static final int[] desireTensorShape = {1, CommonModelF3.DESIRE_LEN, CommonModelF3.HISTORY_BUFFER_LEN+1};
+    //public static final int[] featureTensorShape = {1, CommonModelF3.HISTORY_BUFFER_LEN, CommonModelF3.FEATURE_LEN };
+    //public static final int[] desireTensorShape = {1, CommonModelF3.HISTORY_BUFFER_LEN+1, CommonModelF3.DESIRE_LEN };
     public static final int[] trafficTensorShape = {1, CommonModelF3.TRAFFIC_CONVENTION_LEN};
-    public static final int[] featureTensorShape = {1, CommonModelF3.FEATURE_LEN, CommonModelF3.HISTORY_BUFFER_LEN};
     public static final int[] outputTensorShape = {1, CommonModelF3.NET_OUTPUT_SIZE};
     public static final int[] navFeaturesTensorShape = {1, CommonModelF3.NAV_FEATURE_LEN};
     public static final int[] navInstructionsTensorShape = {1, 150};
@@ -57,6 +63,8 @@ public class ModelExecutorF3 extends ModelExecutor {
     public final INDArray desireNDArr = Nd4j.zeros(desireTensorShape);
     public final INDArray trafficNDArr = Nd4j.zeros(trafficTensorShape);
     public final INDArray featuresNDArr = Nd4j.zeros(featureTensorShape);
+    public final INDArray navfeaturesNDArr = Nd4j.zeros(navFeaturesTensorShape);
+    public final INDArray navinstructNDArr = Nd4j.zeros(navInstructionsTensorShape);
     public final float[] netOutputs = new float[(int)numElements(outputTensorShape)];
     public final INDArray augmentRot = Nd4j.zeros(3);
     public final INDArray augmentTrans = Nd4j.zeros(3);
@@ -126,9 +134,11 @@ public class ModelExecutorF3 extends ModelExecutor {
         desireNDArr.put(desireFeatureSlice0, desireNDArr.get(desireFeatureSlice1));
         for (int i=1; i<CommonModelF3.DESIRE_LEN; i++){
             if (desireIn[i] - prevDesire[i] > 0.99f)
-                desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, desireIn[i]);
+                desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, desireIn[i]); // SNPE
+                //desireNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN, i, desireIn[i]);
             else
-                desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN,0.0f);
+                desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, 0.0f); // SNPE
+                //desireNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN, i,0.0f);
             prevDesire[i] = desireIn[i];
         }
 
@@ -160,7 +170,8 @@ public class ModelExecutorF3 extends ModelExecutor {
         // featureTensorShape, 1, FEATURE_LEN, HISTORY_LEN
         featuresNDArr.put(featureRotateSlice0, featuresNDArr.get(featureRotateSlice1));
         for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
-            featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
+            featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]); // SNPE
+            //featuresNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN - 1, i, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
 
         // publish outputs
         end = System.currentTimeMillis();
@@ -198,6 +209,8 @@ public class ModelExecutorF3 extends ModelExecutor {
         inputShapeMap.put("nav_instructions", navInstructionsTensorShape);
         outputShapeMap.put("outputs", outputTensorShape);
 
+        inputMap.put("nav_features", navfeaturesNDArr);
+        inputMap.put("nav_instructions", navinstructNDArr);
         inputMap.put("features_buffer", featuresNDArr);
         inputMap.put("desire", desireNDArr);
         inputMap.put("traffic_convention", trafficNDArr);
