@@ -14,7 +14,7 @@
 #include "common/util.h"
 #include "selfdrive/modeld/models/commonmodel.h"
 
-constexpr int FEATURE_LEN = 512;
+constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
