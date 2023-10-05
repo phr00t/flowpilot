@@ -179,7 +179,8 @@ class LanePlanner:
       last_curve = vcurv[len(self.lll_y) - 1]
 
       # additional centering force, if needed
-      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.4
+      wiggle_room = (self.lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
+      centering_force = clamp((self.lll_y[0] + self.rll_y[0]) * 0.5, -wiggle_room, wiggle_room) if wiggle_room > 0 else 0.0
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
@@ -206,12 +207,7 @@ class LanePlanner:
         # do a sanity check that this point is still within the lane markings and our min/max values
         ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
         # apply a late centering force within limits of our current lane
-        wiggle_room = (final_lane_width * 0.5) - use_min_lane_distance
-        if wiggle_room > 0:
-          ideal_point += clamp(centering_force, -wiggle_room, wiggle_room)
-        # NLP in general is bad at detecting the amount of left turn up ahead, let's smooth out left turns a little
-        if vcurv[index] < 0:
-          ideal_point -= vcurv[index] * interp(index / len(self.lll_y), [0.0, 1.0], [0.0, 0.4])
+        ideal_point += centering_force
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
         # calculate curve for the next iteration
