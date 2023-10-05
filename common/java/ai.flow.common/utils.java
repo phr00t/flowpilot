@@ -8,7 +8,13 @@ import java.util.Queue;
 
 public class utils {
 
-    public static boolean F2 = true, SNPE = true;
+    public enum USE_MODEL_RUNNER {
+        ONNX,
+        SNPE,
+        TNN
+    }
+    public static boolean F2 = true;
+    public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.TNN;
     public static boolean getBoolEnvVar(String key) {
         String val = System.getenv(key);
         boolean ret = false;

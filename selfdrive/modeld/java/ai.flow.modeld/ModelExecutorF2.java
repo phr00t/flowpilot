@@ -122,7 +122,7 @@ public class ModelExecutorF2 extends ModelExecutor {
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
         netInputWideBuffer = imageWidePrepare.prepare(wideImgBuffer, wrapMatrixWide);
 
-        if (utils.SNPE) {
+        if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE) {
             try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "ModelD")) {
                 // NCHW to NHWC
                 netInputBuffer = netInputBuffer.permute(0, 2, 3, 1).dup();
@@ -172,7 +172,7 @@ public class ModelExecutorF2 extends ModelExecutor {
 
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-        if (utils.SNPE)
+        if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE)
             imgTensorShape = new int[]{1, 128, 256, 12}; // SNPE only supports NHWC input.
 
         ph.createPublishers(Arrays.asList("modelV2", "cameraOdometry"));
