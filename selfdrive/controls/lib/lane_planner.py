@@ -148,8 +148,8 @@ class LanePlanner:
     return path_xyz
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
-    #if self.BigModel:
-    #  return self.get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
+    if self.BigModel:
+      return self.get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
 
     return self.get_stock_path(CS, v_ego, path_t, path_xyz, vcurv)
 
@@ -175,9 +175,6 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
-      # track the last curve seen
-      last_curve = vcurv[len(self.lll_y) - 1]
-
       # additional centering force, if needed
       wiggle_room = (self.lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
       centering_force = clamp((self.lll_y[0] + self.rll_y[0]) * 0.5, -wiggle_room, wiggle_room) if wiggle_room > 0 else 0.0
@@ -202,14 +199,10 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # if we were part of a curve, blend in the nlp path which is usually pretty good
-        ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve))
         # do a sanity check that this point is still within the lane markings and our min/max values
         ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
         # add it to our ultimate path with centering force
         self.ultimate_path[index] = ideal_point + centering_force
-        # calculate curve for the next iteration
-        last_curve = max_abs(vcurv[index], last_curve * 0.925)
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
