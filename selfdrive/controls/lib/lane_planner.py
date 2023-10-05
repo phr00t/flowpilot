@@ -179,7 +179,7 @@ class LanePlanner:
       last_curve = vcurv[len(self.lll_y) - 1]
 
       # additional centering force, if needed
-      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.5
+      centering_force = (self.lll_y[0] + self.rll_y[0]) * 0.4
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
