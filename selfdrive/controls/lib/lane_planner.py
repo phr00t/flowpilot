@@ -13,7 +13,7 @@ TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 4.0
-KEEP_MIN_DISTANCE_FROM_LANE = 1.3
+KEEP_MIN_DISTANCE_FROM_LANE = 1.35
 KEEP_MAX_DISTANCE_FROM_LANE = 2.0
 
 def clamp(num, min_value, max_value):
@@ -199,8 +199,13 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # do a sanity check that this point is still within the lane markings and our min/max values
-        ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
+        # clamp the path to the lane this spot is closest to
+        if abs(self.rll_y[0]) > abs(self.lll_y[0]):
+          # closer to the left lane
+          ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor)
+        else:
+          # closer to right lane
+          ideal_point = clamp(ideal_point, left_anchor, right_anchor - use_min_lane_distance)
         # add it to our ultimate path with centering force
         self.ultimate_path[index] = ideal_point + centering_force
 
