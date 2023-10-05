@@ -211,7 +211,7 @@ class LanePlanner:
           ideal_point += clamp(centering_force, -wiggle_room, wiggle_room)
         # NLP in general is bad at detecting the amount of left turn up ahead, let's smooth out left turns a little
         if vcurv[index] < 0:
-          ideal_point -= vcurv[index] * interp(index / len(self.lll_y), [0.0, 1.0], [0.0, 0.3])
+          ideal_point -= vcurv[index] * interp(index / len(self.lll_y), [0.0, 1.0], [0.0, 0.4])
         # add it to our ultimate path!
         self.ultimate_path[index] = ideal_point
         # calculate curve for the next iteration
