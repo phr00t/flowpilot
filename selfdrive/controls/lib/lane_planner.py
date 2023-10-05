@@ -185,8 +185,8 @@ class LanePlanner:
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
         # the sharper we turn, the more fuzzy the inside lanes will be, and we want to keep away from that
-        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0,  0.5,   2], [0.1,  0.5, 0.75]), self.re_y[index])
-        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index],  [ -2, -0.5, 0.0], [0.75, 0.5,  0.1]), self.le_y[index])
+        right_anchor = min(self.rll_y[index] - self.rll_std * interp(vcurv[index], [0.0,  2], [0.2,  0.5]), self.re_y[index])
+        left_anchor = max(self.lll_y[index] + self.lll_std * interp(vcurv[index],  [ -2,0.0], [0.5,  0.2]), self.le_y[index])
         # get the raw lane width for this point
         lane_width = right_anchor - left_anchor
         # is this lane getting bigger relatively close to us? useful for later determining if we want to mix in the
@@ -206,11 +206,6 @@ class LanePlanner:
         ideal_point = lerp(ideal_point, np.interp(self.ll_t[index], path_t, path_xyz[:,1]), abs(last_curve))
         # do a sanity check that this point is still within the lane markings and our min/max values
         ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
-        # NLP in general is bad at detecting the amount of left turn up ahead, let's smooth out left turns a little
-        # more in the distance
-        if vcurv[index] < 0:
-          soften_point = ideal_point * interp(-vcurv[index], [0.0, 2.0], [1.0, 0.75])
-          ideal_point = lerp(ideal_point, soften_point, index / len(self.lll_y))
         # add it to our ultimate path with centering force
         self.ultimate_path[index] = ideal_point + centering_force
         # calculate curve for the next iteration
