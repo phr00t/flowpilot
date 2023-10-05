@@ -148,8 +148,8 @@ class LanePlanner:
     return path_xyz
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
-    if self.BigModel:
-      return self.get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
+    #if self.BigModel:
+    #  return self.get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
 
     return self.get_stock_path(CS, v_ego, path_t, path_xyz, vcurv)
 
