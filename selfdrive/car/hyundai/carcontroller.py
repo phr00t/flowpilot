@@ -122,7 +122,8 @@ class CarController:
 
     # >90 degree steering fault prevention
     # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
-    if CC.latActive and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
+    steering_amount = abs(CS.out.steeringAngleDeg)
+    if CC.latActive and steering_amount >= MAX_ANGLE:
       self.angle_limit_counter += 1
     else:
       self.angle_limit_counter = 0
@@ -130,6 +131,11 @@ class CarController:
     # Cut steer actuation bit for two frames and hold torque with induced temporary fault
     torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_FRAMES
     lat_active = CC.latActive and not torque_fault
+
+    # if driver is steering at a high angle, cut our steering here
+    # this avoids ugly fighting and steering actuator noises
+    if lat_active and steering_amount > 95 and CS.out.steeringPressed:
+      lat_active = False
 
     if self.frame == 0: # initialize counts from last received count signals
       self.lkas11_cnt = CS.lkas11["CF_Lkas_MsgCount"] + 1
@@ -145,7 +151,7 @@ class CarController:
 
     # 20 Hz LFA MFA message
     if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
-      can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))
+      can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled and lat_active))
 
     # phr00t fork start for cruise spamming
     path_plan = sm['lateralPlan']
