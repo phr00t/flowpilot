@@ -200,8 +200,9 @@ class CarController:
     # we consider this point to be around -2.666m/s lead difference
     l0vstd_multiplier = 2 / (1 + math.exp(-l0v - 2.5)) - 1.0
     # if we are saying the car is going faster, reduce that a little
+    # if we are close to the car, don't add to the velocity
     if l0vstd_multiplier > 0:
-      l0vstd_multiplier *= 0.8
+      l0vstd_multiplier *= interp(l0d, [0.0, 30.0], [0.0, 0.8])
 
     # finally calculate the final mph diff to use, considering l0vstd multipler above
     lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
