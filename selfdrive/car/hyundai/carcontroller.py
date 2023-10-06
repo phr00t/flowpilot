@@ -71,7 +71,7 @@ class CarController:
     self.frame = 0
     self.Options = Params()
     self.usingAccel = self.Options.get_bool("UseAccel")
-    self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
+    self.usingDistSpeed = False #self.Options.get_bool("UseDistSpeed")
     self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
     self.lead_accel_accum = 0.0
@@ -167,15 +167,16 @@ class CarController:
     # this looks for stop signs and red lights
     # accels is a weird type so we will iterate over it and take a lowest average
     accel_count = len(long_plan.accels)
+    avg_accel = max_speed_in_mph
     if accel_count > 4:
       accel_smallest = 9999
       for i in range(0, accel_count):
         if long_plan.accels[i] < accel_smallest:
           accel_smallest = long_plan.accels[i]
       self.accels.append(accel_smallest * CV.MS_TO_MPH)
-      if len(self.accels) > 8:
+      if len(self.accels) > 20:
+        avg_accel = statistics.fmean(self.accels)
         self.accels.pop(0)
-    avg_accel = statistics.fmean(self.accels) if len(self.accels) > 7 else max_speed_in_mph
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
@@ -294,7 +295,7 @@ class CarController:
     # get option updates
     if self.frame % 100 == 0:
       self.usingAccel = self.Options.get_bool("UseAccel")
-      self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
+      #self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
       self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
     if self.usingAccel and (avg_accel < 8.0 or stoplinesp > 0.7) and clu11_speed < 45:
