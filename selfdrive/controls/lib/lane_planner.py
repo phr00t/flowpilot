@@ -186,6 +186,16 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
+      # additional centering force, if needed
+      centering_force = 0.0
+      wiggle_room = (self.lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
+      if wiggle_room > 0:
+        if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
+          centering_force += self.lll_y[0] + KEEP_MIN_DISTANCE_FROM_LANE
+        if self.rll_y[0] < KEEP_MIN_DISTANCE_FROM_LANE:
+          centering_force -= KEEP_MIN_DISTANCE_FROM_LANE - self.rll_y[0]
+        centering_force = clamp(centering_force, -wiggle_room, wiggle_room)
+
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
         # left/right lane or edge
@@ -214,7 +224,7 @@ class LanePlanner:
           # closer to right lane
           ideal_point = clamp(ideal_point, left_anchor, right_anchor - use_min_lane_distance)
         # add it to our ultimate path with centering force
-        self.ultimate_path[index] = ideal_point
+        self.ultimate_path[index] = ideal_point + centering_force
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
