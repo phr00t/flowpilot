@@ -155,12 +155,17 @@ class LanePlanner:
 
   def get_nlp_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # how visible is each lane?
-    l_vis = (self.lll_prob * 0.5 + 0.5) * interp(self.lll_std, [0, 0.9], [1.0, 0.0])
-    r_vis = (self.rll_prob * 0.5 + 0.5) * interp(self.rll_std, [0, 0.9], [1.0, 0.0])
+    l_vis = (self.lll_prob * 0.6667 + 0.3333) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
+    r_vis = (self.rll_prob * 0.6667 + 0.3333) * interp(self.rll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
     lane_trust = clamp(1.1 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
     # make sure we have something with lanelines to work with
-    # otherwise, we will default to laneless, unfortunately
+    # otherwise, we will default to laneless
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
+      # give a boost to closer lanes
+      distance = self.rll_y[0] - self.lll_y[0]
+      left_ratio = 0.25 + (self.rll_y[0] / distance) * 0.5 # if rll_y is big, we are more left
+      l_vis *= left_ratio
+      r_vis *= (1.0 - left_ratio)
       # normalize to 1
       total_prob = l_vis + r_vis
       l_prob = l_vis / total_prob
@@ -175,13 +180,9 @@ class LanePlanner:
       max_lane_width_seen = current_lane_width
       half_len = len(self.lll_y) // 2
 
-      # additional centering force, if needed
-      wiggle_room = (self.lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
-      centering_force = clamp((self.lll_y[0] + self.rll_y[0]) * 0.5, -wiggle_room, wiggle_room) if wiggle_room > 0 else 0.0
-
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
-        # the sharper we turn, the more fuzzy the inside lanes will be, and we want to keep away from that
+        # left/right lane or edge
         right_anchor = min(self.rll_y[index], self.re_y[index])
         left_anchor = max(self.lll_y[index], self.le_y[index])
         # get the raw lane width for this point
@@ -207,7 +208,7 @@ class LanePlanner:
           # closer to right lane
           ideal_point = clamp(ideal_point, left_anchor, right_anchor - use_min_lane_distance)
         # add it to our ultimate path with centering force
-        self.ultimate_path[index] = ideal_point + centering_force
+        self.ultimate_path[index] = ideal_point
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
