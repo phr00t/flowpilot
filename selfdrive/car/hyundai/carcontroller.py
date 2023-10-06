@@ -134,7 +134,7 @@ class CarController:
 
     # if driver is steering at a high angle, cut our steering here
     # this avoids ugly fighting and steering actuator noises
-    if lat_active and steering_amount > 95 and CS.out.steeringPressed:
+    if lat_active and steering_amount >= MAX_ANGLE and CS.out.steeringPressed:
       lat_active = False
 
     if self.frame == 0: # initialize counts from last received count signals
