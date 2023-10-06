@@ -138,6 +138,7 @@ class LateralPlanner:
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2'])
 
     lateralPlan = plan_send.lateralPlan
+    lateralPlan.cProbDEPRECATED = self.LP.tire_stiffness_multiplier
     lateralPlan.modelMonoTime = sm.logMonoTime['modelV2']
     lateralPlan.dPathPoints = self.lat_mpc.x_sol[:, 1].tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()

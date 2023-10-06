@@ -54,6 +54,7 @@ class LanePlanner:
     self.UseModelPath = self.Options.get_bool("UseModelPath")
     self.BigModel = self.Options.get_bool("F3")
     self.updateOptions = 100
+    self.tire_stiffness_multiplier = 1.0
 
     self.lll_prob = 0.
     self.rll_prob = 0.
@@ -172,9 +173,14 @@ class LanePlanner:
       r_prob = r_vis / total_prob
 
       # Find current lanewidth
-      current_lane_width = clamp(abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0])), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
+      raw_current_width = abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0]))
+      current_lane_width = clamp(raw_current_width, MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
       self.lane_width_estimate.update(current_lane_width)
       self.lane_width = self.lane_width_estimate.x
+
+      # should we tighten up steering if the lane is really tight?
+      lane_tightness = min(raw_current_width, self.lane_width)
+      self.tire_stiffness_multiplier = interp(lane_tightness, [2.55, 2.75], [0.59, 1.0])
 
       # track how wide the lanes are getting up ahead
       max_lane_width_seen = current_lane_width
@@ -220,6 +226,7 @@ class LanePlanner:
       if safe_idxs[0] and final_ultimate_path_mix > 0.0:
         path_xyz[:,1] = final_ultimate_path_mix * np.interp(path_t, self.ll_t[safe_idxs], self.ultimate_path[safe_idxs]) + (1 - final_ultimate_path_mix) * path_xyz[:,1]
     else:
+      self.tire_stiffness_multiplier = 1.0
       sLogger.Send("Lanes lost completely! Using model path entirely...")
 
     # apply camera offset after everything

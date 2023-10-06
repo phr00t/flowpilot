@@ -467,11 +467,10 @@ class Controls:
 
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
-    #lp = self.sm['liveParameters']
 
-    # if are lane lines are fuzzy, don't be so jerky with the steering
-    #scale_stiffness = interp(lat_plan.cProbDEPRECATED, [.05, .4], [1.0, 1.5])
-    #self.VM.update_params(scale_stiffness, 13.42)
+    # does our lateral planner want to adjust the tire stiffness dynamically?
+    if lat_plan.cProbDEPRECATED > 0:
+      self.VM.update_params(lat_plan.cProbDEPRECATED, 13.42)
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
