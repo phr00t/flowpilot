@@ -159,6 +159,7 @@ class LanePlanner:
     l_vis = (self.lll_prob * 0.6667 + 0.3333) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
     r_vis = (self.rll_prob * 0.6667 + 0.3333) * interp(self.rll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
     lane_trust = clamp(1.1 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
+    centering_force = 0.0
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
@@ -187,7 +188,6 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # additional centering force, if needed
-      centering_force = 0.0
       wiggle_room = (self.lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
       if wiggle_room > 0:
         if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
@@ -224,7 +224,7 @@ class LanePlanner:
           # closer to right lane
           ideal_point = clamp(ideal_point, left_anchor, right_anchor - use_min_lane_distance)
         # add it to our ultimate path with centering force
-        self.ultimate_path[index] = ideal_point + centering_force
+        self.ultimate_path[index] = ideal_point
 
       # do we want to mix in the model path a little bit if lanelines are going south?
       final_ultimate_path_mix = self.lane_change_multiplier * lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
@@ -239,7 +239,7 @@ class LanePlanner:
       self.tire_stiffness_multiplier = 1.0
       sLogger.Send("Lanes lost completely! Using model path entirely...")
 
-    # apply camera offset after everything
-    path_xyz[:, 1] += CAMERA_OFFSET
+    # apply camera offset and centering force after everything
+    path_xyz[:, 1] += CAMERA_OFFSET + centering_force
 
     return path_xyz
