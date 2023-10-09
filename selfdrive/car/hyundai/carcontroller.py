@@ -202,7 +202,7 @@ class CarController:
     # if we are saying the car is going faster, reduce that a little
     # if we are close to the car, don't add to the velocity
     if l0vstd_multiplier > 0:
-      cutoff_distance = clamp(CS.out.vEgo * 1.75, 30, 60)
+      cutoff_distance = clamp(CS.out.vEgo * 1.75, 35, 60)
       l0vstd_multiplier *= interp(l0d, [0.0, cutoff_distance], [0.0, 0.8])
 
     # finally calculate the final mph diff to use, considering l0vstd multipler above
