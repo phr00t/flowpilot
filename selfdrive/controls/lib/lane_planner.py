@@ -12,9 +12,8 @@ TRAJECTORY_SIZE = 33
 # positive numbers go right
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
-MAX_LANE_DISTANCE = 4.0
+MAX_LANE_DISTANCE = 3.7
 KEEP_MIN_DISTANCE_FROM_LANE = 1.35
-KEEP_MAX_DISTANCE_FROM_LANE = 2.0
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
