@@ -213,10 +213,10 @@ class LanePlanner:
         # model path with very large lanes (that might be splitting into multiple lanes)
         if lane_width > max_lane_width_seen and index <= half_len:
           max_lane_width_seen = lane_width
-        use_min_lane_distance = min(lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
         # how much do we trust this? we want to be seeing both pretty well
         width_trust = min(l_vis, r_vis)
         final_lane_width = min(lane_width, lerp(self.lane_width, lane_width, width_trust))
+        use_min_lane_distance = min(final_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
         # ok, get ideal point from each lane
         ideal_left = left_anchor + final_lane_width * 0.5
         ideal_right = right_anchor - final_lane_width * 0.5
