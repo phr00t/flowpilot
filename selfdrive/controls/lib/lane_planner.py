@@ -181,7 +181,7 @@ class LanePlanner:
 
       # should we tighten up steering if the lane is really tight?
       lane_tightness = min(raw_current_width, self.lane_width)
-      self.tire_stiffness_multiplier = interp(lane_tightness, [2.6, 2.75], [0.59, 1.0])
+      self.tire_stiffness_multiplier = interp(lane_tightness, [2.6, 2.8], [0.59, 1.0])
 
       # track how wide the lanes are getting up ahead
       max_lane_width_seen = current_lane_width
