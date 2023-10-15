@@ -192,10 +192,10 @@ class LanePlanner:
         target_centering = clamp((self.rll_y[0] + self.lll_y[0]) * 0.5, -wiggle_room, wiggle_room)
         if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
           # too close to a left lane, apply full right centering force
-          self.center_force = max(target_centering, min(0.4, KEEP_MIN_DISTANCE_FROM_LANE + self.lll_y[0]))
+          self.center_force = max(target_centering, min(0.3, KEEP_MIN_DISTANCE_FROM_LANE + self.lll_y[0]))
         elif self.rll_y[0] < KEEP_MIN_DISTANCE_FROM_LANE:
           # too close to a right lane, apply full left centering force
-          self.center_force = min(target_centering, max(-0.4, self.rll_y[0] - KEEP_MIN_DISTANCE_FROM_LANE))
+          self.center_force = min(target_centering, max(-0.3, self.rll_y[0] - KEEP_MIN_DISTANCE_FROM_LANE))
         elif target_centering > 0.0:
           # want to center more right
           self.center_force = clamp(self.center_force + target_centering * 0.01, 0.0, target_centering)
