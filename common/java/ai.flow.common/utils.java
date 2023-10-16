@@ -11,7 +11,8 @@ public class utils {
     public enum USE_MODEL_RUNNER {
         ONNX,
         SNPE,
-        TNN
+        TNN,
+        THNEED
     }
     public static boolean F2 = true;
     public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.SNPE;

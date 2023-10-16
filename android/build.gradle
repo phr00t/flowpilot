@@ -23,6 +23,8 @@ android {
 		pickFirst '**/nd4j-native.properties'
 		pickFirst '**/libc++_shared.so'
 		pickFirst 'services.yaml'
+		pickFirst 'lib/arm64-v8a/libthneed.so'
+		pickFirst 'lib/arm64-v8a/libOpenCL.so'
 		// Excluding unnecessary meta-data:
 		exclude 'META-INF/DEPENDENCIES.txt'
 		exclude 'META-INF/DEPENDENCIES'
@@ -58,6 +60,12 @@ android {
 			minifyEnabled false
 			shrinkResources false
 			signingConfig signingConfigs.debug
+		}
+	}
+	externalNativeBuild {
+		cmake {
+			path file('src/main/cpp/CMakeLists.txt')
+			version '3.10.2'
 		}
 	}
 }

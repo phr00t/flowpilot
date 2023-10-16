@@ -4,6 +4,7 @@ import ai.flow.android.sensor.CameraManager;
 import ai.flow.android.sensor.SensorManager;
 import ai.flow.android.vision.ONNXModelRunner;
 import ai.flow.android.vision.SNPEModelRunner;
+import ai.flow.android.vision.THNEEDModelRunner;
 import ai.flow.app.FlowUI;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
@@ -151,6 +152,9 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 				break;
 			case ONNX:
 				model = new ONNXModelRunner(modelPath, useGPU);
+				break;
+			case THNEED:
+				model = new THNEEDModelRunner(modelPath, getApplication());
 				break;
 		}
 
