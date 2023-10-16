@@ -31,7 +31,7 @@ public class THNEEDModelRunner extends ModelRunner {
                                               float[] nav_instructions);
 
     public THNEEDModelRunner(String modelPath, Application context){
-        this.modelPath = modelPath;
+        this.modelPath = modelPath + ".thneed";
         this.context = context;
     }
 
