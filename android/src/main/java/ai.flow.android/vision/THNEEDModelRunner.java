@@ -13,10 +13,7 @@ import ai.flow.modeld.ModelRunner;
 
 public class THNEEDModelRunner extends ModelRunner {
 
-    private Application context;
     String modelPath;
-    Map<String, long[]> shapes = new HashMap<>();
-    float[] outputs;
 
     // native function
     public static native void createStdString(String javaString);
@@ -30,9 +27,8 @@ public class THNEEDModelRunner extends ModelRunner {
                                               float[] nav_features,
                                               float[] nav_instructions);
 
-    public THNEEDModelRunner(String modelPath, Application context){
+    public THNEEDModelRunner(String modelPath){
         this.modelPath = modelPath + ".thneed";
-        this.context = context;
     }
 
     @Override
@@ -42,10 +38,6 @@ public class THNEEDModelRunner extends ModelRunner {
         createStdString(modelPath);
         getArray(CommonModelF3.NET_OUTPUT_SIZE);
         initThneed();
-
-        for (String name : shapes.keySet()) {
-            this.shapes.put(name, Arrays.stream(shapes.get(name)).mapToLong((i) -> (long) i).toArray());
-        }
     }
 
     @Override
