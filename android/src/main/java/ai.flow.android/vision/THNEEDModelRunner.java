@@ -42,13 +42,13 @@ public class THNEEDModelRunner extends ModelRunner {
 
     @Override
     public void run(Map<String, INDArray> inputMap, Map<String, float[]> outputMap) {
-        float[] netOutputs = executeModel(inputMap.get("input_imgs").toFloatVector(),
-                                          inputMap.get("big_input_imgs").toFloatVector(),
-                                          inputMap.get("features_buffer").toFloatVector(),
-                                          inputMap.get("desire").toFloatVector(),
-                                          inputMap.get("traffic_convention").toFloatVector(),
-                                          inputMap.get("nav_features").toFloatVector(),
-                                          inputMap.get("nav_instructions").toFloatVector());
+        float[] netOutputs = executeModel(inputMap.get("input_imgs").data().asFloat(),
+                                          inputMap.get("big_input_imgs").data().asFloat(),
+                                          inputMap.get("features_buffer").data().asFloat(),
+                                          inputMap.get("desire").data().asFloat(),
+                                          inputMap.get("traffic_convention").data().asFloat(),
+                                          inputMap.get("nav_features").data().asFloat(),
+                                          inputMap.get("nav_instructions").data().asFloat());
         System.arraycopy(netOutputs, 0, outputMap.get("outputs"), 0, outputMap.get("outputs").length);
     }
 
