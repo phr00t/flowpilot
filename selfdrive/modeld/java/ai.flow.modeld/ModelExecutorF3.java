@@ -54,11 +54,11 @@ public class ModelExecutorF3 extends ModelExecutor {
 
     public static final Map<String, int[]> inputShapeMap = new HashMap<>();
     public static final Map<String, int[]> outputShapeMap = new HashMap<>();
-    public final INDArray desireNDArr = Nd4j.zeros(desireTensorShape);
-    public final INDArray trafficNDArr = Nd4j.zeros(trafficTensorShape);
-    public final INDArray featuresNDArr = Nd4j.zeros(featureTensorShape);
-    public final INDArray navfeaturesNDArr = Nd4j.zeros(navFeaturesTensorShape);
-    public final INDArray navinstructNDArr = Nd4j.zeros(navInstructionsTensorShape);
+    public INDArray desireNDArr;
+    public INDArray trafficNDArr;
+    public INDArray featuresNDArr;
+    public INDArray navfeaturesNDArr;
+    public INDArray navinstructNDArr;
     public final float[] netOutputs = new float[(int)numElements(outputTensorShape)];
     public final INDArray augmentRot = Nd4j.zeros(3);
     public final INDArray augmentTrans = Nd4j.zeros(3);
@@ -213,6 +213,12 @@ public class ModelExecutorF3 extends ModelExecutor {
             featureTensorShape = new int[] {1, CommonModelF3.HISTORY_BUFFER_LEN, CommonModelF3.FEATURE_LEN };
             desireTensorShape = new int[] {1, CommonModelF3.HISTORY_BUFFER_LEN+1, CommonModelF3.DESIRE_LEN };
         }
+
+        desireNDArr = Nd4j.zeros(desireTensorShape);
+        trafficNDArr = Nd4j.zeros(trafficTensorShape);
+        featuresNDArr = Nd4j.zeros(featureTensorShape);
+        navfeaturesNDArr = Nd4j.zeros(navFeaturesTensorShape);
+        navinstructNDArr = Nd4j.zeros(navInstructionsTensorShape);
 
         ph.createPublishers(Arrays.asList("modelRaw"));
         sh.createSubscribers(Arrays.asList("pulseDesire", "liveCalibration", "lateralPlan"));

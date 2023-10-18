@@ -23,7 +23,7 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             jniconvert.cpp)
+             jniconvert.cpp json11.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -42,14 +42,10 @@ find_library( # Sets the name of the path variable.
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
-add_library(thneed SHARED IMPORTED)
-set_property(TARGET thneed PROPERTY IMPORTED_LOCATION "D:/flowpilot/android/libs/arm64-v8a/libthneed.so")
-add_library(OpenCL SHARED IMPORTED)
-set_property(TARGET OpenCL PROPERTY IMPORTED_LOCATION "D:/flowpilot/android/libs/arm64-v8a/libOpenCL.so")
-
+link_directories(jniconvert PUBLIC "D:/flowpilot/android/libs/arm64-v8a/")
 target_link_libraries( # Specifies the target library.
                        jniconvert
 
                        # Links the target library to the log library
                        # included in the NDK.
-                       thneed OpenCL ${log-lib})
+                       ${log-lib})

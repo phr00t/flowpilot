@@ -154,7 +154,7 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 				model = new ONNXModelRunner(modelPath, useGPU);
 				break;
 			case THNEED:
-				model = new THNEEDModelRunner(modelPath);
+				model = new THNEEDModelRunner(modelPath, getApplication());
 				break;
 		}
 

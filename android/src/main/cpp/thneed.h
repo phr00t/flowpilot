@@ -110,11 +110,9 @@ class Thneed {
     int debug;
     int timestamp;
 
-#ifdef QCOM2
     unique_ptr<GPUMalloc> ram;
     vector<unique_ptr<CachedIoctl> > cmds;
     int fd;
-#endif
 
     // all CL kernels
     void copy_inputs(float **finputs, bool internal=false);

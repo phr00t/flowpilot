@@ -34,7 +34,7 @@ android {
 	defaultConfig {
 		applicationId 'ai.flow.android'
 		minSdkVersion 30
-		targetSdkVersion 30
+		targetSdkVersion 29
 		versionCode 1
 
 		// set app version
@@ -42,7 +42,7 @@ android {
 
 		externalNativeBuild {
 			cmake {
-				cppFlags "-std=c++11"
+				cppFlags "-std=c++17"
 				arguments "-DANDROID_STL=c++_shared"
 			}
 		}

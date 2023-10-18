@@ -14,6 +14,7 @@ import ai.flow.modeld.ModelRunner;
 public class THNEEDModelRunner extends ModelRunner {
 
     String modelPath;
+    Application context;
 
     // native function
     public static native void createStdString(String javaString);
@@ -27,12 +28,14 @@ public class THNEEDModelRunner extends ModelRunner {
                                               float[] nav_features,
                                               float[] nav_instructions);
 
-    public THNEEDModelRunner(String modelPath){
+    public THNEEDModelRunner(String modelPath, Application context){
         this.modelPath = modelPath + ".thneed";
+        this.context = context;
     }
 
     @Override
     public void init(Map<String, int[]> shapes, Map<String, int[]> outputShapes) {
+        //String libPath = context.getApplicationInfo().nativeLibraryDir;
         System.loadLibrary("jniconvert");
 
         createStdString(modelPath);
