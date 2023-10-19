@@ -3,7 +3,7 @@
 #include <string>
 #include <sstream>
 #include <string>
-
+#include <android/log.h>
 #include "thneedmodel.h"
 
 #include <cassert>
@@ -99,12 +99,12 @@ auto p_clSetKernelArg = reinterpret_cast<clSetKernelArg_t>(dlsym(opencl_library,
 
 void hexdump(uint8_t *d, int len) {
     assert((len%4) == 0);
-    printf("  dumping %p len 0x%x\n", d, len);
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG","  dumping %p len 0x%x\n", d, len);
     for (int i = 0; i < len/4; i++) {
-        if (i != 0 && (i%0x10) == 0) printf("\n");
-        printf("%8x ", d[i]);
+        if (i != 0 && (i%0x10) == 0) __android_log_print(ANDROID_LOG_INFO, "JNILOG","\n");
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","%8x ", d[i]);
     }
-    printf("\n");
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG","\n");
 }
 
 extern map<cl_program, string> g_program_source;
@@ -159,7 +159,7 @@ std::string readFileIntoString(const char *filepath) {
 }
 
 void Thneed::load(const char *filename) {
-    printf("Thneed::load: loading from %s\n", filename);
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::load: loading from %s\n", filename);
 
     string buf = readFileIntoString(filename);
     int jsz = *(int *)buf.data();
@@ -183,7 +183,7 @@ void Thneed::load(const char *filename) {
         } else {
             if (mobj["needs_load"].bool_value()) {
                 clbuf = (*p_clCreateBuffer)(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, &buf[ptr], NULL);
-                if (debug >= 1) printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
+                if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","loading %p %d @ 0x%X\n", clbuf, sz, ptr);
                 ptr += sz;
             } else {
                 // TODO: is there a faster way to init zeroed out buffers?
@@ -223,7 +223,7 @@ void Thneed::load(const char *filename) {
             clbuf = (*p_clCreateImage)(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
 #endif
             /*if (clbuf == NULL) {
-                printf("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
                        desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer);
             }*/
             assert(clbuf != NULL);
@@ -234,7 +234,7 @@ void Thneed::load(const char *filename) {
 
     map<string, cl_program> g_programs;
     for (const auto &[name, source] : jdat["programs"].object_items()) {
-        if (debug >= 1) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
+        if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","building %s with size %zu\n", name.c_str(), source.string_value().size());
         g_programs[name] = cl_program_from_source(context, device_id, source.string_value());
     }
 
@@ -244,11 +244,11 @@ void Thneed::load(const char *filename) {
         cl_mem aa = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
         input_clmem.push_back(aa);
         input_sizes.push_back(sz);
-        printf("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
 
         cl_int cl_err;
         void *ret = (*p_clEnqueueMapBuffer)(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &cl_err);
-        //if (cl_err != CL_SUCCESS) printf("clError: %s map %p %d\n", cl_get_error_string(cl_err), aa, sz);
+        //if (cl_err != CL_SUCCESS) __android_log_print(ANDROID_LOG_INFO, "JNILOG","clError: %s map %p %d\n", cl_get_error_string(cl_err), aa, sz);
         assert(cl_err == CL_SUCCESS);
         inputs.push_back(ret);
     }
@@ -256,7 +256,7 @@ void Thneed::load(const char *filename) {
     for (auto &obj : jdat["outputs"].array_items()) {
         auto mobj = obj.object_items();
         int sz = mobj["size"].int_value();
-        printf("Thneed::save: adding output with size %d\n", sz);
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::save: adding output with size %d\n", sz);
         // TODO: support multiple outputs
         output = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
         assert(output != NULL);
@@ -265,7 +265,7 @@ void Thneed::load(const char *filename) {
     for (auto &obj : jdat["binaries"].array_items()) {
         string name = obj["name"].string_value();
         size_t length = obj["length"].int_value();
-        if (debug >= 1) printf("binary %s with size %zu\n", name.c_str(), length);
+        if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","binary %s with size %zu\n", name.c_str(), length);
         g_programs[name] = cl_program_from_binary(context, device_id, (const uint8_t*)&buf[ptr], length);
         ptr += length;
     }
@@ -317,7 +317,7 @@ int __ioctl(int filedes, unsigned long request, void *argp) {
         struct kgsl_drawctxt_create *create = (struct kgsl_drawctxt_create *)argp;
         create->flags &= ~KGSL_CONTEXT_PRIORITY_MASK;
         create->flags |= 6 << KGSL_CONTEXT_PRIORITY_SHIFT;   // priority from 1-15, 1 is max priority
-        printf("IOCTL_KGSL_DRAWCTXT_CREATE: creating context with flags 0x%x\n", create->flags);
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","IOCTL_KGSL_DRAWCTXT_CREATE: creating context with flags 0x%x\n", create->flags);
     }
 
     if (thneed != NULL) {
@@ -329,7 +329,7 @@ int __ioctl(int filedes, unsigned long request, void *argp) {
                 thneed->cmds.push_back(unique_ptr<CachedCommand>(new CachedCommand(thneed, cmd)));
             }
             if (thneed->debug >= 1) {
-                printf("IOCTL_KGSL_GPU_COMMAND(%2zu): flags: 0x%lx    context_id: %u  timestamp: %u  numcmds: %d  numobjs: %d\n",
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","IOCTL_KGSL_GPU_COMMAND(%2zu): flags: 0x%lx    context_id: %u  timestamp: %u  numcmds: %d  numobjs: %d\n",
                        thneed->cmds.size(),
                        cmd->flags,
                        cmd->context_id, cmd->timestamp, cmd->numcmds, cmd->numobjs);
@@ -339,11 +339,11 @@ int __ioctl(int filedes, unsigned long request, void *argp) {
             struct kgsl_gpuobj_sync_obj *objs = (struct kgsl_gpuobj_sync_obj *)(cmd->objs);
 
             if (thneed->debug >= 2) {
-                printf("IOCTL_KGSL_GPUOBJ_SYNC count:%d ", cmd->count);
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","IOCTL_KGSL_GPUOBJ_SYNC count:%d ", cmd->count);
                 for (int i = 0; i < cmd->count; i++) {
-                    printf(" -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
+                    __android_log_print(ANDROID_LOG_INFO, "JNILOG"," -- offset:0x%lx len:0x%lx id:%d op:%d  ", objs[i].offset, objs[i].length, objs[i].id, objs[i].op);
                 }
-                printf("\n");
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","\n");
             }
 
             if (thneed->record) {
@@ -352,13 +352,13 @@ int __ioctl(int filedes, unsigned long request, void *argp) {
         } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
             struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
             if (thneed->debug >= 1) {
-                printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
                        cmd->context_id, cmd->timestamp, cmd->timeout);
             }
         } else if (request == IOCTL_KGSL_SETPROPERTY) {
             if (thneed->debug >= 1) {
                 struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
-                printf("IOCTL_KGSL_SETPROPERTY: 0x%x sizebytes:%zu\n", prop->type, prop->sizebytes);
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","IOCTL_KGSL_SETPROPERTY: 0x%x sizebytes:%zu\n", prop->type, prop->sizebytes);
                 if (thneed->debug >= 2) {
                     hexdump((uint8_t *)prop->value, prop->sizebytes);
                     if (prop->type == KGSL_PROP_PWR_CONSTRAINT) {
@@ -373,14 +373,14 @@ int __ioctl(int filedes, unsigned long request, void *argp) {
             // this happens
         } else {
             if (thneed->debug >= 1) {
-                printf("other ioctl %lx\n", request);
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","other ioctl %lx\n", request);
             }
         }
     }
 
     int ret = ioctl(filedes, request, argp);
     // NOTE: This error message goes into stdout and messes up pyenv
-    // if (ret != 0) printf("ioctl returned %d with errno %d\n", ret, errno);
+    // if (ret != 0) __android_log_print(ANDROID_LOG_INFO, "JNILOG","ioctl returned %d with errno %d\n", ret, errno);
     return ret;
 }
 
@@ -465,7 +465,7 @@ void CachedCommand::exec() {
     cache.timestamp = ++thneed->timestamp;
     int ret = __ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
-    if (thneed->debug >= 1) printf("CachedCommand::exec got %d\n", ret);
+    if (thneed->debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","CachedCommand::exec got %d\n", ret);
 
     if (thneed->debug >= 2) {
         for (auto &it : kq) {
@@ -488,7 +488,7 @@ Thneed::Thneed(bool do_clinit, cl_context _context) {
     timestamp = -1;
     g_thneed = this;
     char *thneed_debug_env = getenv("THNEED_DEBUG");
-    debug = (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
+    debug = 1; // (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
 }
 
 void Thneed::wait() {
@@ -501,7 +501,7 @@ void Thneed::wait() {
     int wret = __ioctl(fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
     uint64_t te = nanos_since_boot();
 
-    if (debug >= 1) printf("wait %d after %lu us\n", wret, (te-tb)/1000);
+    if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","wait %d after %lu us\n", wret, (te-tb)/1000);
 }
 
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
@@ -515,7 +515,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     int i = 0;
     for (auto &it : cmds) {
         ++i;
-        if (debug >= 1) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
+        if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
         it->exec();
         if ((i == cmds.size()) || slow) wait();
     }
@@ -525,12 +525,12 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 
     if (debug >= 1) {
         te = nanos_since_boot();
-        printf("model exec in %lu us\n", (te-tb)/1000);
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","model exec in %lu us\n", (te-tb)/1000);
     }
 }
 
 void Thneed::stop() {
-    //printf("Thneed::stop: recorded %lu commands\n", cmds.size());
+    //__android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::stop: recorded %lu commands\n", cmds.size());
     record = false;
 }
 
@@ -540,11 +540,11 @@ void Thneed::clinit() {
     //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
     cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0, 0};
     command_queue = CL_CHECK_ERR((*p_clCreateCommandQueueWithProperties)(context, device_id, props, &err));
-    printf("Thneed::clinit done\n");
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::clinit done\n");
 }
 
 cl_int Thneed::clexec() {
-    if (debug >= 1) printf("Thneed::clexec: running %lu queued kernels\n", kq.size());
+    if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::clexec: running %lu queued kernels\n", kq.size());
     for (auto &k : kq) {
         if (record) ckq.push_back(k);
         cl_int ret = k->exec();
@@ -555,7 +555,7 @@ cl_int Thneed::clexec() {
 
 void Thneed::copy_inputs(float **finputs, bool internal) {
     for (int idx = 0; idx < inputs.size(); ++idx) {
-        if (debug >= 1) printf("copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
+        if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
 
         if (internal) {
             // if it's internal, using memcpy is fine since the buffer sync is cached in the ioctl layer
@@ -570,10 +570,10 @@ void Thneed::copy_output(float *foutput) {
     if (output != NULL) {
         size_t sz;
         (*p_clGetMemObjectInfo)(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-        if (debug >= 1) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
+        if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","copying %lu for output %p -> %p\n", sz, output, foutput);
         CL_CHECK((*p_clEnqueueReadBuffer)(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL));
     } else {
-        printf("CAUTION: model output is NULL, does it have no outputs?\n");
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","CAUTION: model output is NULL, does it have no outputs?\n");
     }
 }
 
@@ -618,7 +618,7 @@ int CLQueuedKernel::get_arg_num(const char *search_arg_name) {
     for (int i = 0; i < num_args; i++) {
         if (arg_names[i] == search_arg_name) return i;
     }
-    printf("failed to find %s in %s\n", search_arg_name, name.c_str());
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG","failed to find %s in %s\n", search_arg_name, name.c_str());
     assert(false);
 }
 
@@ -655,37 +655,37 @@ cl_int CLQueuedKernel::exec() {
 }
 
 void CLQueuedKernel::debug_print(bool verbose) {
-    printf("%p %56s -- ", kernel, name.c_str());
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG","%p %56s -- ", kernel, name.c_str());
     for (int i = 0; i < work_dim; i++) {
-        printf("%4zu ", global_work_size[i]);
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","%4zu ", global_work_size[i]);
     }
-    printf(" -- ");
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG"," -- ");
     for (int i = 0; i < work_dim; i++) {
-        printf("%4zu ", local_work_size[i]);
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","%4zu ", local_work_size[i]);
     }
-    printf("\n");
+    __android_log_print(ANDROID_LOG_INFO, "JNILOG","\n");
 
     if (verbose) {
         for (int i = 0; i < num_args; i++) {
             string arg = args[i];
-            printf("  %s %s", arg_types[i].c_str(), arg_names[i].c_str());
+            __android_log_print(ANDROID_LOG_INFO, "JNILOG","  %s %s", arg_types[i].c_str(), arg_names[i].c_str());
             void *arg_value = (void*)arg.data();
             int arg_size = arg.size();
             if (arg_size == 0) {
-                printf(" (size) %d", args_size[i]);
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG"," (size) %d", args_size[i]);
             } else if (arg_size == 1) {
-                printf(" = %d", *((char*)arg_value));
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG"," = %d", *((char*)arg_value));
             } else if (arg_size == 2) {
-                printf(" = %d", *((short*)arg_value));
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG"," = %d", *((short*)arg_value));
             } else if (arg_size == 4) {
                 if (arg_types[i] == "float") {
-                    printf(" = %f", *((float*)arg_value));
+                    __android_log_print(ANDROID_LOG_INFO, "JNILOG"," = %f", *((float*)arg_value));
                 } else {
-                    printf(" = %d", *((int*)arg_value));
+                    __android_log_print(ANDROID_LOG_INFO, "JNILOG"," = %d", *((int*)arg_value));
                 }
             } else if (arg_size == 8) {
                 cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
-                printf(" = %p", val);
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG"," = %p", val);
                 if (val != NULL) {
                     cl_mem_object_type obj_type;
                     (*p_clGetMemObjectInfo)(val, CL_MEM_TYPE, sizeof(obj_type), &obj_type, NULL);
@@ -709,15 +709,15 @@ void CLQueuedKernel::debug_print(bool verbose) {
                         (*p_clGetImageInfo)(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
                         size_t sz = 0;
                         if (buf != NULL) (*p_clGetMemObjectInfo)(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-                        printf(" image %zu x %zu rp %zu @ %p buffer %zu", width, height, row_pitch, buf, sz);
+                        __android_log_print(ANDROID_LOG_INFO, "JNILOG"," image %zu x %zu rp %zu @ %p buffer %zu", width, height, row_pitch, buf, sz);
                     } else {
                         size_t sz;
                         (*p_clGetMemObjectInfo)(val, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-                        printf(" buffer %zu", sz);
+                        __android_log_print(ANDROID_LOG_INFO, "JNILOG"," buffer %zu", sz);
                     }
                 }
             }
-            printf("\n");
+            __android_log_print(ANDROID_LOG_INFO, "JNILOG","\n");
         }
     }
 }
