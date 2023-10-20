@@ -22,8 +22,6 @@ map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
 
-#define QCOM2
-
 Thneed *g_thneed = NULL;
 int g_fd = -1;
 
@@ -43,6 +41,7 @@ typedef cl_context (*clCreateContext_t)(const cl_context_properties *, cl_uint,c
 typedef	cl_command_queue (*clCreateCommandQueueWithProperties_t)(	cl_context , 	cl_device_id , 	const 	cl_queue_properties * , 	cl_int * );
 typedef	cl_int (*clEnqueueWriteBuffer_t)(	cl_command_queue , 	cl_mem , 	cl_bool , 	size_t , 	size_t , 	const void * , 	cl_uint , 	const 	cl_event * , 	cl_event * );
 typedef	cl_int (*clEnqueueReadBuffer_t)(	cl_command_queue , 	cl_mem , 	cl_bool , 	size_t , 	size_t , 	void * , 	cl_uint , 	const 	cl_event * , 	cl_event * );
+typedef cl_int (*clReleaseMemObject_t)(cl_mem);
 
 // Load the OpenCL library
 void* opencl_library = dlopen("libOpenCL.so", RTLD_LAZY | RTLD_LOCAL);
@@ -63,6 +62,7 @@ auto p_clCreateContext = reinterpret_cast<clCreateContext_t>(dlsym(opencl_librar
 auto p_clCreateCommandQueueWithProperties = reinterpret_cast<clCreateCommandQueueWithProperties_t>(dlsym(opencl_library,"clCreateCommandQueueWithProperties"));
 auto p_clEnqueueWriteBuffer = reinterpret_cast<clEnqueueWriteBuffer_t>(dlsym(opencl_library,"clEnqueueWriteBuffer"));
 auto p_clEnqueueReadBuffer = reinterpret_cast<clEnqueueReadBuffer_t>(dlsym(opencl_library,"clEnqueueReadBuffer"));
+auto p_clReleaseMemObject = reinterpret_cast<clReleaseMemObject_t>(dlsym(opencl_library,"clReleaseMemObject"));
 
 // Define more function pointer types
 typedef cl_kernel (*clCreateKernel_t)(cl_program, const char *, cl_int *);
@@ -144,6 +144,43 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
     return nullptr;
 }
 
+#include <dirent.h>
+#include <unistd.h>
+#include <iostream>
+
+cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
+    g_args_size[make_pair(kernel, arg_index)] = arg_size;
+    if (arg_value != NULL) {
+        g_args[make_pair(kernel, arg_index)] = string((char*)arg_value, arg_size);
+    } else {
+        g_args[make_pair(kernel, arg_index)] = string("");
+    }
+    cl_int ret = (*p_clSetKernelArg)(kernel, arg_index, arg_size, arg_value);
+    return ret;
+}
+
+void getGPUMemoryAllocationFD() {
+    DIR* dir = opendir("/proc/self/fd");
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::string fdPath = std::string("/proc/self/fd/") + entry->d_name;
+        char linkTarget[256];
+        ssize_t len = readlink(fdPath.c_str(), linkTarget, sizeof(linkTarget)-1);
+        if (len != -1) {
+            linkTarget[len] = '\0';
+            if (std::string(linkTarget) == "/dev/kgsl-3d0") {
+                g_fd = std::stoi(entry->d_name);
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG", "File descriptor found for GPU allocation: %d", g_fd);
+                closedir(dir);
+                return;
+            }
+        }
+    }
+
+    // hmm, didn't find anything...
+    closedir(dir);
+}
+
 std::string readFileIntoString(const char *filepath) {
     std::ifstream ifs(filepath);
     std::stringstream buffer;
@@ -198,7 +235,7 @@ void Thneed::load(const char *filename) {
             desc.buffer = clbuf;
 #else
             // TODO: we are creating unused buffers on PC
-            clReleaseMemObject(clbuf);
+            (*p_clReleaseMemObject)(clbuf);
 #endif
             cl_image_format format = {0};
             format.image_channel_order = CL_RGBA;
@@ -208,9 +245,9 @@ void Thneed::load(const char *filename) {
 
 #ifndef QCOM2
             if (mobj["needs_load"].bool_value()) {
-                clbuf = clCreateImage(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
+                clbuf = (*p_clCreateImage)(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
             } else {
-                clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+                clbuf = (*p_clCreateImage)(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
             }
 #else
             clbuf = (*p_clCreateImage)(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
@@ -295,16 +332,44 @@ void Thneed::load(const char *filename) {
     (*p_clFinish)(command_queue);
 }
 
-// *********** ioctl interceptor ***********
+// *********** Thneed ***********
 
-extern "C" {
+#ifndef QCOM2
+
+Thneed::Thneed(bool do_clinit, cl_context _context) {
+    context = _context;
+    if (do_clinit) clinit();
+    char *thneed_debug_env = getenv("THNEED_DEBUG");
+    debug = (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
+}
+
+void Thneed::execute(float **finputs, float *foutput, bool slow) {
+    uint64_t tb, te;
+    if (debug >= 1) tb = nanos_since_boot();
+
+    // ****** copy inputs
+    copy_inputs(finputs);
+
+    // ****** run commands
+    clexec();
+
+    // ****** copy outputs
+    copy_output(foutput);
+
+    if (debug >= 1) {
+        te = nanos_since_boot();
+        printf("model exec in %lu us\n", (te-tb)/1000);
+    }
+}
+
+#else
 
 int __ioctl(int filedes, unsigned long request, void *argp) {
     request &= 0xFFFFFFFF;  // needed on QCOM2
     Thneed *thneed = g_thneed;
 
     // save the fd
-    if (request == IOCTL_KGSL_GPUOBJ_ALLOC) g_fd = filedes;
+    //if (request == IOCTL_KGSL_GPUOBJ_ALLOC) g_fd = filedes;
 
     // note that this runs always, even without a thneed object
     if (request == IOCTL_KGSL_DRAWCTXT_CREATE) {
@@ -374,7 +439,7 @@ int __ioctl(int filedes, unsigned long request, void *argp) {
 
     int ret = ioctl(filedes, request, argp);
     // NOTE: This error message goes into stdout and messes up pyenv
-    // if (ret != 0) __android_log_print(ANDROID_LOG_INFO, "JNILOG","ioctl returned %d with errno %d\n", ret, errno);
+    if (ret != 0) __android_log_print(ANDROID_LOG_INFO, "JNILOG","ioctl returned %d with errno %d\n", ret, errno);
     return ret;
 }
 
@@ -470,21 +535,6 @@ void CachedCommand::exec() {
     assert(ret == 0);
 }
 
-// *********** Thneed ***********
-
-Thneed::Thneed(bool do_clinit, cl_context _context) {
-    // TODO: QCOM2 actually requires a different context
-    //context = _context;
-    if (do_clinit) clinit();
-    assert(g_fd != -1);
-    fd = g_fd;
-    ram = make_unique<GPUMalloc>(0x80000, fd);
-    timestamp = -1;
-    g_thneed = this;
-    char *thneed_debug_env = getenv("THNEED_DEBUG");
-    debug = 1; // (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
-}
-
 void Thneed::wait() {
     struct kgsl_device_waittimestamp_ctxtid wait;
     wait.context_id = context_id;
@@ -496,6 +546,20 @@ void Thneed::wait() {
     uint64_t te = nanos_since_boot();
 
     if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","wait %d after %lu us\n", wret, (te-tb)/1000);
+}
+
+Thneed::Thneed(bool do_clinit, cl_context _context) {
+    // TODO: QCOM2 actually requires a different context
+    //context = _context;
+    if (do_clinit) clinit();
+    getGPUMemoryAllocationFD(); // this should set g_fd
+    assert(g_fd != -1);
+    fd = g_fd;
+    ram = make_unique<GPUMalloc>(0x80000, fd);
+    timestamp = -1;
+    g_thneed = this;
+    //char *thneed_debug_env = getenv("THNEED_DEBUG");
+    debug = 1; // (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
 }
 
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
@@ -522,6 +586,8 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
         __android_log_print(ANDROID_LOG_INFO, "JNILOG","model exec in %lu us\n", (te-tb)/1000);
     }
 }
+
+#endif
 
 void Thneed::stop() {
     //__android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::stop: recorded %lu commands\n", cmds.size());
@@ -714,17 +780,6 @@ void CLQueuedKernel::debug_print(bool verbose) {
             __android_log_print(ANDROID_LOG_INFO, "JNILOG","\n");
         }
     }
-}
-
-cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
-    g_args_size[make_pair(kernel, arg_index)] = arg_size;
-    if (arg_value != NULL) {
-        g_args[make_pair(kernel, arg_index)] = string((char*)arg_value, arg_size);
-    } else {
-        g_args[make_pair(kernel, arg_index)] = string("");
-    }
-    cl_int ret = (*p_clSetKernelArg)(kernel, arg_index, arg_size, arg_value);
-    return ret;
 }
 
 ThneedModel::ThneedModel(const std::string path, float *_output, size_t _output_size, int runtime, bool luse_tf8, cl_context context) {
