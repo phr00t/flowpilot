@@ -196,6 +196,13 @@ public class ModelExecutorF2 extends ModelExecutor {
         wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, false);
         wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, !utils.F2, true);
 
+        // wait for a frame
+        while (msgFrameBuffer == null) {
+            try {
+                Thread.sleep(10);
+            } catch (Exception e) {}
+        }
+
         boolean rgb;
         if (getUseGPU()){
             rgb = msgFrameBuffer.getEncoding() == Definitions.FrameBuffer.Encoding.RGB;

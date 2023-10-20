@@ -2,40 +2,30 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-#include <string>
 #include <android/log.h>
-#include "thneedmodel.h"
-
+#include <dlfcn.h>
+#include <sys/mman.h>
 #include <cassert>
+#include <cerrno>
 #include <cstring>
 #include <map>
 
+#include "thneedmodel.h"
 #include "clutil.h"
 #include "timing.h"
-
 #include "json11.hpp"
 #include "util.h"
+#include <dlfcn.h>
+#include "CL/cl.h"
 
 map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
 
-#include <dlfcn.h>
-#include <sys/mman.h>
-
-#include <cassert>
-#include <cerrno>
-#include <cstring>
-#include <map>
-#include <string>
-
 #define QCOM2
 
 Thneed *g_thneed = NULL;
 int g_fd = -1;
-
-#include <dlfcn.h>
-#include "CL/cl.h"
 
 // Define function pointer types
 typedef cl_program (*clCreateProgramWithSource_t)(cl_context, cl_uint, const char **, const size_t *, cl_int *);
@@ -96,6 +86,9 @@ auto p_clSetKernelArg = reinterpret_cast<clSetKernelArg_t>(dlsym(opencl_library,
 // Now you can use these function pointers as if they were the original functions
 // For example:
 // cl_context context = (*p_clCreateContext)(NULL, 1, &device_id, NULL, NULL, &err);
+
+#undef assert
+#define assert(x) ((x) ? __assert_no_op : (void)__android_log_print(ANDROID_LOG_ERROR, "ASSERT", "Assert failed: %s", #x))
 
 void hexdump(uint8_t *d, int len) {
     assert((len%4) == 0);
@@ -259,7 +252,8 @@ void Thneed::load(const char *filename) {
         __android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::save: adding output with size %d\n", sz);
         // TODO: support multiple outputs
         output = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
-        assert(output != NULL);
+        if (output == NULL)
+            __android_log_print(ANDROID_LOG_INFO, "JNILOG","Thneed::save: output was null!");
     }
 
     for (auto &obj : jdat["binaries"].array_items()) {

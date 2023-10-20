@@ -247,6 +247,13 @@ public class ModelExecutorF3 extends ModelExecutor {
         wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
         wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
 
+        // wait for a frame
+        while (msgFrameBuffer == null) {
+            try {
+                Thread.sleep(10);
+            } catch (Exception e) {}
+        }
+
         // TODO:Clean this shit.
         boolean rgb;
         if (getUseGPU()){

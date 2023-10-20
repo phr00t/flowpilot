@@ -32,7 +32,7 @@ add_library( # Sets the name of the library.
 # completing its build.
 
 find_library( # Sets the name of the path variable.
-              log-lib
+             log-lib
 
               # Specifies the name of the NDK library that
               # you want CMake to locate.
@@ -42,7 +42,6 @@ find_library( # Sets the name of the path variable.
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
-link_directories(jniconvert PUBLIC "D:/flowpilot/android/libs/arm64-v8a/")
 target_link_libraries( # Specifies the target library.
                        jniconvert
 
