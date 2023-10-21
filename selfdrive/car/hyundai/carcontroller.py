@@ -71,7 +71,7 @@ class CarController:
     self.frame = 0
     self.Options = Params()
     self.usingAccel = self.Options.get_bool("UseAccel")
-    self.usingDistSpeed = False #self.Options.get_bool("UseDistSpeed")
+    self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
     self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
     self.lead_accel_accum = 0.0
@@ -213,17 +213,17 @@ class CarController:
       # ok, start averaging this distance value
       self.lead_distance_hist.append(l0d)
       # if we've got enough data to calculate an average distance, do so now
-      if len(self.lead_distance_hist) > 40:
+      if len(self.lead_distance_hist) > 30:
         self.lead_distance_distavg.append(statistics.fmean(reject_outliers(self.lead_distance_hist)))
         self.lead_distance_times.append(datetime.datetime.now())
         self.lead_distance_hist.pop(0)
         # do we have enough distances over time to get a distspeed estimate?
-        if len(self.lead_distance_distavg) > 50:
+        if len(self.lead_distance_distavg) > 60:
           time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
           dist_diff = self.lead_distance_distavg[-1] - self.lead_distance_distavg[0]
           self.lead_distance_distavg.pop(0)
           self.lead_distance_times.pop(0)
-          l0v_distval_mph = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, lead_vdiff_mph - 12, lead_vdiff_mph + 12)
+          l0v_distval_mph = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, lead_vdiff_mph - 15, lead_vdiff_mph + 15)
           # reduce confidence of large values different from model's values
           difference_factor = clamp(1.0 - ((abs(l0v_distval_mph - lead_vdiff_mph) / 15.0) ** 1.5), 0.0, 1.0)
           if difference_factor > 0:
@@ -296,7 +296,7 @@ class CarController:
     # get option updates
     if self.frame % 100 == 0:
       self.usingAccel = self.Options.get_bool("UseAccel")
-      #self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
+      self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
       self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
     if self.usingAccel and (avg_accel < 8.0 or stoplinesp > 0.7) and clu11_speed < 45:
@@ -361,7 +361,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " la" + "{:.2f}".format(self.lead_accel_accum) + " vS" + "{:.2f}".format(l0vstd) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " dV" + "{:.2f}".format(l0v_distval_mph) + " vS" + "{:.2f}".format(l0vstd) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
