@@ -231,31 +231,19 @@ void Thneed::load(const char *filename) {
             desc.image_height = mobj["height"].int_value();
             desc.image_row_pitch = mobj["row_pitch"].int_value();
             assert(sz == desc.image_height*desc.image_row_pitch);
-#ifdef QCOM2
             desc.buffer = clbuf;
-#else
-            // TODO: we are creating unused buffers on PC
-            (*p_clReleaseMemObject)(clbuf);
-#endif
             cl_image_format format = {0};
             format.image_channel_order = CL_RGBA;
             format.image_channel_data_type = mobj["float32"].bool_value() ? CL_FLOAT : CL_HALF_FLOAT;
 
             cl_int errcode;
 
-#ifndef QCOM2
-            if (mobj["needs_load"].bool_value()) {
-                clbuf = (*p_clCreateImage)(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
-            } else {
-                clbuf = (*p_clCreateImage)(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
-            }
-#else
             clbuf = (*p_clCreateImage)(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
-#endif
-            /*if (clbuf == NULL) {
-                __android_log_print(ANDROID_LOG_INFO, "JNILOG","clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
+
+            if (clbuf == NULL) {
+                __android_log_print(ANDROID_LOG_INFO, "JNILOG","clError: %d create image %zux%zu rp %zu with buffer %p\n", errcode,
                        desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer);
-            }*/
+            }
             assert(clbuf != NULL);
         }
 
@@ -339,8 +327,7 @@ void Thneed::load(const char *filename) {
 Thneed::Thneed(bool do_clinit, cl_context _context) {
     context = _context;
     if (do_clinit) clinit();
-    char *thneed_debug_env = getenv("THNEED_DEBUG");
-    debug = (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
+    debug = 1; //(thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
 }
 
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
@@ -441,8 +428,6 @@ int __ioctl(int filedes, unsigned long request, void *argp) {
     // NOTE: This error message goes into stdout and messes up pyenv
     if (ret != 0) __android_log_print(ANDROID_LOG_INFO, "JNILOG","ioctl returned %d with errno %d\n", ret, errno);
     return ret;
-}
-
 }
 
 // *********** GPUMalloc ***********
@@ -615,7 +600,7 @@ cl_int Thneed::clexec() {
 
 void Thneed::copy_inputs(float **finputs, bool internal) {
     for (int idx = 0; idx < inputs.size(); ++idx) {
-        if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
+        if (debug >= 1) __android_log_print(ANDROID_LOG_INFO, "JNILOG","copying idx:%d %lu -- %p -> %p (cl %p)\n", idx, input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
 
         if (internal) {
             // if it's internal, using memcpy is fine since the buffer sync is cached in the ioctl layer
@@ -868,6 +853,8 @@ extern "C" {
         thneed = new ThneedModel(*pathString, outputs, output_len, 0, false, NULL);
     }
 
+    float** input_bufs;
+
     JNIEXPORT jfloatArray JNICALL Java_ai_flow_android_vision_THNEEDModelRunner_executeModel(JNIEnv *env, jobject obj,
                                                                jfloatArray input_imgs,
                                                                jfloatArray big_input_imgs,
@@ -894,27 +881,24 @@ extern "C" {
         jfloat *nav_features_buf = env->GetFloatArrayElements(nav_features, 0);
         jfloat *nav_instructions_buf = env->GetFloatArrayElements(nav_instructions, 0);
 
-        if (inputsSet) {
-            thneed->setInputBuffer("input_imgs", input_imgs_buf, input_imgs_len);
-            thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, big_input_imgs_len);
-            thneed->setInputBuffer("features_buffer", features_buffer_buf, features_buffer_len);
-            thneed->setInputBuffer("desire", desire_buf, desire_len);
-            thneed->setInputBuffer("traffic_convention", traffic_convention_buf, traffic_convention_len);
-            thneed->setInputBuffer("nav_features", nav_features_buf, nav_features_len);
-            thneed->setInputBuffer("nav_instructions", nav_instructions_buf, nav_instructions_len);
-        } else {
-            thneed->addInput("input_imgs", input_imgs_buf, input_imgs_len);
-            thneed->addInput("big_input_imgs", big_input_imgs_buf, big_input_imgs_len);
-            thneed->addInput("features_buffer", features_buffer_buf, features_buffer_len);
-            thneed->addInput("desire", desire_buf, desire_len);
-            thneed->addInput("traffic_convention", traffic_convention_buf, traffic_convention_len);
-            thneed->addInput("nav_features", nav_features_buf, nav_features_len);
-            thneed->addInput("nav_instructions", nav_instructions_buf, nav_instructions_len);
-            inputsSet = true;
+        if (inputsSet == false) {
+            input_bufs = new float*[7]; // 7 inputs
+            input_bufs[0] = new float[input_imgs_len];
+            input_bufs[1] = new float[big_input_imgs_len];
+            input_bufs[2] = new float[features_buffer_len];
+            input_bufs[3] = new float[desire_len];
+            input_bufs[4] = new float[traffic_convention_len];
+            input_bufs[5] = new float[nav_features_len];
+            input_bufs[6] = new float[nav_instructions_len];
         }
 
-        // ok execute model
-        thneed->execute();
+        memcpy(input_bufs[0], input_imgs_buf, input_imgs_len * sizeof(float));
+        memcpy(input_bufs[1], big_input_imgs_buf, big_input_imgs_len * sizeof(float));
+        memcpy(input_bufs[2], features_buffer_buf, features_buffer_len * sizeof(float));
+        memcpy(input_bufs[3], desire_buf, desire_len * sizeof(float));
+        memcpy(input_bufs[4], traffic_convention_buf, traffic_convention_len * sizeof(float));
+        memcpy(input_bufs[5], nav_features_buf, nav_features_len * sizeof(float));
+        memcpy(input_bufs[6], nav_instructions_buf, nav_instructions_len * sizeof(float));
 
         // When done, release the memory
         env->ReleaseFloatArrayElements(input_imgs, input_imgs_buf, 0);
@@ -924,6 +908,20 @@ extern "C" {
         env->ReleaseFloatArrayElements(traffic_convention, traffic_convention_buf, 0);
         env->ReleaseFloatArrayElements(nav_features, nav_features_buf, 0);
         env->ReleaseFloatArrayElements(nav_instructions, nav_instructions_buf, 0);
+
+        if (inputsSet == false) {
+            thneed->addInput("input_imgs", input_bufs[0], input_imgs_len);
+            thneed->addInput("big_input_imgs", input_bufs[1], big_input_imgs_len);
+            thneed->addInput("features_buffer", input_bufs[2], features_buffer_len);
+            thneed->addInput("desire", input_bufs[3], desire_len);
+            thneed->addInput("traffic_convention", input_bufs[4], traffic_convention_len);
+            thneed->addInput("nav_features", input_bufs[5], nav_features_len);
+            thneed->addInput("nav_instructions", input_bufs[6], nav_instructions_len);
+            inputsSet = true;
+        }
+
+        // ok execute model
+        thneed->execute();
 
         // get the outputs
         jfloatArray result = env->NewFloatArray(output_len);

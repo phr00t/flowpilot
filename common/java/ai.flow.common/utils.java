@@ -14,8 +14,8 @@ public class utils {
         TNN,
         THNEED
     }
-    public static boolean F2 = true;
-    public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.THNEED;
+    public static boolean F2 = false;
+    public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.SNPE;
     public static boolean getBoolEnvVar(String key) {
         String val = System.getenv(key);
         boolean ret = false;
