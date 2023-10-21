@@ -18,6 +18,8 @@
 #include <dlfcn.h>
 #include "CL/cl.h"
 
+#ifndef USE_PRECOMPILED
+
 map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
@@ -766,6 +768,8 @@ void CLQueuedKernel::debug_print(bool verbose) {
         }
     }
 }
+
+#endif // USE_PRECOMPILED
 
 ThneedModel::ThneedModel(const std::string path, float *_output, size_t _output_size, int runtime, bool luse_tf8, cl_context context) {
     thneed = new Thneed(true, context);

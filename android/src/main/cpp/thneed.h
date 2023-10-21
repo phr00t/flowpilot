@@ -15,6 +15,7 @@
 #include "msm_kgsl.h"
 
 #define QCOM2
+#define USE_PRECOMPILED
 
 using namespace std;
 
