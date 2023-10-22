@@ -36,7 +36,7 @@ public class THNEEDModelRunner extends ModelRunner {
     @Override
     public void init(Map<String, int[]> shapes, Map<String, int[]> outputShapes) {
         //String libPath = context.getApplicationInfo().nativeLibraryDir;
-        //System.loadLibrary("stdc++");
+        System.loadLibrary("stdc++");
         System.loadLibrary("thneed");
         System.loadLibrary("jniconvert");
 
