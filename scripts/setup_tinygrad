@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd ~
+
 apt update
 
 git clone https://github.com/KhronosGroup/OpenCL-Headers.git
