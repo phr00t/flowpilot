@@ -10,7 +10,7 @@ mv OpenCL-Headers/CL /usr/include/
 apt install python-dev
 apt install libboost-python-dev
 
-export LD_LIBRARY_PATH=/system/vendor/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH
 
 git clone https://github.com/inducer/pyopencl.git
 cd pyopencl
