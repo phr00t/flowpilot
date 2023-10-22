@@ -1,6 +1,8 @@
 set -e
 source ./.env
 
+export LD_LIBRARY_PATH=/system/vendor/lib64:$LD_LIBRARY_PATH
+
 export WIDE_ROAD_CAMERA_SOURCE="selfdrive/assets/tmp" # no affect on android
 export ROAD_CAMERA_SOURCE="selfdrive/assets/tmp" # no affect on android
 export USE_GPU="0" # no affect on android, gpu always used on android

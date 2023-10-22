@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+apt update
+
+git clone https://github.com/KhronosGroup/OpenCL-Headers.git
+mv OpenCL-Headers/CL /usr/include/
+
+apt install python-dev
+apt install libboost-python-dev
+
+git clone https://github.com/tinygrad/tinygrad.git
+cd tinygrad
+python3 -m pip install -e .
