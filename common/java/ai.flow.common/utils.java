@@ -12,7 +12,8 @@ public class utils {
         ONNX,
         SNPE,
         TNN,
-        THNEED
+        THNEED,
+        EXTERNAL_TINYGRAD
     }
     public static boolean F2 = false;
     public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.SNPE;
