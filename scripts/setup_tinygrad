@@ -10,6 +10,10 @@ mv OpenCL-Headers/CL /usr/include/
 apt install python-dev
 apt install libboost-python-dev
 
+git clone https://github.com/inducer/pyopencl.git
+cd pyopencl
+python3 -m pip install -e .
+
 git clone https://github.com/tinygrad/tinygrad.git
-cd tinygrad
+cd ~/tinygrad
 python3 -m pip install -e .
