@@ -1,0 +1,1 @@
+gitversion-whatever-doesnt-matter
