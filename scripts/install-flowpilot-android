@@ -50,13 +50,13 @@ apt update && apt install -y sudo git
 DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
 sudo apt install -y software-properties-common
 yes | sudo add-apt-repository ppa:deadsnakes/ppa || true
-sudo apt install -y python3.9 python3.9-dev python3.9-distutils python-is-python3 python3-pip pkg-config capnproto
+sudo apt install -y python3.9 python3.9-dev python3.9-distutils python-is-python3 python3-pip pkg-config capnproto git-lfs
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
 
 cd ~/ && [ ! -d 'flowpilot' ] && git clone -b master https://github.com/phr00t/flowpilot.git || true
 git clone https://github.com/capnproto/capnproto-java.git && cd ~/capnproto-java && make && cp capnpc-java /usr/local/bin/
-cd ~/flowpilot && git submodule update --init
+cd ~/flowpilot && git lfs install && git lfs pull && git submodule update --init
 
 echo "set -g mouse on" >> ~/.tmux.conf # enable mouse scrolling in tmux
 echo "set -g remain-on-exit on" >> ~/.tmux.conf # enable mouse scrolling in tmux
