@@ -4,18 +4,21 @@ cd ~
 
 apt update
 
-git clone https://github.com/KhronosGroup/OpenCL-Headers.git
-mv OpenCL-Headers/CL /usr/include/
-
+apt install cmake make
+apt install git
+apt install python
+apt install python-pip
 apt install python-dev
 apt install libboost-python-dev
-
-export LD_LIBRARY_PATH=/system/vendor/lib64:$LD_LIBRARY_PATH
-
 pip install onnx
 pip install pytest
 pip install torch
 pip install onnx2torch
+
+git clone https://github.com/KhronosGroup/OpenCL-Headers.git
+mv OpenCL-Headers/CL /data/data/com.termux/files/usr/include
+
+export LD_LIBRARY_PATH=/system/vendor/lib64:$LD_LIBRARY_PATH
 
 git clone https://github.com/inducer/pyopencl.git
 cd pyopencl
