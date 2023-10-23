@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tmux kill-window -t window-number 0
+tmux kill-window -t 0
 
 cd flowpilot
 git pull
