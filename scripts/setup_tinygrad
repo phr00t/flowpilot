@@ -4,6 +4,7 @@ cd ~
 
 apt update
 
+apt install libandroid-spawn
 apt install cmake make
 apt install git
 apt install python
