@@ -16,13 +16,15 @@ apt install git libandroid-complex-math
 apt install python
 apt install python-pip
 apt install python-dev
+pkg install libjpeg-turbo
 apt install libboost-python-dev
 pip install Cython
 MATHLIB="m" pip install numpy
-pip install onnx 
-pip install pytest
-pip install torch
-pip install onnx2torch
+pkg install protobuf
+CMAKE_ARGS=-std=c++14 pip install onnx 
+CMAKE_ARGS=-std=c++14 pip install pytest
+CMAKE_ARGS=-std=c++14 pip install torch
+CMAKE_ARGS=-std=c++14 pip install onnx2torch
 
 git clone https://github.com/KhronosGroup/OpenCL-Headers.git
 mv OpenCL-Headers/CL /data/data/com.termux/files/usr/include
@@ -36,8 +38,8 @@ export MATHLIB="m"
 git clone https://github.com/inducer/pyopencl
 cd ~/pyopencl
 ./configure.py --cl-pretend-version=2.0
-MATHLIB="m" python3 -m pip install -e .
+LIBRARY_PATH="/system/vendor/lib64" LD_LIBRARY_PATH=/system/vendor/lib64:/system/lib64:/data/data/com.termux/files/usr/lib:/data/data/com.termux/files/usr/local/lib64: MATHLIB="m" python3 -m pip install -e .
 
 git clone https://github.com/tinygrad/tinygrad.git
 cd ~/tinygrad
-MATHLIB="m" python3 -m pip install -e .
+LIBRARY_PATH="/system/vendor/lib64" LD_LIBRARY_PATH=/system/vendor/lib64:/system/lib64:/data/data/com.termux/files/usr/lib:/data/data/com.termux/files/usr/local/lib64: MATHLIB="m" python3 -m pip install -e .
