@@ -17,7 +17,8 @@ apt install python
 apt install python-pip
 apt install python-dev
 pkg install libjpeg-turbo
-apt install libboost-python-dev
+apt install boost
+apt install libboost-python
 pip install Cython
 MATHLIB="m" pip install numpy
 pkg install protobuf
