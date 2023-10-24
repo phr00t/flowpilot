@@ -2,16 +2,24 @@
 
 cd ~
 
-apt update
+# mathlib 
+export MATHLIB="m"
 
+apt update
+apt install tur-repo
+apt update
+apt install autoconf
+apt install ndk-multilib-native-stubs
 apt install libandroid-spawn
 apt install cmake make
-apt install git
+apt install git libandroid-complex-math
 apt install python
 apt install python-pip
 apt install python-dev
 apt install libboost-python-dev
-pip install onnx
+pip install Cython
+MATHLIB="m" pip install numpy
+pip install onnx 
 pip install pytest
 pip install torch
 pip install onnx2torch
@@ -19,12 +27,17 @@ pip install onnx2torch
 git clone https://github.com/KhronosGroup/OpenCL-Headers.git
 mv OpenCL-Headers/CL /data/data/com.termux/files/usr/include
 
-export LD_LIBRARY_PATH=/system/vendor/lib64:$LD_LIBRARY_PATH
+# libraries
+export LD_LIBRARY_PATH=/data/data/com.termux/files/usr/lib:/data/data/com.termux/files/usr/local/lib64:/system/vendor/lib64:/system/lib64:
+export LD_PRELOAD=/data/data/com.termux/files/usr/lib/libtermux-exec.so:/vendor/lib64/libOpenCL.so:
 
-git clone https://github.com/inducer/pyopencl.git
-cd pyopencl
-python3 -m pip install -e .
+# pyopencl
+export MATHLIB="m"
+git clone https://github.com/inducer/pyopencl
+cd ~/pyopencl
+./configure.py --cl-pretend-version=2.0
+MATHLIB="m" python3 -m pip install -e .
 
 git clone https://github.com/tinygrad/tinygrad.git
 cd ~/tinygrad
-python3 -m pip install -e .
+MATHLIB="m" python3 -m pip install -e .
