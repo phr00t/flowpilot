@@ -1,0 +1,1 @@
+g++ thneedrunner.cpp json11.cpp -I . -L . -L /vendor/lib64 -lOpenCL
