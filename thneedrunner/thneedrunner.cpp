@@ -15,6 +15,13 @@
 #include "json11.hpp"
 #include "util.h"
 
+#include <assert.h>
+#include <sched.h>
+
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/modeld/models/driving.h"
+#include "common/util.h"
+
 #ifndef USE_PRECOMPILED
 
 map<pair<cl_kernel, int>, string> g_args;
@@ -292,6 +299,8 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 }
 
 #else
+	
+extern "C" {
 
 int (*my_ioctl)(int filedes, unsigned long request, void *argp) = NULL;
 #undef ioctl
@@ -373,6 +382,8 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     // NOTE: This error message goes into stdout and messes up pyenv
     if (ret != 0) printf("ioctl returned %d with errno %d\n", ret, errno);
     return ret;
+}
+
 }
 
 // *********** GPUMalloc ***********
@@ -740,8 +751,8 @@ void* ThneedModel::getCLBuffer(const std::string name) {
 }
 
 void ThneedModel::execute() {
-    //if (!recorded) {
-    //    thneed->record = true;
+    if (!recorded) {
+        thneed->record = true;
         float *input_buffers[inputs.size()];
         for (int i = 0; i < inputs.size(); i++) {
             input_buffers[inputs.size() - i - 1] = inputs[i]->buffer;
@@ -750,38 +761,132 @@ void ThneedModel::execute() {
         thneed->copy_inputs(input_buffers);
         thneed->clexec();
         thneed->copy_output(output);
-    //    thneed->stop();
+        thneed->stop();
 
-    /*    recorded = true;
+        recorded = true;
     } else {
         float *input_buffers[inputs.size()];
         for (int i = 0; i < inputs.size(); i++) {
             input_buffers[inputs.size() - i - 1] = inputs[i]->buffer;
         }
         thneed->execute(input_buffers, output);
-    }*/
+    }
 }
 
 extern "C" {
 
-int main() {
-	float* outputs;
-	int output_len;
-	ThneedModel *thneed;
-	bool inputsSet = false;
+int main(int argc, char **argv) {
+  bool do_exit;
+  
+  // outputs
+  float *model_raw_preds = new float[NET_OUTPUT_SIZE];
 
-	printf("Starting!\n");
-	float* buf = new float[1572864/4];
-	outputs = new float[6504];
-	output_len = 6504;
-        thneed = new ThneedModel("/sdcard/flowpilot/selfdrive/assets/models/f3/supercombo.thneed", outputs, output_len, 0, false, NULL);
-        thneed->addInput("input_imgs", buf, 1572864/4);
-        thneed->addInput("big_input_imgs", buf, 1572864/4);
-        thneed->addInput("features_buffer", buf, 202752/4);
-        thneed->addInput("desire", buf, 3200/4);
-        thneed->addInput("traffic_convention", buf, 8/4);
-        thneed->addInput("nav_features", buf, 1024/4);
-        thneed->addInput("nav_instructions", buf, 600/4);
+  // these are the inputs we need to read
+  int input_imgs_len = 1572864 / 4;
+  int features_len = 512 * 3072 / 4; // 1572864 with feature len 512
+  int desire_len = 3200 / 4;
+  int total_input_len = input_imgs_size * 2 + features_size + desire_size;
+  
+  // the rest of the inputs can just be 0
+  float *zerobuf = new float[1024/4]; // 1024/4 is the biggest 0 buffer we need (nav_features)
+  memset(zerobuf, 0, 1024);
+
+  // we will manage desire and features in here
+  float *desire_buf = new float[desire_len];
+  float *feature_buf = new float[features_len];
+  float *prev_desire = new float[DESIRE_LEN];
+
+  // magic model
+  ThneedModel *thneed;
+  thneed = new ThneedModel("/sdcard/flowpilot/selfdrive/assets/models/f3/supercombo.thneed", model_raw_preds, NET_OUTPUT_SIZE, 0, false, NULL);
+
+  thneed->addInput("traffic_convention", zerobuf, 8/4);
+  thneed->addInput("nav_features", zerobuf, 1024/4);
+  thneed->addInput("nav_instructions", zerobuf, 600/4);
+  thneed->addInput("features_buffer", feature_buf, features_len);
+  thneed->addInput("desire", desire_buf, desire_len);
+
+  PubMaster pm({"modelV2", "cameraOdometry"});
+  SubMaster sm({"lateralPlan", "modelRaw"});
+
+  uint32_t last_frame_id = 0;
+  bool inputsSet = false;
+
+  while (!do_exit) {
+	sm.update(0);
+	if (sm.updated("modelRaw") == false) {
+		sched_yield();
+     	if (errno == EINTR) {
+		  do_exit = true;
+	    }
+		continue;
+	}
+	int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+	auto modelRaw = sm["modelRaw"].getModelRaw();
+	float *model_raw = ((float*)modelRaw.getRawPredictions());	
+	float *input_imgs = &model_raw[0];
+	float *big_input_imgs = &model_raw[input_imgs_len];
+	
+	// set images from android app
+	if (inputsSet == false) {
+		thneed->addInput("input_imgs", input_imgs, input_imgs_len);
+        thneed->addInput("big_input_imgs", big_input_imgs, input_imgs_len);
+		inputsSet = true;
+	} else {
+		thneed->setInputBuffer("input_imgs", input_imgs, input_imgs_len);
+        thneed->setInputBuffer("big_input_imgs", big_input_imgs, input_imgs_len);
+	}
+	
+    // handle desire
+    float vec_desire[DESIRE_LEN] = {0};
+    if (desire >= 0 && desire < DESIRE_LEN) {
+      vec_desire[desire] = 1.0;
+    }
+
+	memmove(&desire_buf[0], &desire_buf[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
+	for (int i = 1; i < DESIRE_LEN; i++) {
+	  // Model decides when action is completed
+	  // so desire input is just a pulse triggered on rising edge
+	  if (vec_desire[i] - prev_desire[i] > .99) {
+		desire_buf[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = vec_desire[i];
+	  } else {
+		desire_buf[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = 0.0;
+	  }
+	  prev_desire[i] = vec_desire[i];
+	}
+
+	thneed->execute();
+	
+	// handle features
+	std::memmove(&feature_buf[0], &feature_buf[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
+    std::memcpy(&feature_buf[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &model_raw_preds[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
+
+    uint32_t vipc_dropped_frames = modelRaw.getFrameId() - last_frame_id - 1;
+    
+    model_publish(pm, modelRaw.getFrameId(), modelRaw.getFrameIdExtra(), modelRaw.getFrameId(), modelRaw.getFrameDropPerc()/100, 
+                  model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getModelExecutionTime(), modelRaw.getValid());
+    posenet_publish(pm, modelRaw.getFrameId(), vipc_dropped_frames, model_raw_preds, modelRaw.getTimestampEof(), modelRaw.getValid());
+
+    last_frame_id = modelRaw.getFrameId();
+  }
+  return 0;
+}
+
+
+int test_main() {
+	int output_len = 6504;
+	float* model_raw_preds = new float[output_len];
+    float* buf = new float[1572864/4];
+	// magic model
+    ThneedModel *thneed;
+    thneed = new ThneedModel("/sdcard/flowpilot/selfdrive/assets/models/f3/supercombo.thneed", model_raw_preds, output_len, 0, false, NULL);	
+	thneed->addInput("input_imgs", buf, 1572864/4);
+	thneed->addInput("big_input_imgs", buf, 1572864/4);
+	thneed->addInput("features_buffer", buf, 202752/4);
+	thneed->addInput("desire", buf, 3200/4);
+	thneed->addInput("traffic_convention", buf, 8/4);
+	thneed->addInput("nav_features", buf, 1024/4);
+	thneed->addInput("nav_instructions", buf, 600/4);
 	thneed->execute();
 	thneed->execute();
 	thneed->execute();
