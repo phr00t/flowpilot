@@ -261,12 +261,12 @@ def thermald_thread(end_event, hw_queue):
     should_start_prev = should_start
 
     # Log to statsd
-    statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
-    statlog.gauge("memory_usage_percent", msg.deviceState.memoryUsagePercent)
-    for i, usage in enumerate(msg.deviceState.cpuUsagePercent):
-      statlog.gauge(f"cpu{i}_usage_percent", usage)
-    for i, temp in enumerate(msg.deviceState.cpuTempC):
-      statlog.gauge(f"cpu{i}_temperature", temp)
+    #statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
+    #statlog.gauge("memory_usage_percent", msg.deviceState.memoryUsagePercent)
+    #for i, usage in enumerate(msg.deviceState.cpuUsagePercent):
+    #  statlog.gauge(f"cpu{i}_usage_percent", usage)
+    #for i, temp in enumerate(msg.deviceState.cpuTempC):
+    #  statlog.gauge(f"cpu{i}_temperature", temp)
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:

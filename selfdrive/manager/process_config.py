@@ -26,7 +26,7 @@ procs = [
   ManagerProcess("proclogd", "./system/proclogd/proclogd"),
   ManagerProcess("logmessaged", "logmessaged", offroad=True),
   ManagerProcess("thermald_", "thermald_", offroad=True),
-  ManagerProcess("statsd", "statsd", offroad=True),
+  #ManagerProcess("statsd", "statsd", offroad=True),
   ManagerProcess("keyvald", "keyvald", offroad=True),
   ManagerProcess("flowpilot", "./gradlew", args=["desktop:run"], rename=False, offroad=True, platform=["desktop"], pipe_std=False),
   ManagerProcess("pandad", "pandad", offroad=True),
