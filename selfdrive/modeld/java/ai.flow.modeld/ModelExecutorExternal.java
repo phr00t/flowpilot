@@ -180,7 +180,6 @@ public class ModelExecutorExternal extends ModelExecutor {
         stopped = true;
         wrapMatrix.close();
         wrapMatrixWide.close();
-        modelRunner.dispose();
         imagePrepare.dispose();
         imageWidePrepare.dispose();
         ph.releaseAll();

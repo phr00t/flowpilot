@@ -12,13 +12,6 @@ public class MsgModelRaw extends MessageBase {
     public Definitions.ModelRaw.Builder modelRaw;
     public PrimitiveList.Float.Builder rawPreds;
 
-    public MsgModelRaw(ByteBuffer rawMessageBuffer) {
-        super(rawMessageBuffer);
-        initFields();
-        bytesSerializedForm = computeSerializedMsgBytes();
-        initSerializedBuffer();
-    }
-
     public MsgModelRaw(int size) {
         super();
         initFields(size);

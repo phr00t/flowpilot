@@ -13,15 +13,16 @@ def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
-def is_f3():
-  return Params().get_bool("F3")
+def useModelParseD():
+  return False # we will use the external one instead
+  #return Params().get_bool("F3")
 
 procs = [
   ManagerProcess("controlsd", "controlsd"),
   ManagerProcess("plannerd", "plannerd"),
   ManagerProcess("radard", "radard"),
   ManagerProcess("calibrationd", "calibrationd"),
-  ManagerProcess("modelparsed", "./selfdrive/modeld/modelparsed", enabled=is_f3()),
+  ManagerProcess("modelparsed", "./selfdrive/modeld/modelparsed", enabled=useModelParseD()),
   ManagerProcess("clocksd", "./system/clocksd/clocksd"),
   ManagerProcess("proclogd", "./system/proclogd/proclogd"),
   ManagerProcess("logmessaged", "logmessaged", offroad=True),

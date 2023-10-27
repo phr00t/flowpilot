@@ -16,6 +16,7 @@ import ai.flow.modeld.*;
 import ai.flow.sensor.SensorInterface;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Process;
 import android.os.*;
 import android.provider.Settings;
@@ -32,6 +33,8 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.AndroidFragmentApplication;
+import com.termux.shared.termux.TermuxConstants;
+
 import org.acra.ACRA;
 import org.acra.ErrorReporter;
 import org.jetbrains.annotations.NotNull;
@@ -140,10 +143,9 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 
 		String modelPath = Path.getModelDir();
 
-		ModelRunner model;
+		ModelRunner model = null;
 		boolean useGPU = true; // always use gpus on android phones.
 		switch (utils.Runner) {
-			default:
 			case SNPE:
 				model = new SNPEModelRunner(getApplication(), modelPath, useGPU);
 				break;
@@ -156,10 +158,26 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			case THNEED:
 				model = new THNEEDModelRunner(modelPath, getApplication());
 				break;
+			case EXTERNAL_TINYGRAD:
+				// start the special model parser
+				Intent intent = new Intent();
+				intent.setClassName(TermuxConstants.TERMUX_PACKAGE_NAME, TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE_NAME);
+				intent.setAction(TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE.ACTION_RUN_COMMAND);
+				intent.putExtra(TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE.EXTRA_COMMAND_PATH, "/data/data/com.termux/files/usr/bin/bash");
+				intent.putExtra(TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE.EXTRA_ARGUMENTS, new String[]{"externalmodelparsed"});
+				intent.putExtra(TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE.EXTRA_WORKDIR, "/data/data/com.termux/files/home");
+				intent.putExtra(TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE.EXTRA_BACKGROUND, true);
+				intent.putExtra(TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE.EXTRA_SESSION_ACTION, "0");
+				intent.putExtra(TermuxConstants.TERMUX_APP.RUN_COMMAND_SERVICE.EXTRA_COMMAND_LABEL, "run externalmodelparsed");
+				startService(intent);
+				break;
 		}
 
 		ModelExecutor modelExecutor;
-		modelExecutor = utils.F2 ? new ModelExecutorF2(model) : new ModelExecutorF3(model);
+		if (utils.Runner == utils.USE_MODEL_RUNNER.EXTERNAL_TINYGRAD)
+			modelExecutor = new ModelExecutorExternal();
+		else
+			modelExecutor = utils.F2 ? new ModelExecutorF2(model) : new ModelExecutorF3(model);
 		Launcher launcher = new Launcher(sensors, modelExecutor);
 
 		ErrorReporter ACRAreporter = ACRA.getErrorReporter();
