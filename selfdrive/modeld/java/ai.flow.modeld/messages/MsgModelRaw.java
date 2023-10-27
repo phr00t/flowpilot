@@ -19,17 +19,17 @@ public class MsgModelRaw extends MessageBase {
         initSerializedBuffer();
     }
 
-    public MsgModelRaw() {
+    public MsgModelRaw(int size) {
         super();
-        initFields();
+        initFields(size);
         bytesSerializedForm = computeSerializedMsgBytes();
         initSerializedBuffer();
     }
 
-    private void initFields(){
+    private void initFields(int size){
         event = messageBuilder.initRoot(Definitions.Event.factory);
         modelRaw = event.initModelRaw();
-        rawPreds = modelRaw.initRawPredictions(CommonModelF3.NET_OUTPUT_SIZE);
+        rawPreds = modelRaw.initRawPredictions(size);
     }
 
     public void fill(float[] outs, long timestamp, int frameId,

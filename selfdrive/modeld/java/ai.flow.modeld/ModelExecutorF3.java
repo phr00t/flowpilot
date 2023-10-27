@@ -72,7 +72,7 @@ public class ModelExecutorF3 extends ModelExecutor {
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
     public final ZMQPubHandler ph = new ZMQPubHandler();
     public final ZMQSubHandler sh = new ZMQSubHandler(true);
-    public MsgModelRaw msgModelRaw = new MsgModelRaw();
+    public MsgModelRaw msgModelRaw = new MsgModelRaw(CommonModelF3.NET_OUTPUT_SIZE);
     public Definitions.LiveCalibrationData.Reader liveCalib;
 
     public long start, end;
