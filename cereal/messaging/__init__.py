@@ -231,14 +231,6 @@ class SubMaster:
   def all_alive(self, service_list=None) -> bool:
     if service_list is None:  # check all
       service_list = self.alive.keys()
-
-    for s in service_list:
-      print(s)
-      print(self.alive[s])
-      print('ignore?')
-      print(s in self.ignore_alive)
-      print('done')
-
     return all(self.alive[s] for s in service_list if s not in self.ignore_alive)
 
   def all_freq_ok(self, service_list=None) -> bool:
