@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include <android/log.h>
 
 #define USE_CPU_RUNTIME 0
 #define USE_GPU_RUNTIME 1

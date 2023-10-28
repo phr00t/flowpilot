@@ -1,3 +1,4 @@
+#include "json11.hpp"
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -5,15 +6,12 @@
 #include <sys/mman.h>
 #include <cassert>
 #include <cerrno>
-#include <cstring>
 #include <map>
-#include <CL/cl.h>
+#include "CL/cl.h"
 
 #include "thneedmodel.h"
 #include "clutil.h"
 #include "timing.h"
-#include "json11.hpp"
-#include "util.h"
 
 #include <assert.h>
 #include <sched.h>
@@ -302,10 +300,17 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 	
 extern "C" {
 
-int (*my_ioctl)(int filedes, unsigned long request, void *argp) = NULL;
+//int (*my_ioctl)(int filedes, unsigned long request, void *argp) = NULL;
+int (*my_ioctl)(int filedes, int request, ...) = NULL;
 #undef ioctl
-int ioctl(int filedes, unsigned long request, void *argp) {
+//int ioctl(int filedes, unsigned long request, void *argp) {
+int ioctl(int filedes, int request, ...) {
     request &= 0xFFFFFFFF;  // needed on QCOM2
+
+    va_list args;
+    va_start(args, 1);
+    void* argp = va_arg(args, void*);
+
     if (my_ioctl == NULL) my_ioctl = reinterpret_cast<decltype(my_ioctl)>(dlsym(RTLD_NEXT, "ioctl"));
     Thneed *thneed = g_thneed;
 
@@ -785,7 +790,7 @@ int main(int argc, char **argv) {
   int input_imgs_len = 1572864 / 4;
   int features_len = 512 * 3072 / 4; // 1572864 with feature len 512
   int desire_len = 3200 / 4;
-  int total_input_len = input_imgs_size * 2 + features_size + desire_size;
+  float *model_input = new float[input_imgs_len * 2];
   
   // the rest of the inputs can just be 0
   float *zerobuf = new float[1024/4]; // 1024/4 is the biggest 0 buffer we need (nav_features)
@@ -823,9 +828,11 @@ int main(int argc, char **argv) {
 	}
 	int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
 	auto modelRaw = sm["modelRaw"].getModelRaw();
-	float *model_raw = ((float*)modelRaw.getRawPredictions());	
-	float *input_imgs = &model_raw[0];
-	float *big_input_imgs = &model_raw[input_imgs_len];
+	auto model_raw_data = modelRaw.getRawPredictions();
+	for (int i=0; i<model_raw_data.size(); i++)
+		model_input[i] = model_raw_data[i];
+	float *input_imgs = &model_input[0];
+	float *big_input_imgs = &model_input[input_imgs_len];
 	
 	// set images from android app
 	if (inputsSet == false) {
