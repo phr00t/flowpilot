@@ -14,7 +14,7 @@
 #include "common/util.h"
 #include "selfdrive/modeld/models/commonmodel.h"
 
-constexpr int FEATURE_LEN = 128; // 128 for nicki, 512 for latest
+constexpr int FEATURE_LEN = 512; // 128 for nicki, 512 for latest
 constexpr int HISTORY_BUFFER_LEN = 99;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
@@ -259,7 +259,7 @@ struct ModelOutput {
   const ModelOutputPose pose;
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
   const ModelOutputTemporalPose temporal_pose;
-  //const ModelOutputRoadTransform road_transform; // added after Nikki
+  const ModelOutputRoadTransform road_transform; // added after Nikki
   //const LateralPlannerOutput lateral_planner_solution; // NLP thing
 };
 
