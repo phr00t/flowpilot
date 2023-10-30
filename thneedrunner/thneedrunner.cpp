@@ -117,7 +117,7 @@ void getGPUMemoryAllocationFD() {
             linkTarget[len] = '\0';
             if (std::string(linkTarget) == "/dev/kgsl-3d0") {
                 g_fd = std::stoi(entry->d_name);
-                printf( "File descriptor found for GPU allocation: %d", g_fd);
+                printf( "File descriptor found for GPU allocation: %d\n", g_fd);
                 closedir(dir);
                 return;
             }
@@ -305,7 +305,7 @@ int (*my_ioctl)(int filedes, int request, ...) = NULL;
 #undef ioctl
 //int ioctl(int filedes, unsigned long request, void *argp) {
 int ioctl(int filedes, int request, ...) {
-    request &= 0xFFFFFFFF;  // needed on QCOM2
+    //request &= 0xFFFFFFFF;  // needed on QCOM2
 
     va_list args;
     va_start(args, 1);
@@ -329,8 +329,6 @@ int ioctl(int filedes, int request, ...) {
         if (request == IOCTL_KGSL_GPU_COMMAND) {
             struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
             if (thneed->record) {
-                thneed->timestamp = cmd->timestamp;
-                thneed->context_id = cmd->context_id;
                 thneed->cmds.push_back(unique_ptr<CachedCommand>(new CachedCommand(thneed, cmd)));
             }
             if (thneed->debug >= 1) {
@@ -356,7 +354,9 @@ int ioctl(int filedes, int request, ...) {
             }
         } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
             struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
-            if (thneed->debug >= 1) {
+            thneed->timestamp = cmd->timestamp;
+            thneed->context_id = cmd->context_id;
+	    if (thneed->debug >= 1) {
                 printf("IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID: context_id: %d  timestamp: %d  timeout: %d\n",
                        cmd->context_id, cmd->timestamp, cmd->timeout);
             }
@@ -385,7 +385,7 @@ int ioctl(int filedes, int request, ...) {
 
     int ret = my_ioctl(filedes, request, argp);
     // NOTE: This error message goes into stdout and messes up pyenv
-    if (ret != 0) printf("ioctl returned %d with errno %d\n", ret, errno);
+    if (ret != 0) printf("ioctl returned %d with errno %d, fd %d, request %d, argp %p\n", ret, errno, filedes, request, argp);
     return ret;
 }
 
@@ -470,7 +470,7 @@ void CachedCommand::exec() {
     cache.timestamp = ++thneed->timestamp;
     int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
-    if (thneed->debug >= 1) printf("CachedCommand::exec got %d\n", ret);
+    if (thneed->debug >= 1) printf("CachedCommand::exec got %d, request %d\n", ret, IOCTL_KGSL_GPU_COMMAND);
 
     if (thneed->debug >= 2) {
         for (auto &it : kq) {
@@ -780,7 +780,7 @@ void ThneedModel::execute() {
 
 extern "C" {
 
-int main(int argc, char **argv) {
+/*int main(int argc, char **argv) {
   bool do_exit;
   
   // outputs
@@ -877,10 +877,10 @@ int main(int argc, char **argv) {
     last_frame_id = modelRaw.getFrameId();
   }
   return 0;
-}
+}*/
 
 
-int test_main() {
+/*int main() {
 	int output_len = 6504;
 	float* model_raw_preds = new float[output_len];
     float* buf = new float[1572864/4];
@@ -899,7 +899,7 @@ int test_main() {
 	thneed->execute();
 	thneed->execute();
 	return 0;
-}
+}*/
 
 }
 

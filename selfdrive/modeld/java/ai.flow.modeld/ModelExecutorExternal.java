@@ -24,13 +24,14 @@ import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
 import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
+import ai.flow.modeld.messages.FloatArraySender;
 import ai.flow.modeld.messages.MsgModelRaw;
 import messaging.ZMQPubHandler;
 import messaging.ZMQSubHandler;
 
 public class ModelExecutorExternal extends ModelExecutor {
 
-    public static ModelExecutor instance;
+    FloatArraySender inputSender;
     public boolean stopped = true;
     public boolean initialized = false;
     public long timePerIt = 0;
@@ -45,9 +46,7 @@ public class ModelExecutorExternal extends ModelExecutor {
     public final ParamsInterface params = ParamsInterface.getInstance();
 
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
-    public final ZMQPubHandler ph = new ZMQPubHandler();
     public final ZMQSubHandler sh = new ZMQSubHandler(true);
-    public MsgModelRaw msgModelRaw = new MsgModelRaw(2 * 1572864 / 4); // 1572864 is the size of an image in bytes
     public Definitions.LiveCalibrationData.Reader liveCalib;
 
     public long start, end;
@@ -98,14 +97,20 @@ public class ModelExecutorExternal extends ModelExecutor {
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
         netInputWideBuffer = imageWidePrepare.prepare(wideImgBuffer, wrapMatrixWide);
 
+        int desire = 0;
+        if (sh.updated("lateralPlan")){
+            desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
+        }
+
         //inputMap.put("input_imgs", netInputBuffer);
         //inputMap.put("big_input_imgs", netInputWideBuffer);
         //modelRunner.run(inputMap, outputMap);
 
         // publish outputs
         end = System.currentTimeMillis();
-        msgModelRaw.fill(Nd4j.toFlattened(netInputBuffer, netInputWideBuffer).data().asNioFloat().array(), processStartTimestamp, lastFrameID, 0, 0f, end - start);
-        ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
+        inputSender.sendInputsOut(Nd4j.toFlattened(netInputBuffer, netInputWideBuffer).data().asBytes(), desire);
+        //msgModelRaw.fill(Nd4j.toFlattened(netInputBuffer, netInputWideBuffer).data().asNioFloat().array(), processStartTimestamp, lastFrameID, 0, 0f, end - start);
+        //ph.publishBuffer("modelRaw", msgModelRaw.serialize(true));
 
         // compute runtime stats every 10 runs
         timePerIt += end - processStartTimestamp;
@@ -123,8 +128,7 @@ public class ModelExecutorExternal extends ModelExecutor {
         if (initialized) return;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-        ph.createPublishers(Arrays.asList("modelRaw"));
-        sh.createSubscribers(Arrays.asList("liveCalibration"));
+        sh.createSubscribers(Arrays.asList("lateralPlan", "liveCalibration"));
 
         wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
         wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
@@ -159,6 +163,8 @@ public class ModelExecutorExternal extends ModelExecutor {
                     msgFrameWideBuffer.getUOffset(), msgFrameWideBuffer.getVOffset(), msgFrameWideBuffer.getStride());
         }
 
+        inputSender = new FloatArraySender("127.0.0.1", 8228);
+
         initialized = true;
         params.putBool("ModelDReady", true);
     }
@@ -182,7 +188,8 @@ public class ModelExecutorExternal extends ModelExecutor {
         wrapMatrixWide.close();
         imagePrepare.dispose();
         imageWidePrepare.dispose();
-        ph.releaseAll();
+        sh.releaseAll();
+        inputSender.close();
     }
 
     public void stop() {

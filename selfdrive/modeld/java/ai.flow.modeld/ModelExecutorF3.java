@@ -32,7 +32,6 @@ import static ai.flow.sensor.messages.MsgFrameBuffer.updateImageBuffer;
 
 public class ModelExecutorF3 extends ModelExecutor {
 
-    public static ModelExecutor instance;
     public boolean stopped = true;
     public boolean initialized = false;
     public long timePerIt = 0;

@@ -5,6 +5,7 @@ import ai.flow.common.ParamsInterface;
 import ai.flow.common.transformations.Camera;
 import ai.flow.common.utils;
 import ai.flow.definitions.Definitions;
+import ai.flow.modeld.ModelExecutor;
 import ai.flow.modeld.ModelExecutorF3;
 import ai.flow.modeld.messages.MsgFrameData;
 import ai.flow.sensor.SensorInterface;
@@ -160,7 +161,7 @@ public class CameraManager extends SensorInterface {
 
                             msgFrameData.frameData.setFrameId(frameID);
 
-                            ModelExecutorF3.instance.ExecuteModel(
+                            ModelExecutor.instance.ExecuteModel(
                                     msgFrameData.frameData.asReader(),
                                     msgFrameBuffer.frameBuffer.asReader(),
                                     startTimestamp);

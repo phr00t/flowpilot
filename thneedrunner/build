@@ -1,1 +1,2 @@
-g++ thneedrunner.cpp json11.cpp -I /data/data/com.termux/files/home/flowpilot_env_root/root/flowpilot -I . -L . -L /vendor/lib64 -lzmq -lOpenCL
+g++ thneedrunner.cpp json11.cpp thneedapp.cpp -I /data/data/com.termux/files/home/flowpilot_env_root/root/flowpilot -I . -I /data/data/com.termux/files/home/flowpilot_env_root/root/flowpilot/cereal -L . -L /vendor/lib64 -lzmq -lOpenCL -lkj -lcapnp
+mv a.out thneedrunner

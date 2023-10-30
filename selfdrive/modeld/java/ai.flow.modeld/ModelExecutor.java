@@ -3,6 +3,7 @@ package ai.flow.modeld;
 import ai.flow.definitions.Definitions;
 
 public abstract class ModelExecutor {
+    public static ModelExecutor instance;
     public void init(){}
     public long getIterationRate(){return 0;}
     public float getFrameDropPercent() {return 0f;}
