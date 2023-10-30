@@ -262,7 +262,7 @@ int main () {
     delete [] model_input;
 
     // close both sockets
-    close (server_sock);
+    close (server_conn_sock);
     close (client_sock);
 
     cout << "Connection closed" << endl;

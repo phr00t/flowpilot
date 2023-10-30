@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
 
 #ifdef USE_SOCKETS
   int server_socket = -1;
+  bool success;
 #else
   AlignedBuffer aligned_buf;
   std::unique_ptr<Context> context(Context::create());
