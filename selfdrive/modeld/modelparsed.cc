@@ -15,6 +15,8 @@
 
 #define USE_SOCKETS
 
+using namespace std;
+
 // function that reads data from an input stream until a given number of bytes are read
 // returns true if successful, false otherwise
 bool readFully(int sock, char *buffer, int length) {
