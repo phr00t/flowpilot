@@ -59,6 +59,7 @@ int getServerSocket(int port) {
     int server_sock; // server socket descriptor for receiving data from Java application
     int server_conn_sock; // server socket connection descriptor for receiving data from Java application
     struct sockaddr_in server_addr; // server address structure for receiving data from Java application
+    struct sockaddr_in client_addr; // client address structure for sending data to another C++ application
     socklen_t sin_size; // size of sockaddr_in structure
     // set the server address and port for receiving data from Java application
     server_addr.sin_family = AF_INET;
