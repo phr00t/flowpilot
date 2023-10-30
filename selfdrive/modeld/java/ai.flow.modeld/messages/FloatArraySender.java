@@ -8,12 +8,17 @@ public class FloatArraySender {
 
     private Socket socket; // the socket to communicate with the C++ application
     private DataOutputStream out; // the output stream to send data through the socket
+    private int port;
 
     // constructor that takes the IP address and port number of the C++ application as parameters
-    public FloatArraySender (String address, int port) {
+    public FloatArraySender (int port) {
+        this.port = port;
+    }
+
+    private void CreateSocket() {
         try {
             // create a new socket with the given address and port
-            socket = new Socket (address, port);
+            socket = new Socket ("127.0.0.1", port);
             // get the output stream of the socket
             out = new DataOutputStream (socket.getOutputStream ());
         } catch (Exception e) {}
@@ -21,6 +26,10 @@ public class FloatArraySender {
 
     // method that takes a float array as parameter and sends it to the C++ application
     public void sendInputsOut(byte[] bytes, int desire) {
+        // do we have a valid socket?
+        if (socket == null || socket.isConnected() == false)
+            CreateSocket();
+
         try {
             // write the byte array to the output stream
             out.write(bytes);

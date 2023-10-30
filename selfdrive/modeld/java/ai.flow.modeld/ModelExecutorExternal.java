@@ -163,7 +163,7 @@ public class ModelExecutorExternal extends ModelExecutor {
                     msgFrameWideBuffer.getUOffset(), msgFrameWideBuffer.getVOffset(), msgFrameWideBuffer.getStride());
         }
 
-        inputSender = new FloatArraySender("127.0.0.1", 8228);
+        inputSender = new FloatArraySender(8228);
 
         initialized = true;
         params.putBool("ModelDReady", true);
