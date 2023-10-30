@@ -97,9 +97,8 @@ int main(int argc, char **argv) {
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "modelRaw"));
   assert(subscriber != NULL);
-#endif
-
   uint32_t last_frame_id = 0;
+#endif
 
   while (!do_exit) {
 #ifdef USE_SOCKETS
