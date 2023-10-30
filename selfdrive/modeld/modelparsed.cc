@@ -111,8 +111,11 @@ int main(int argc, char **argv) {
 	if (!success) { // if an error occurred or end of stream reached
 		server_socket = -1;
 		sched_yield();
+        cout << "Error with receiving data..." << endl;
 		continue;
 	}	
+
+    cout << "Got data from C++ app!" << endl;
 
     model_publish(pm, 0, 0, 0, 0, model_raw_preds, 0, 0, true);
     posenet_publish(pm, 0, 0, model_raw_preds, 0, true);
