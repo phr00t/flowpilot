@@ -165,6 +165,8 @@ int main () {
 	thneed->addInput("nav_instructions", model_input, 600/4);
 	thneed->addInput("features_buffer", model_input + StartFeatures, features_len);
 	thneed->addInput("desire", model_input + StartDesire, desire_len);
+	thneed->addInput("input_imgs", model_input + StartInput, input_imgs_len);
+	thneed->addInput("big_input_imgs", model_input + StartInput + input_imgs_len, input_imgs_len);
 
 	uint32_t last_frame_id = 0;
 	bool inputsSet = false;
@@ -197,23 +199,8 @@ int main () {
 
         cout << "Server received data from Java application" << endl;
 
-		int desire = *((int*)&model_input[StartDesireInt]);
-		float *input_imgs = &model_input[StartInput];
-		float *big_input_imgs = &model_input[StartInput + input_imgs_len]; // &model_input[1+input_imgs_len];
-
-		// set images from android app
-		if (inputsSet == false) {
-			thneed->addInput("input_imgs", &model_input[StartInput], input_imgs_len);
-		thneed->addInput("big_input_imgs", &model_input[StartInput + input_imgs_len], input_imgs_len);
-			inputsSet = true;
-		} else {
-			thneed->setInputBuffer("input_imgs", &model_input[StartInput], input_imgs_len);
-		thneed->setInputBuffer("big_input_imgs", &model_input[StartInput + input_imgs_len], input_imgs_len);
-		}
-
-		cout << "Made inputs, now doing desire..." << endl;
-
 		// handle desire
+		int desire = *((int*)&model_input[StartDesireInt]);
 		float vec_desire[DESIRE_LEN] = {0};
 		if (desire >= 0 && desire < DESIRE_LEN) {
 		  vec_desire[desire] = 1.0;
