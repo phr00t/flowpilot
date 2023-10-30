@@ -536,7 +536,9 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 #endif
 
 void Thneed::stop() {
+#ifdef QCOM2
     printf("Thneed::stop: recorded %lu commands\n", cmds.size());
+#endif
     record = false;
 }
 
