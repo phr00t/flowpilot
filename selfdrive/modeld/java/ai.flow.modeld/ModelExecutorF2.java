@@ -67,8 +67,6 @@ public class ModelExecutorF2 extends ModelExecutor {
     public int totalFrameDrops = 0;
     public int frameDrops = 0; // per iteration
     public ModelRunner modelRunner;
-    Definitions.FrameData.Reader frameData, frameWideData;
-    Definitions.FrameBuffer.Reader msgFrameBuffer, msgFrameWideBuffer;
     public MsgCameraOdometery msgCameraOdometery = new MsgCameraOdometery();
     public MsgModelDataV2 msgModelDataV2 = new MsgModelDataV2();
     ByteBuffer imgBuffer, wideImgBuffer;
@@ -81,14 +79,14 @@ public class ModelExecutorF2 extends ModelExecutor {
 
     public ModelExecutorF2(ModelRunner modelRunner){
         this.modelRunner = modelRunner;
-        ModelExecutorF3.instance = this;
+        ModelExecutor.instance = this;
     }
 
     public void ExecuteModel(Definitions.FrameData.Reader roadData, Definitions.FrameBuffer.Reader roadBuf,
                              long processStartTimestamp) {
 
-        ModelExecutorF3.frameWideData = frameWideData = frameData = roadData;
-        ModelExecutorF3.msgFrameWideBuffer = msgFrameWideBuffer = msgFrameBuffer = roadBuf;
+        ModelExecutor.frameWideData = frameWideData = frameData = roadData;
+        ModelExecutor.msgFrameWideBuffer = msgFrameWideBuffer = msgFrameBuffer = roadBuf;
 
         if (stopped || initialized == false) return;
 

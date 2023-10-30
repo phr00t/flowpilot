@@ -9,6 +9,7 @@ import ai.flow.common.utils;
 import ai.flow.definitions.CarDefinitions.CarControl.HUDControl.AudibleAlert;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.CommonModelF3;
+import ai.flow.modeld.ModelExecutor;
 import ai.flow.modeld.ModelExecutorF3;
 import ai.flow.modeld.ParsedOutputs;
 import ai.flow.modeld.Preprocess;
@@ -522,13 +523,13 @@ public class OnRoadScreen extends ScreenAdapter {
 
     public void updateCamera() {
         // wait for our first picture if needed...
-        while (ModelExecutorF3.msgFrameWideBuffer == null || ModelExecutorF3.frameWideData == null) {
+        while (ModelExecutor.msgFrameWideBuffer == null || ModelExecutor.frameWideData == null) {
             try {
                 Thread.sleep(1);
             } catch (Exception e) { }
         }
-        msgframeBuffer = ModelExecutorF3.msgFrameWideBuffer; // sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
-        msgframeData = ModelExecutorF3.frameWideData; // sh.recv(cameraTopic).getWideRoadCameraState();
+        msgframeBuffer = ModelExecutor.msgFrameWideBuffer; // sh.recv(cameraBufferTopic).getWideRoadCameraBuffer();
+        msgframeData = ModelExecutor.frameWideData; // sh.recv(cameraTopic).getWideRoadCameraState();
         imgBuffer = updateImageBuffer(msgframeBuffer, imgBuffer);
     }
 

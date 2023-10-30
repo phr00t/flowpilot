@@ -79,10 +79,6 @@ public class ModelExecutorF3 extends ModelExecutor {
 
     int desire;
     public ModelRunner modelRunner;
-    public static Definitions.FrameData.Reader frameData;
-    public static Definitions.FrameData.Reader frameWideData;
-    public static Definitions.FrameBuffer.Reader msgFrameBuffer;
-    public static Definitions.FrameBuffer.Reader msgFrameWideBuffer;
     ByteBuffer imgBuffer;
     ByteBuffer wideImgBuffer;
     final WorkspaceConfiguration wsConfig = WorkspaceConfiguration.builder()

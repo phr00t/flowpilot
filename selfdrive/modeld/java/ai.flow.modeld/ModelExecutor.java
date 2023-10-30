@@ -3,6 +3,10 @@ package ai.flow.modeld;
 import ai.flow.definitions.Definitions;
 
 public abstract class ModelExecutor {
+    public static Definitions.FrameData.Reader frameData;
+    public static Definitions.FrameData.Reader frameWideData;
+    public static Definitions.FrameBuffer.Reader msgFrameBuffer;
+    public static Definitions.FrameBuffer.Reader msgFrameWideBuffer;
     public static ModelExecutor instance;
     public void init(){}
     public long getIterationRate(){return 0;}
