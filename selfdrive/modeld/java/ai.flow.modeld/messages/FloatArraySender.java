@@ -23,8 +23,8 @@ public class FloatArraySender {
     public void sendInputsOut(byte[] bytes, int desire) {
         try {
             // write the byte array to the output stream
-            out.writeInt(desire);
             out.write(bytes);
+            out.writeInt(desire);
             // flush the output stream
             out.flush ();
         } catch (Exception e) {}
