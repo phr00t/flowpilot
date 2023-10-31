@@ -19,6 +19,8 @@ public class FloatArraySender {
         try {
             // create a new socket with the given address and port
             socket = new Socket ("127.0.0.1", port);
+            socket.setReuseAddress(true);
+            socket.setTcpNoDelay(true);
             // get the output stream of the socket
             out = new DataOutputStream (socket.getOutputStream ());
         } catch (Exception e) {}

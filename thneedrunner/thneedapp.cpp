@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sched.h>
+#include <netinet/tcp.h>
 
 #include "selfdrive/modeld/models/driving.h"
 #include "thneedmodel.h"
@@ -78,6 +79,13 @@ int getServerSocket(int port) {
 
     if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0) 
         perror("setsockopt(SO_REUSEPORT) failed");
+	
+	int yes = 1;
+	int result = setsockopt(server_sock,
+							IPPROTO_TCP,
+							TCP_NODELAY,
+							(char *) &yes, 
+							sizeof(int));    // 1 - on, 0 - off
 
     // bind the socket to the server address and port for receiving data from Java application
     if (::bind (server_sock, (struct sockaddr *)&server_addr, sizeof (struct sockaddr)) == -1) {
@@ -122,6 +130,12 @@ int getClientSocket(int port) {
     if (setsockopt(client_sock, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0) 
         perror("setsockopt(SO_REUSEPORT) failed");
 	
+	int yes = 1;
+	int result = setsockopt(client_sock,
+							IPPROTO_TCP,
+							TCP_NODELAY,
+							(char *) &yes, 
+							sizeof(int));    // 1 - on, 0 - off
 
     // set the client address and port for sending data to another C++ application
     client_addr.sin_family = AF_INET;
@@ -175,13 +189,13 @@ int main () {
 	ThneedModel *thneed;
 	thneed = new ThneedModel("/sdcard/flowpilot/selfdrive/assets/models/f3/supercombo.thneed", model_raw_preds, NET_OUTPUT_SIZE, 0, false, NULL);
 
+	thneed->addInput("big_input_imgs", model_input + StartInput + input_imgs_len, input_imgs_len);
+	thneed->addInput("input_imgs", model_input + StartInput, input_imgs_len);
+	thneed->addInput("desire", model_input + StartDesire, desire_len);
 	thneed->addInput("traffic_convention", model_input, 8/4);
 	thneed->addInput("nav_features", model_input, 1024/4);
 	thneed->addInput("nav_instructions", model_input, 600/4);
 	thneed->addInput("features_buffer", model_input + StartFeatures, features_len);
-	thneed->addInput("desire", model_input + StartDesire, desire_len);
-	thneed->addInput("input_imgs", model_input + StartInput, input_imgs_len);
-	thneed->addInput("big_input_imgs", model_input + StartInput + input_imgs_len, input_imgs_len);
 
 	uint32_t last_frame_id = 0;
 	bool inputsSet = false;
