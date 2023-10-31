@@ -80,12 +80,7 @@ int getServerSocket(int port) {
     if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0) 
         perror("setsockopt(SO_REUSEPORT) failed");
 	
-	int yes = 1;
-	int result = setsockopt(server_sock,
-							IPPROTO_TCP,
-							TCP_NODELAY,
-							(char *) &yes, 
-							sizeof(int));    // 1 - on, 0 - off
+	setsockopt(server_sock, IPPROTO_TCP, TCP_NODELAY, (char *) &reuse, sizeof(int));    // 1 - on, 0 - off
 
     // bind the socket to the server address and port for receiving data from Java application
     if (::bind (server_sock, (struct sockaddr *)&server_addr, sizeof (struct sockaddr)) == -1) {
@@ -130,12 +125,7 @@ int getClientSocket(int port) {
     if (setsockopt(client_sock, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0) 
         perror("setsockopt(SO_REUSEPORT) failed");
 	
-	int yes = 1;
-	int result = setsockopt(client_sock,
-							IPPROTO_TCP,
-							TCP_NODELAY,
-							(char *) &yes, 
-							sizeof(int));    // 1 - on, 0 - off
+	setsockopt(server_sock, IPPROTO_TCP, TCP_NODELAY, (char *) &reuse, sizeof(int));    // 1 - on, 0 - off
 
     // set the client address and port for sending data to another C++ application
     client_addr.sin_family = AF_INET;
