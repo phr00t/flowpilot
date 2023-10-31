@@ -179,8 +179,8 @@ int main () {
 	ThneedModel *thneed;
 	thneed = new ThneedModel("/sdcard/flowpilot/selfdrive/assets/models/f3/supercombo.thneed", model_raw_preds, NET_OUTPUT_SIZE, 0, false, NULL);
 
-	thneed->addInput("big_input_imgs", model_input + StartInput + input_imgs_len, input_imgs_len);
 	thneed->addInput("input_imgs", model_input + StartInput, input_imgs_len);
+	thneed->addInput("big_input_imgs", model_input + StartInput + input_imgs_len, input_imgs_len);
 	thneed->addInput("desire", model_input + StartDesire, desire_len);
 	thneed->addInput("traffic_convention", model_input, 8/4);
 	thneed->addInput("nav_features", model_input, 1024/4);
