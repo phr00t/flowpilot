@@ -33,13 +33,13 @@ public:
 
   virtual void addInput(const std::string name, float *buffer, int size) {
     inputs.push_back(std::unique_ptr<ModelInput>(new ModelInput(name, buffer, size)));
-    printf("Input added: %s @ %p %d", name.c_str(), buffer, size);
+    printf("Input added: %s @ %p %d\n", name.c_str(), buffer, size);
   }
   virtual void setInputBuffer(const std::string name, float *buffer, int size) {
     for (auto &input : inputs) {
       if (name == input->name) {
         input->setBuffer(buffer, size);
-        printf("Input set: %s @ %p %d", name.c_str(), buffer, size);
+        printf("Input set: %s @ %p %d\n", name.c_str(), buffer, size);
         return;
       }
     }
