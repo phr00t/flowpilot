@@ -192,7 +192,10 @@ int main () {
         success = readFully(server_conn_sock, (char*)&model_input[StartInput], total_input_len * 4);
 
         if (!success) { // if an error occurred or end of stream reached
-            server_conn_sock = -1;
+			if (server_conn_sock != -1) {	
+				close(server_conn_sock);
+				server_conn_sock = -1;
+			}
 			sched_yield();
 			continue;
         }
@@ -234,7 +237,10 @@ int main () {
         success = writeFully(client_sock, (char*)model_raw_preds, NET_OUTPUT_SIZE * 4);
 
         if (!success) { // if an error occurred or end of stream reached
-            client_sock = -1;
+            if (client_sock != -1) {
+				close(client_sock);
+				client_sock = -1;
+			}
 			sched_yield();
 			continue;
         }

@@ -58,12 +58,14 @@ int getServerSocket(int port) {
 
     // bind the socket to the server address and port for receiving data from Java application
     if (::bind (server_sock, (struct sockaddr *)&server_addr, sizeof (struct sockaddr)) == -1) {
-        perror ("bind");
+        close(server_sock);
+		perror ("bind");
         return -1;
     }
 
     // listen for incoming connections on the socket for receiving data from Java application
     if (listen (server_sock, 1) == -1) {
+		close(server_sock);
         perror ("listen");
         return -1;
     }
@@ -73,7 +75,9 @@ int getServerSocket(int port) {
     // accept an incoming connection on the socket for receiving data from Java application
     sin_size = sizeof (struct sockaddr_in);
     if ((server_conn_sock = accept (server_sock, (struct sockaddr *)&client_addr, &sin_size)) == -1) {
-        perror ("accept");
+        close(server_conn_sock);
+		close(server_sock);
+		perror ("accept");
         return -1;
     }
 
@@ -109,6 +113,7 @@ int main(int argc, char **argv) {
 	success = readFully(server_socket, (char*)&model_raw_preds[0], NET_OUTPUT_SIZE * 4);
 
 	if (!success) { // if an error occurred or end of stream reached
+		close(server_socket);
 		server_socket = -1;
 		sched_yield();
         cout << "Error with receiving data..." << endl;
