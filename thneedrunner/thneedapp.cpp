@@ -125,7 +125,7 @@ int getClientSocket(int port) {
     if (setsockopt(client_sock, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0) 
         perror("setsockopt(SO_REUSEPORT) failed");
 	
-	setsockopt(server_sock, IPPROTO_TCP, TCP_NODELAY, (char *) &reuse, sizeof(int));    // 1 - on, 0 - off
+	setsockopt(client_sock, IPPROTO_TCP, TCP_NODELAY, (char *) &reuse, sizeof(int));    // 1 - on, 0 - off
 
     // set the client address and port for sending data to another C++ application
     client_addr.sin_family = AF_INET;
