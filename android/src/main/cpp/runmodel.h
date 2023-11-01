@@ -43,5 +43,7 @@ public:
         return;
       }
     }
+    // didn't have it, just add it now
+    addInput(name, buffer, size);
   }
 };

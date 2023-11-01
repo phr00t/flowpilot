@@ -16,7 +16,7 @@ public class utils {
         EXTERNAL_TINYGRAD
     }
     public static boolean F2 = false;
-    public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.EXTERNAL_TINYGRAD;
+    public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.THNEED;
     public static boolean getBoolEnvVar(String key) {
         String val = System.getenv(key);
         boolean ret = false;

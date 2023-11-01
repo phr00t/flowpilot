@@ -823,7 +823,6 @@ std::string *pathString;
 jfloat* outputs;
 jint output_len;
 ThneedModel *thneed;
-jboolean inputsSet = false;
 
 extern "C" {
 
@@ -843,89 +842,39 @@ extern "C" {
     }
 
     void JNICALL Java_ai_flow_android_vision_THNEEDModelRunner_initThneed(JNIEnv *env, jobject obj) {
-        /*cl_int err;
-        cl_uint numPlatforms;
-        err = clGetPlatformIDs(0, NULL, &numPlatforms);
-        std::vector<cl_platform_id> platforms(numPlatforms);
-        err = clGetPlatformIDs(numPlatforms, platforms.data(), NULL);
-        cl_uint numDevices;
-        err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices); // Change to CPU if no GPU is available
-        std::vector<cl_device_id> devices(numDevices);
-        err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, numDevices, devices.data(), NULL); // Change to CPU if no GPU is available
-        cl_context context = clCreateContext(NULL, numDevices, devices.data(), NULL, NULL, &err);*/
-        // this actually makes a context, so we will just pass NULL
         thneed = new ThneedModel(*pathString, outputs, output_len, 0, false, NULL);
     }
 
-    float** input_bufs;
-
     JNIEXPORT jfloatArray JNICALL Java_ai_flow_android_vision_THNEEDModelRunner_executeModel(JNIEnv *env, jobject obj,
-                                                               jfloatArray input_imgs,
-                                                               jfloatArray big_input_imgs,
-                                                               jfloatArray features_buffer,
-                                                               jfloatArray desire,
-                                                               jfloatArray traffic_convention,
-                                                               jfloatArray nav_features,
-                                                               jfloatArray nav_instructions) {
-        // get sizes
-        jsize input_imgs_len = env->GetArrayLength(input_imgs);
-        jsize big_input_imgs_len = env->GetArrayLength(big_input_imgs);
-        jsize features_buffer_len = env->GetArrayLength(features_buffer);
-        jsize desire_len = env->GetArrayLength(desire);
-        jsize traffic_convention_len = env->GetArrayLength(traffic_convention);
-        jsize nav_features_len = env->GetArrayLength(nav_features);
-        jsize nav_instructions_len = env->GetArrayLength(nav_instructions);
-
+                                                               jfloatArray input) {
         // buffers
-        jfloat *input_imgs_buf = env->GetFloatArrayElements(input_imgs, 0);
-        jfloat *big_input_imgs_buf = env->GetFloatArrayElements(big_input_imgs, 0);
-        jfloat *features_buffer_buf = env->GetFloatArrayElements(features_buffer, 0);
-        jfloat *desire_buf = env->GetFloatArrayElements(desire, 0);
-        jfloat *traffic_convention_buf = env->GetFloatArrayElements(traffic_convention, 0);
-        jfloat *nav_features_buf = env->GetFloatArrayElements(nav_features, 0);
-        jfloat *nav_instructions_buf = env->GetFloatArrayElements(nav_instructions, 0);
+        jfloat *input_buf = env->GetFloatArrayElements(input, 0);
 
-        if (inputsSet == false) {
-            input_bufs = new float*[7]; // 7 inputs
-            input_bufs[0] = new float[input_imgs_len];
-            input_bufs[1] = new float[big_input_imgs_len];
-            input_bufs[2] = new float[features_buffer_len];
-            input_bufs[3] = new float[desire_len];
-            input_bufs[4] = new float[traffic_convention_len];
-            input_bufs[5] = new float[nav_features_len];
-            input_bufs[6] = new float[nav_instructions_len];
-        }
+        // useful offsets
+        int zero_len = 1024 / 4;
+        int input_imgs_len = 1572864 / 4;
+        int features_len = 512 * 3072 / 4; // 1572864 with feature len 512
+        int desire_len = 3200 / 4;
 
-        memcpy(input_bufs[0], input_imgs_buf, input_imgs_len * sizeof(float));
-        memcpy(input_bufs[1], big_input_imgs_buf, big_input_imgs_len * sizeof(float));
-        memcpy(input_bufs[2], features_buffer_buf, features_buffer_len * sizeof(float));
-        memcpy(input_bufs[3], desire_buf, desire_len * sizeof(float));
-        memcpy(input_bufs[4], traffic_convention_buf, traffic_convention_len * sizeof(float));
-        memcpy(input_bufs[5], nav_features_buf, nav_features_len * sizeof(float));
-        memcpy(input_bufs[6], nav_instructions_buf, nav_instructions_len * sizeof(float));
+        float* zero_buf = &input_buf[0];
+        float* input_imgs_buf = &input_buf[zero_len];
+        float* big_input_imgs_buf = &input_buf[zero_len + input_imgs_len];
+        float* features_buf = &input_buf[zero_len + input_imgs_len * 2];
+        float* desire_buf = &input_buf[zero_len + input_imgs_len * 2 + features_len];
 
-        // When done, release the memory
-        env->ReleaseFloatArrayElements(input_imgs, input_imgs_buf, 0);
-        env->ReleaseFloatArrayElements(big_input_imgs, big_input_imgs_buf, 0);
-        env->ReleaseFloatArrayElements(features_buffer, features_buffer_buf, 0);
-        env->ReleaseFloatArrayElements(desire, desire_buf, 0);
-        env->ReleaseFloatArrayElements(traffic_convention, traffic_convention_buf, 0);
-        env->ReleaseFloatArrayElements(nav_features, nav_features_buf, 0);
-        env->ReleaseFloatArrayElements(nav_instructions, nav_instructions_buf, 0);
-
-        if (inputsSet == false) {
-            thneed->addInput("input_imgs", input_bufs[0], input_imgs_len);
-            thneed->addInput("big_input_imgs", input_bufs[1], big_input_imgs_len);
-            thneed->addInput("features_buffer", input_bufs[2], features_buffer_len);
-            thneed->addInput("desire", input_bufs[3], desire_len);
-            thneed->addInput("traffic_convention", input_bufs[4], traffic_convention_len);
-            thneed->addInput("nav_features", input_bufs[5], nav_features_len);
-            thneed->addInput("nav_instructions", input_bufs[6], nav_instructions_len);
-            inputsSet = true;
-        }
+        thneed->addInput("input_imgs", input_imgs_buf, input_imgs_len);
+        thneed->addInput("big_input_imgs", big_input_imgs_buf, input_imgs_len);
+        thneed->addInput("desire", desire_buf, desire_len);
+        thneed->addInput("traffic_convention", zero_buf, 8/4);
+        thneed->addInput("nav_features", zero_buf, 1024/4);
+        thneed->addInput("nav_instructions", zero_buf, 600/4);
+        thneed->addInput("features_buffer", features_buf, features_len);
 
         // ok execute model
         thneed->execute();
+
+        // When done, release the memory
+        env->ReleaseFloatArrayElements(input, input_buf, 0);
 
         // get the outputs
         jfloatArray result = env->NewFloatArray(output_len);
