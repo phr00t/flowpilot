@@ -14,8 +14,8 @@ def logging(started, params, CP: car.CarParams) -> bool:
   return started and run
 
 def useModelParseD():
-  return False #debug run externally
-  #return Params().get_bool("F3")
+  #return False #if we are running externally
+  return Params().get_bool("F3")
 
 procs = [
   ManagerProcess("controlsd", "controlsd"),

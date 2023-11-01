@@ -14,7 +14,7 @@
 #include "selfdrive/modeld/models/driving.h"
 #include "common/util.h"
 
-#define USE_SOCKETS
+//#define USE_SOCKETS
 
 using namespace std;
 
