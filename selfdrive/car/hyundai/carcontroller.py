@@ -195,18 +195,9 @@ class CarController:
     l0v = radarState.leadOne.vRel
     l0vstd = radarState.leadOne.vLeadK
 
-    # generally add l0vstd to our speed, as its nearly universally wrong in the slow direction, unless lead
-    # is detected as significantly slowing, then we will consider the devation smoothly in the negative direction
-    # we consider this point to be around -2.666m/s lead difference
-    #l0vstd_multiplier = 2 / (1 + math.exp(-l0v - 2.5)) - 1.0
-    # if we are saying the car is going faster, reduce that a little depending on how close we are to the lead
-    #if l0vstd_multiplier > 0:
-    #  cutoff_distance = clamp(CS.out.vEgo * 1.75, 35, 60)
-    #  l0vstd_multiplier *= interp(l0d, [10.0, cutoff_distance], [0.0, 0.8])
-
-    # finally calculate the final mph diff to use, considering l0vstd multipler above
-    #lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
-    lead_vdiff_mph = l0v * 2.23694
+    # adjust l0v based on l0vstd and l0v
+    l0vstd_multiplier = 1 / (1 + math.exp(-l0v)) - 0.5
+    lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
     l0v_distval_mph = 0
