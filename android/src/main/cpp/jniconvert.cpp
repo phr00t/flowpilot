@@ -329,7 +329,7 @@ void Thneed::load(const char *filename) {
 Thneed::Thneed(bool do_clinit, cl_context _context) {
     context = _context;
     if (do_clinit) clinit();
-    debug = 1; //(thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
+    debug = 0; //(thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
 }
 
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
@@ -347,7 +347,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 
     if (debug >= 1) {
         te = nanos_since_boot();
-        printf("model exec in %lu us\n", (te-tb)/1000);
+        __android_log_print(ANDROID_LOG_INFO, "JNILOG","model exec in %lu us\n", (te-tb)/1000);
     }
 }
 
@@ -693,9 +693,9 @@ cl_int CLQueuedKernel::exec() {
         }
     }
 
-    if (thneed->debug >= 1) {
-        debug_print(thneed->debug >= 2);
-    }
+    //if (thneed->debug >= 1) {
+    //    debug_print(thneed->debug >= 2);
+    //}
 
     return (*p_clEnqueueNDRangeKernel)(thneed->command_queue,
                                   kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
@@ -853,7 +853,7 @@ extern "C" {
         // useful offsets
         int zero_len = 1024 / 4;
         int input_imgs_len = 1572864 / 4;
-        int features_len = 512 * 3072 / 4; // 1572864 with feature len 512
+        int features_len = 99 * 512;
         int desire_len = 3200 / 4;
 
         float* zero_buf = &input_buf[0];
