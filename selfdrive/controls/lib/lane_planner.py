@@ -202,6 +202,8 @@ class LanePlanner:
         else:
           # want to center more left
           self.center_force = clamp(self.center_force - target_centering * 0.01, target_centering, 0.0)
+        # if we are lane changing, cut center force
+        self.center_force *= self.lane_change_multiplier
       else:
         self.center_force = 0.0
 
