@@ -83,8 +83,8 @@ class CarController:
     self.lkas11_cnt = 0
     self.mdpsBus = 0
 
-    self.speed_ratios =  [0.0, 1.0,  1.1,  1.2,  1.3,  1.4,  1.5,  1.6]
-    self.target_accels = [2.0, 0.0, -0.3, -0.7, -1.2, -1.8, -2.5, -3.0]
+    self.speed_ratios =  [0.0, 1.0,  1.05,  1.1,  1.15,  1.2,  1.25,  1.3]
+    self.target_accels = [2.0, 0.0,  -0.3, -0.7,  -1.2, -1.8,  -2.5, -3.0]
 
     self.lead_distance_hist = []
     self.lead_distance_times = []
@@ -198,14 +198,15 @@ class CarController:
     # generally add l0vstd to our speed, as its nearly universally wrong in the slow direction, unless lead
     # is detected as significantly slowing, then we will consider the devation smoothly in the negative direction
     # we consider this point to be around -2.666m/s lead difference
-    l0vstd_multiplier = 2 / (1 + math.exp(-l0v - 2.5)) - 1.0
+    #l0vstd_multiplier = 2 / (1 + math.exp(-l0v - 2.5)) - 1.0
     # if we are saying the car is going faster, reduce that a little depending on how close we are to the lead
-    if l0vstd_multiplier > 0:
-      cutoff_distance = clamp(CS.out.vEgo * 1.75, 35, 60)
-      l0vstd_multiplier *= interp(l0d, [10.0, cutoff_distance], [0.0, 0.8])
+    #if l0vstd_multiplier > 0:
+    #  cutoff_distance = clamp(CS.out.vEgo * 1.75, 35, 60)
+    #  l0vstd_multiplier *= interp(l0d, [10.0, cutoff_distance], [0.0, 0.8])
 
     # finally calculate the final mph diff to use, considering l0vstd multipler above
-    lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
+    #lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
+    lead_vdiff_mph = l0v * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
     l0v_distval_mph = 0
@@ -248,7 +249,7 @@ class CarController:
       self.lead_seen_counter += 1
       if clu11_speed > 5:
         # amplify large lead car speed differences a bit so we react faster
-        lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
+        #lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
         # calculate an estimate of the lead car's speed for purposes of setting our speed
         lead_speed = clu11_speed + lead_vdiff_mph
         # calculate lead car time
@@ -271,8 +272,8 @@ class CarController:
         # depending on slowing down or speeding up, scale
         if lead_time_ideal_offset < 0:
           lead_time_ideal_offset = -(-lead_time_ideal_offset * (10.5 / target_time)) ** 1.4  # exponentially slow down if getting closer and closer
-        else:
-          lead_time_ideal_offset = (lead_time_ideal_offset * 3) ** 1.25  # exponentially not consider lead car the further away
+        #else:
+        #  lead_time_ideal_offset = (lead_time_ideal_offset * 3) ** 1.25  # exponentially not consider lead car the further away
         # calculate the final max speed we should be going based on lead car
         max_lead_adj = lead_speed + lead_time_ideal_offset
         # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
@@ -308,12 +309,8 @@ class CarController:
       if self.usingAccel and avg_accel < clu11_speed * 0.5 and desired_speed > clu11_speed - 1:
         desired_speed = clu11_speed - 1
 
-      # what is our difference between desired speed and target speed?
-      speed_diff = desired_speed - clu11_speed
-
-      # apply a spam overpress to amplify speed changes
-      # make sure we don't go negative here (or zero)
-      desired_speed = clamp(desired_speed + speed_diff * 0.6, 0.001, max_speed_in_mph)
+      # clamp for the following divisions
+      desired_speed = clamp(desired_speed, 0.001, max_speed_in_mph)
 
       # what is our speed to desired speed ratio?
       target_speed_ratio = clu11_speed / desired_speed
@@ -342,11 +339,12 @@ class CarController:
       # we are stopping for some other reason, clear our lead accumulator
       self.lead_accel_accum = 0.0
 
-    # sanity checks
-    if desired_speed > max_speed_in_mph:
-      desired_speed = max_speed_in_mph
-    if desired_speed < 0:
-      desired_speed = 0
+    # what is our difference between desired speed and target speed?
+    speed_diff = desired_speed - clu11_speed
+
+    # apply a spam overpress to amplify speed changes
+    # then clamp
+    desired_speed = clamp(desired_speed + speed_diff * 0.6, 0.0, max_speed_in_mph)
 
     # if we recently pressed a cruise button, don't spam more to prevent errors for a little bit
     if CS.cruise_buttons != 0:
@@ -361,7 +359,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " dV" + "{:.2f}".format(l0v_distval_mph) + " vS" + "{:.2f}".format(l0vstd) + " lD" + "{:.1f}".format(l0d))
+    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " CC" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " Pr?" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " dV" + "{:.2f}".format(l0v_distval_mph) + " vS" + "{:.2f}".format(l0vstd * 2.23694) + " lD" + "{:.1f}".format(l0d))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
