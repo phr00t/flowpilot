@@ -862,13 +862,13 @@ extern "C" {
         float* features_buf = &input_buf[zero_len + input_imgs_len * 2];
         float* desire_buf = &input_buf[zero_len + input_imgs_len * 2 + features_len];
 
-        thneed->addInput("input_imgs", input_imgs_buf, input_imgs_len);
-        thneed->addInput("big_input_imgs", big_input_imgs_buf, input_imgs_len);
-        thneed->addInput("desire", desire_buf, desire_len);
-        thneed->addInput("traffic_convention", zero_buf, 8/4);
-        thneed->addInput("nav_features", zero_buf, 1024/4);
-        thneed->addInput("nav_instructions", zero_buf, 600/4);
-        thneed->addInput("features_buffer", features_buf, features_len);
+        thneed->setInputBuffer("input_imgs", input_imgs_buf, input_imgs_len);
+        thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, input_imgs_len);
+        thneed->setInputBuffer("desire", desire_buf, desire_len);
+        thneed->setInputBuffer("traffic_convention", zero_buf, 8/4);
+        thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
+        thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
+        thneed->setInputBuffer("features_buffer", features_buf, features_len);
 
         // ok execute model
         thneed->execute();
