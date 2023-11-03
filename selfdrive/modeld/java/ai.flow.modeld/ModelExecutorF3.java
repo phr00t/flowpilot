@@ -161,14 +161,17 @@ public class ModelExecutorF3 extends ModelExecutor {
         inputMap.put("big_input_imgs", netInputWideBuffer);
         modelRunner.run(inputMap, outputMap);
 
-        // featureTensorShape, 1, FEATURE_LEN, HISTORY_LEN
-        featuresNDArr.put(featureRotateSlice0, featuresNDArr.get(featureRotateSlice1));
-        if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE) {
-            for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
-                featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]); // SNPE
-        } else {
-            for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
-                featuresNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN - 1, i, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
+        // we handle features in JNI for THNEED
+        if (utils.Runner != utils.USE_MODEL_RUNNER.THNEED) {
+            // featureTensorShape, 1, FEATURE_LEN, HISTORY_LEN
+            featuresNDArr.put(featureRotateSlice0, featuresNDArr.get(featureRotateSlice1));
+            if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE) {
+                for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
+                    featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]); // SNPE
+            } else {
+                for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
+                    featuresNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN - 1, i, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
+            }
         }
 
         // publish outputs

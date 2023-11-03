@@ -819,12 +819,18 @@ void ThneedModel::execute() {
     }
 }
 
+const int FEATURE_LEN = 512;
+const int HISTORY_BUFFER_LEN = 99;
+const int OUTPUT_SIZE = 5978 + 12;
+
 std::string *pathString;
 jfloat* outputs;
 jint output_len;
 ThneedModel *thneed;
 float *zero_buf;
+float *features_buf;
 int zero_len = 1024 / 4;
+int features_len = HISTORY_BUFFER_LEN * FEATURE_LEN;
 
 extern "C" {
 
@@ -842,8 +848,11 @@ extern "C" {
         outputs = new jfloat[size];
         output_len = size;
         zero_buf = new float[zero_len];
+        features_buf = new float[features_len];
         for (int i=0; i<zero_len; i++)
             zero_buf[i] = 0;
+        for (int i=0; i<features_len; i++)
+            features_buf[i] = 0;
     }
 
     void JNICALL Java_ai_flow_android_vision_THNEEDModelRunner_initThneed(JNIEnv *env, jobject obj) {
@@ -857,13 +866,11 @@ extern "C" {
 
         // useful offsets
         int input_imgs_len = 1572864 / 4;
-        int features_len = 99 * 512;
         int desire_len = 3200 / 4;
 
         float* input_imgs_buf = &input_buf[0];
         float* big_input_imgs_buf = &input_buf[input_imgs_len];
-        float* features_buf = &input_buf[input_imgs_len * 2];
-        float* desire_buf = &input_buf[input_imgs_len * 2 + features_len];
+        float* desire_buf = &input_buf[input_imgs_len * 2];
 
         thneed->setInputBuffer("input_imgs", input_imgs_buf, input_imgs_len);
         thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, input_imgs_len);
@@ -878,6 +885,10 @@ extern "C" {
 
         // When done, release the memory
         env->ReleaseFloatArrayElements(input, input_buf, 0);
+
+        // handle features
+        std::memmove(&features_buf[0], &features_buf[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
+        std::memcpy(&features_buf[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &outputs[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
 
         // get the outputs
         jfloatArray result = env->NewFloatArray(output_len);
