@@ -196,7 +196,7 @@ class CarController:
     l0vstd = radarState.leadOne.vLeadK
 
     # adjust l0v based on l0vstd and l0v
-    l0vstd_multiplier = 1 / (1 + math.exp(-l0v)) - 0.5
+    l0vstd_multiplier = 1.5 / (1 + math.exp(-2*l0v)) - 0.75
     lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
@@ -264,7 +264,7 @@ class CarController:
         if lead_time_ideal_offset < 0:
           lead_time_ideal_offset = -(-lead_time_ideal_offset * (10.5 / target_time)) ** 1.4  # exponentially slow down if getting closer and closer
         #else:
-        #  lead_time_ideal_offset = (lead_time_ideal_offset * 3) ** 1.25  # exponentially not consider lead car the further away
+          lead_time_ideal_offset = (lead_time_ideal_offset * 2) ** 1.2  # exponentially not consider lead car the further away
         # calculate the final max speed we should be going based on lead car
         max_lead_adj = lead_speed + lead_time_ideal_offset
         # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
