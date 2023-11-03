@@ -263,7 +263,7 @@ class CarController:
         # depending on slowing down or speeding up, scale
         if lead_time_ideal_offset < 0:
           lead_time_ideal_offset = -(-lead_time_ideal_offset * (10.5 / target_time)) ** 1.4  # exponentially slow down if getting closer and closer
-        #else:
+        else:
           lead_time_ideal_offset = (lead_time_ideal_offset * 2) ** 1.2  # exponentially not consider lead car the further away
         # calculate the final max speed we should be going based on lead car
         max_lead_adj = lead_speed + lead_time_ideal_offset
