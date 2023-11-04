@@ -297,7 +297,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   }
 
   fill_plan(framed, best_plan);
-  //fill_lateral_planner(framed, net_outputs.lateral_planner_solution); // NLP thing
+  fill_lateral_planner(framed, net_outputs.lateral_planner_solution); // NLP thing
   fill_lane_lines(framed, plan_t, net_outputs.lane_lines);
   fill_road_edges(framed, plan_t, net_outputs.road_edges);
 
