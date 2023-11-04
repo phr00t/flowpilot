@@ -9,14 +9,14 @@ import java.util.Queue;
 public class utils {
 
     public enum USE_MODEL_RUNNER {
-        ONNX,
-        SNPE,
-        TNN,
-        THNEED,
-        EXTERNAL_TINYGRAD
+        ONNX, // DOESNT WORK
+        SNPE, // Nicki Minaj Model
+        TNN, // DOESNT WORK
+        THNEED, // NLPv3
+        EXTERNAL_TINYGRAD // DOESNT WORK
     }
     public static boolean F2 = false;
-    public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.THNEED;
+    public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.SNPE;
     public static boolean getBoolEnvVar(String key) {
         String val = System.getenv(key);
         boolean ret = false;
