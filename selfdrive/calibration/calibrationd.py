@@ -240,7 +240,7 @@ class Calibrator:
     liveCalibration.rpyCalib = smooth_rpy.tolist()
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
     liveCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
-    #liveCalibration.height = self.height.tolist()
+    liveCalibration.height = self.height.tolist()
 
     if self.not_car:
       liveCalibration.validBlocks = INPUTS_NEEDED
