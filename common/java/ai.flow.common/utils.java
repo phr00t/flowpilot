@@ -15,7 +15,7 @@ public class utils {
         THNEED, // NLPv3
         EXTERNAL_TINYGRAD // DOESNT WORK
     }
-    public static boolean F2 = false, NLPModel = false;
+    public static boolean F2 = false, NLPModel = true;
     public static USE_MODEL_RUNNER Runner = USE_MODEL_RUNNER.THNEED;
     public static boolean getBoolEnvVar(String key) {
         String val = System.getenv(key);
