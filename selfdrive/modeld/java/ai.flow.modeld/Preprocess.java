@@ -25,7 +25,7 @@ public class Preprocess {
     private static final int[] idxTensor1 = {6, 7, 8, 9, 10, 11};
     public static INDArray sbigmodel_from_calib = Model.sbigmodel_intrinsics.mmul(Camera.view_from_device);
     public static INDArray medmodel_from_calib = Model.medmodel_intrinsics.mmul(Camera.view_from_device);
-    public static INDArray getWrapMatrix(INDArray rpy_calib, INDArray road_intrinsics, INDArray wide_intrinsics, boolean wide_cam, boolean big_model) {
+    public static INDArray getWrapMatrix(INDArray eMatrix, INDArray road_intrinsics, INDArray wide_intrinsics, boolean wide_cam, boolean big_model) {
         INDArray intrinsics;
         if (wide_cam)
             intrinsics = wide_intrinsics;
@@ -38,8 +38,7 @@ public class Preprocess {
         else
             calib_from_model = InvertMatrix.invert(medmodel_from_calib, false);
 
-        INDArray device_from_calib = eulerAnglesToRotationMatrix(rpy_calib.getDouble(0), rpy_calib.getDouble(1), rpy_calib.getDouble(2), false);
-        INDArray camera_from_calib = intrinsics.mmul(Camera.view_from_device.mmul(device_from_calib));
+        INDArray camera_from_calib = intrinsics.mmul(Camera.view_from_device.mmul(eMatrix));
         INDArray warp_matrix = camera_from_calib.mmul(calib_from_model);
         return warp_matrix;
     }

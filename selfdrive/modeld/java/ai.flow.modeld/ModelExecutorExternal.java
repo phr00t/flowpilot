@@ -40,8 +40,7 @@ public class ModelExecutorExternal extends ModelExecutor {
 
     public static int[] imgTensorShape = {1, 12, 128, 256};
 
-    public final INDArray augmentRot = Nd4j.zeros(3);
-    public final INDArray augmentTrans = Nd4j.zeros(3);
+    public final INDArray eMatrix = Nd4j.zeros(9);
 
     public final ParamsInterface params = ParamsInterface.getInstance();
 
@@ -82,12 +81,12 @@ public class ModelExecutorExternal extends ModelExecutor {
 
         if (sh.updated("liveCalibration")) {
             liveCalib = sh.recv("liveCalibration").getLiveCalibration();
-            PrimitiveList.Float.Reader rpy = liveCalib.getRpyCalib();
-            for (int i = 0; i < 3; i++) {
-                augmentRot.putScalar(i, rpy.get(i));
+            PrimitiveList.Float.Reader rpy = liveCalib.getExtrinsicMatrix();
+            for (int i = 0; i < 9; i++) {
+                eMatrix.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
-            wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
+            wrapMatrix = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+            wrapMatrixWide = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
         }
 
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
@@ -126,8 +125,8 @@ public class ModelExecutorExternal extends ModelExecutor {
 
         sh.createSubscribers(Arrays.asList("lateralPlan", "liveCalibration"));
 
-        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
-        wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
+        wrapMatrix = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+        wrapMatrixWide = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
 
         // wait for a frame
         while (msgFrameBuffer == null) {

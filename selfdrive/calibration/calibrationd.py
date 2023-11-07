@@ -76,6 +76,7 @@ class Calibrator:
             rpy_init = np.array(msg.liveCalibration.rpyCalib)
             valid_blocks = msg.liveCalibration.validBlocks
             wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
+            height = np.array(msg.liveCalibration.height)
             print("calibration loaded OK")
           else:
             print("msg was empty")
@@ -176,6 +177,11 @@ class Calibrator:
     else:
       return self.rpy
 
+  def get_extrinsic_matrix(self):
+      R = rot_from_euler(self.get_smooth_rpy())
+      t = np.array([[0.0, np.mean(self.height), 0.0]])
+      return np.vstack([R, t]).T
+
   def handle_cam_odom(self, trans: List[float],
                             rot: List[float],
                             wide_from_device_euler: List[float],
@@ -241,6 +247,7 @@ class Calibrator:
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
     liveCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
     liveCalibration.height = self.height.tolist()
+    liveCalibration.extrinsicMatrix = get_extrinsic_matrix()
 
     if self.not_car:
       liveCalibration.validBlocks = INPUTS_NEEDED

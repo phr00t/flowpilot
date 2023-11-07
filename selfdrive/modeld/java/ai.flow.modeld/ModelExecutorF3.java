@@ -59,8 +59,6 @@ public class ModelExecutorF3 extends ModelExecutor {
     public INDArray navfeaturesNDArr;
     public INDArray navinstructNDArr;
     public final float[] netOutputs = new float[(int)numElements(outputTensorShape)];
-    public final INDArray augmentRot = Nd4j.zeros(3);
-    public final INDArray augmentTrans = Nd4j.zeros(3);
     public final float[]prevDesire = new float[CommonModelF3.DESIRE_LEN];
     public final float[]desireIn = new float[CommonModelF3.DESIRE_LEN];
     public final Map<String, INDArray> inputMap =  new HashMap<>();
@@ -138,12 +136,12 @@ public class ModelExecutorF3 extends ModelExecutor {
 
         if (sh.updated("liveCalibration")) {
             liveCalib = sh.recv("liveCalibration").getLiveCalibration();
-            PrimitiveList.Float.Reader rpy = liveCalib.getRpyCalib();
-            for (int i = 0; i < 3; i++) {
-                augmentRot.putScalar(i, rpy.get(i));
+            PrimitiveList.Float.Reader rpy = liveCalib.getExtrinsicMatrix();
+            for (int i = 0; i < 9; i++) {
+                eMatrix.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
-            wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
+            wrapMatrix = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+            wrapMatrixWide = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
         }
 
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
@@ -242,8 +240,8 @@ public class ModelExecutorF3 extends ModelExecutor {
         modelRunner.init(inputShapeMap, outputShapeMap);
         modelRunner.warmup();
 
-        wrapMatrix = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
-        wrapMatrixWide = Preprocess.getWrapMatrix(augmentRot, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
+        wrapMatrix = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+        wrapMatrixWide = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
 
         // wait for a frame
         while (msgFrameBuffer == null) {

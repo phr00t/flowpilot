@@ -1,8 +1,12 @@
 package ai.flow.modeld;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+
 import ai.flow.definitions.Definitions;
 
 public abstract class ModelExecutor {
+    public final INDArray eMatrix = Nd4j.zeros(9);
     public static Definitions.FrameData.Reader frameData;
     public static Definitions.FrameData.Reader frameWideData;
     public static Definitions.FrameBuffer.Reader msgFrameBuffer;
