@@ -23,7 +23,7 @@ from system.swaglog import cloudlog
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
-
+DEFAULT_HEIGHT = 1.22
 MAX_HEIGHT_STD = np.exp(-3.5)
 
 # This is at model frequency, blocks needed for efficiency
@@ -34,7 +34,7 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
 WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
-HEIGHT_INIT = np.array([1.28]) #1.28 for kona ev, 1.22 is default model height
+HEIGHT_INIT = np.array([DEFAULT_HEIGHT]) #1.28 for kona ev, 1.22 is default model height
 
 # These values are needed to accommodate the model frame in the narrow cam of the C3
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
@@ -179,7 +179,7 @@ class Calibrator:
 
   def get_extrinsic_matrix(self):
       R = rot_from_euler(self.get_smooth_rpy())
-      t = np.array([[0.0, np.mean(self.height), 0.0]]) #
+      t = np.array([[0.0, np.mean(self.height) - DEFAULT_HEIGHT, 0.0]]) #
       return np.vstack([R, t]).T
 
   def handle_cam_odom(self, trans: List[float],
