@@ -247,7 +247,7 @@ class Calibrator:
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
     liveCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
     liveCalibration.height = self.height.tolist()
-    liveCalibration.extrinsicMatrix = self.get_extrinsic_matrix().tolist()
+    liveCalibration.extrinsicMatrix = self.get_extrinsic_matrix().flatten().tolist()
 
     if self.not_car:
       liveCalibration.validBlocks = INPUTS_NEEDED
