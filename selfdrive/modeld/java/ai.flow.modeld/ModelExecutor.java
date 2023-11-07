@@ -6,7 +6,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import ai.flow.definitions.Definitions;
 
 public abstract class ModelExecutor {
-    public final INDArray eMatrix = Nd4j.zeros(9);
+    public final INDArray eMatrix = Nd4j.zeros(3, 3);
     public static Definitions.FrameData.Reader frameData;
     public static Definitions.FrameData.Reader frameWideData;
     public static Definitions.FrameBuffer.Reader msgFrameBuffer;

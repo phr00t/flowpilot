@@ -138,7 +138,7 @@ public class ModelExecutorF3 extends ModelExecutor {
             liveCalib = sh.recv("liveCalibration").getLiveCalibration();
             PrimitiveList.Float.Reader rpy = liveCalib.getExtrinsicMatrix();
             for (int i = 0; i < 9; i++) {
-                eMatrix.putScalar(i, rpy.get(i));
+                eMatrix.putScalar(i%3, i/3, rpy.get(i));
             }
             wrapMatrix = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
             wrapMatrixWide = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);

@@ -179,7 +179,7 @@ class Calibrator:
 
   def get_extrinsic_matrix(self):
       R = rot_from_euler(self.get_smooth_rpy())
-      t = np.array([[0.0, np.mean(self.height), 0.0]])
+      t = np.array([[0.0, 0.0, 0.0]]) #np.mean(self.height)
       return np.vstack([R, t]).T
 
   def handle_cam_odom(self, trans: List[float],
