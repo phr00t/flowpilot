@@ -40,8 +40,6 @@ public class ModelExecutorExternal extends ModelExecutor {
 
     public static int[] imgTensorShape = {1, 12, 128, 256};
 
-    public final INDArray eMatrix = Nd4j.zeros(9);
-
     public final ParamsInterface params = ParamsInterface.getInstance();
 
     public static final int[] FULL_FRAME_SIZE = Camera.frameSize;
@@ -83,10 +81,10 @@ public class ModelExecutorExternal extends ModelExecutor {
             liveCalib = sh.recv("liveCalibration").getLiveCalibration();
             PrimitiveList.Float.Reader rpy = liveCalib.getExtrinsicMatrix();
             for (int i = 0; i < 9; i++) {
-                eMatrix.putScalar(i, rpy.get(i));
+                rpy_calib.putScalar(i, rpy.get(i));
             }
-            wrapMatrix = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
-            wrapMatrixWide = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
+            wrapMatrix = Preprocess.getWrapMatrix(rpy_calib, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+            wrapMatrixWide = Preprocess.getWrapMatrix(rpy_calib, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
         }
 
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
@@ -125,8 +123,8 @@ public class ModelExecutorExternal extends ModelExecutor {
 
         sh.createSubscribers(Arrays.asList("lateralPlan", "liveCalibration"));
 
-        wrapMatrix = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
-        wrapMatrixWide = Preprocess.getWrapMatrix(eMatrix, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
+        wrapMatrix = Preprocess.getWrapMatrix(rpy_calib, Camera.cam_intrinsics, Camera.cam_intrinsics, true, false);
+        wrapMatrixWide = Preprocess.getWrapMatrix(rpy_calib, Camera.cam_intrinsics, Camera.cam_intrinsics, true, true);
 
         // wait for a frame
         while (msgFrameBuffer == null) {
