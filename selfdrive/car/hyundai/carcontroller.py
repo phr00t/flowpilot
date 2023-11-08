@@ -197,6 +197,14 @@ class CarController:
 
     # adjust l0v based on l0vstd and l0v
     l0vstd_multiplier = 1.5 / (1 + math.exp(-2*l0v)) - 0.75
+
+    # if we think we should have the lead car going faster, verify we are not too close to the lead car
+    # before applying this fully
+    if l0vstd_multiplier > 0:
+      cutoff_distance = clamp(CS.out.vEgo * 1.75, 35, 60)
+      l0vstd_multiplier *= interp(l0d, [10.0, cutoff_distance], [0.0, 1.0])
+
+    # ok, get a good estimate of the lead car speed
     lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
     # store distance history of lead car to merge with l0v to get a better speed relative value
