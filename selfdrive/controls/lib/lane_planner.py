@@ -188,7 +188,7 @@ class LanePlanner:
 
       # additional centering force, if needed
       wiggle_room = (lane_tightness * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
-      target_centering = clamp(self.rll_y[0] + self.lll_y[0]) * 0.5
+      target_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
       if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
         # too close to a left lane, apply full right centering force
         self.center_force = max(target_centering, min(0.5, KEEP_MIN_DISTANCE_FROM_LANE + self.lll_y[0]))
