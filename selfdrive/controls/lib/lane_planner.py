@@ -14,6 +14,7 @@ CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
 KEEP_MIN_DISTANCE_FROM_LANE = 1.35
+KEEP_MIN_DISTANCE_FROM_EDGELANE = 1.15
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -189,12 +190,15 @@ class LanePlanner:
       # additional centering force, if needed
       wiggle_room = (lane_tightness * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
       target_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
-      if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
+      # wait, are we looking at a lane near an edge?
+      left_keep_min = KEEP_MIN_DISTANCE_FROM_EDGELANE if abs(self.lll_y[0] - self.le_y[0]) < MIN_LANE_DISTANCE * 0.5 else KEEP_MIN_DISTANCE_FROM_LANE
+      right_keep_min = KEEP_MIN_DISTANCE_FROM_EDGELANE if abs(self.rll_y[0] - self.re_y[0]) < MIN_LANE_DISTANCE * 0.5 else KEEP_MIN_DISTANCE_FROM_LANE
+      if self.lll_y[0] > -left_keep_min:
         # too close to a left lane, apply full right centering force
-        self.center_force = max(target_centering, min(0.5, KEEP_MIN_DISTANCE_FROM_LANE + self.lll_y[0]))
-      elif self.rll_y[0] < KEEP_MIN_DISTANCE_FROM_LANE:
+        self.center_force = max(target_centering, min(0.5, left_keep_min + self.lll_y[0]))
+      elif self.rll_y[0] < right_keep_min:
         # too close to a right lane, apply full left centering force
-        self.center_force = min(target_centering, max(-0.5, self.rll_y[0] - KEEP_MIN_DISTANCE_FROM_LANE))
+        self.center_force = min(target_centering, max(-0.5, self.rll_y[0] - right_keep_min))
       elif wiggle_room > 0:
         # we've got some wiggle room inside the lane
         if target_centering > 0.0:
