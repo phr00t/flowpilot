@@ -213,6 +213,8 @@ class LanePlanner:
         self.center_force = 0.0
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
+      # if we are in a small lane, reduce centering force to prevent pingponging
+      self.center_force *= interp(lane_tightness, [2.6, 2.8], [0.0, 1.0])
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
