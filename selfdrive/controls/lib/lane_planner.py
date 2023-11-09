@@ -188,24 +188,27 @@ class LanePlanner:
 
       # additional centering force, if needed
       wiggle_room = (lane_tightness * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
-      if wiggle_room > 0:
-        target_centering = clamp((self.rll_y[0] + self.lll_y[0]) * 0.5, -wiggle_room, wiggle_room)
-        if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
-          # too close to a left lane, apply full right centering force
-          self.center_force = max(target_centering, min(0.5, KEEP_MIN_DISTANCE_FROM_LANE + self.lll_y[0]))
-        elif self.rll_y[0] < KEEP_MIN_DISTANCE_FROM_LANE:
-          # too close to a right lane, apply full left centering force
-          self.center_force = min(target_centering, max(-0.5, self.rll_y[0] - KEEP_MIN_DISTANCE_FROM_LANE))
-        elif target_centering > 0.0:
+      target_centering = clamp(self.rll_y[0] + self.lll_y[0]) * 0.5
+      if self.lll_y[0] > -KEEP_MIN_DISTANCE_FROM_LANE:
+        # too close to a left lane, apply full right centering force
+        self.center_force = max(target_centering, min(0.5, KEEP_MIN_DISTANCE_FROM_LANE + self.lll_y[0]))
+      elif self.rll_y[0] < KEEP_MIN_DISTANCE_FROM_LANE:
+        # too close to a right lane, apply full left centering force
+        self.center_force = min(target_centering, max(-0.5, self.rll_y[0] - KEEP_MIN_DISTANCE_FROM_LANE))
+      elif wiggle_room > 0:
+        # we've got some wiggle room inside the lane
+        if target_centering > 0.0:
           # want to center more right
           self.center_force = clamp(self.center_force + target_centering * 0.01, 0.0, target_centering)
         else:
           # want to center more left
           self.center_force = clamp(self.center_force - target_centering * 0.01, target_centering, 0.0)
-        # if we are lane changing, cut center force
-        self.center_force *= self.lane_change_multiplier
+        # clamp to wiggle room
+        self.center_force = clamp(self.center_force, -wiggle_room, wiggle_room)
       else:
         self.center_force = 0.0
+      # if we are lane changing, cut center force
+      self.center_force *= self.lane_change_multiplier
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
