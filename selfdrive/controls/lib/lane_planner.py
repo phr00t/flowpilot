@@ -205,10 +205,10 @@ class LanePlanner:
         # we've got some wiggle room inside the lane
         if target_centering > 0.0:
           # want to center more right
-          self.center_force = clamp(self.center_force + target_centering * 0.01, 0.0, target_centering)
+          self.center_force = clamp(self.center_force + target_centering * 0.015, 0.0, target_centering)
         else:
           # want to center more left
-          self.center_force = clamp(self.center_force - target_centering * 0.01, target_centering, 0.0)
+          self.center_force = clamp(self.center_force + target_centering * 0.015, target_centering, 0.0)
         # clamp to wiggle room
         self.center_force = clamp(self.center_force, -wiggle_room, wiggle_room)
       else:
