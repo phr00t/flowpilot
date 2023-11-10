@@ -82,6 +82,7 @@ def main():
                         ("DisengageOnAccelerator", "0"),
                         ("HasAcceptedTerms", "1"),
                         ("UseAccel", "0"),
+                        ("LanePlannerPreferred", "1"),
                         ("F3", "1"),
                         ("UseModelPath", "0"),
                         ("UseDistSpeed", "0"),

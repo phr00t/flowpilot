@@ -114,6 +114,8 @@ public class SettingsScreen extends ScreenAdapter {
         AdditionalToggles.add("F3");
         AdditionalToggles.add("Stop Sign/Red Lights");
         AdditionalToggles.add("UseAccel");
+        AdditionalToggles.add("Use Lane Planner More");
+        AdditionalToggles.add("LanePlannerPreferred");
         //AdditionalToggles.add("Use DistSpeed Estimator");
         //AdditionalToggles.add("UseDistSpeed");
         AdditionalToggles.add("More Sensitive Slower");

@@ -53,6 +53,7 @@ class LanePlanner:
     self.Options = Params()
     self.UseModelPath = self.Options.get_bool("UseModelPath")
     self.BigModel = self.Options.get_bool("F3")
+    self.LanePreferred = self.Options.get_bool("LanePlannerPreferred")
     self.updateOptions = 100
     self.tire_stiffness_multiplier = 1.0
 
@@ -72,6 +73,7 @@ class LanePlanner:
     self.updateOptions -= 1
     if self.updateOptions <= 0:
       self.updateOptions = 100
+      self.LanePreferred = self.Options.get_bool("LanePlannerPreferred")
       self.UseModelPath = self.Options.get_bool("UseModelPath")
 
     lane_lines = md.laneLines
@@ -247,7 +249,13 @@ class LanePlanner:
         self.ultimate_path[index] = ideal_point
 
       # do we want to mix in the model path a little bit if lanelines are going south?
-      final_ultimate_path_mix = self.lane_change_multiplier * lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0]) if not self.UseModelPath else 0.0
+      ultimate_path_mix = 0.0
+      if not self.UseModelPath:
+        if self.LanePreferred:
+          ultimate_path_mix = clamp(lane_trust * 3, 0.0, 1.0)
+        else:
+          ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
+      final_ultimate_path_mix = self.lane_change_multiplier * ultimate_path_mix
 
       # debug
       sLogger.Send("Cf" + "{:.2f}".format(self.center_force) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))

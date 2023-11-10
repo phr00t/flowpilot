@@ -61,6 +61,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
     {"ResetExtrinsicCalibration", CLEAR_ON_MANAGER_START},
     {"UseAccel", PERSISTENT},
+    {"LanePlannerPreferred", PERSISTENT},
     {"SensitiveSlow", PERSISTENT},
     {"UseDistSpeed", PERSISTENT},
     {"UseModelPath", PERSISTENT},
