@@ -77,6 +77,7 @@ class CarController:
     self.lead_accel_accum = 0.0
     self.accel_last = 0
     self.accels = []
+    self.accels_max = []
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
@@ -167,15 +168,21 @@ class CarController:
     # this looks for stop signs and red lights
     # accels is a weird type so we will iterate over it and take a lowest average
     accel_count = len(long_plan.accels)
-    avg_accel = max_speed_in_mph
+    avg_accel_min = max_speed_in_mph
+    avg_accel_max = max_speed_in_mph
     if accel_count > 4:
       accel_smallest = 9999
+      accel_biggest = 0
       for i in range(0, accel_count):
         if long_plan.accels[i] < accel_smallest:
           accel_smallest = long_plan.accels[i]
+        if long_plan.accels[i] > accel_biggest:
+          accel_biggest = long_plan.accels[i]
       self.accels.append(accel_smallest * CV.MS_TO_MPH)
+      self.accels_max.append(accel_biggest * CV.MS_TO_MPH)
       if len(self.accels) > 20:
-        avg_accel = statistics.fmean(self.accels)
+        avg_accel_min = statistics.fmean(self.accels)
+        avg_accel_max = statistics.fmean(self.accels_max)
         self.accels.pop(0)
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
@@ -299,13 +306,13 @@ class CarController:
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
       self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
-    if self.usingAccel and (avg_accel < 8.0 or stoplinesp > 0.7) and clu11_speed < 45:
+    if self.usingAccel and (avg_accel_min < 8.0 or stoplinesp > 0.7) and clu11_speed < 45:
       # stop sign or red light, stop!
       desired_speed = 0
       CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     elif desired_speed > 0:
       # does the model think we should be really slowing down?
-      if self.usingAccel and avg_accel < clu11_speed * 0.5 and desired_speed > clu11_speed - 1:
+      if self.usingAccel and avg_accel_min < clu11_speed * 0.5 and desired_speed > clu11_speed - 1:
         desired_speed = clu11_speed - 1
 
       # clamp for the following divisions
@@ -358,7 +365,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0Ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " pr" + str(CS.out.cruiseState.nonAdaptive) + " DS" + "{:.1f}".format(desired_speed) + " dV" + "{:.2f}".format(l0v_distval_mph) + " vS" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel))
+    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " pr" + str(int(CS.out.cruiseState.nonAdaptive)) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(l0v_distval_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " ms" + "{:.1f}".format(avg_accel_max))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
