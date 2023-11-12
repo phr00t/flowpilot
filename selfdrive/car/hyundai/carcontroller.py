@@ -184,6 +184,7 @@ class CarController:
         avg_accel_min = statistics.fmean(self.accels)
         avg_accel_max = statistics.fmean(self.accels_max)
         self.accels.pop(0)
+        self.accels_max.pop(0)
 
     # get biggest upcoming curve value, ignoring the curve we are currently on (so we plan ahead better)
     vcurv = 0
