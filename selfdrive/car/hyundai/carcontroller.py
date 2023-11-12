@@ -204,7 +204,7 @@ class CarController:
     l0vstd = radarState.leadOne.vLeadK
 
     # adjust l0v based on l0vstd and l0v
-    l0vstd_multiplier = 1.5 / (1 + math.exp(-2*l0v)) - 0.75
+    l0vstd_multiplier = 1.75 / (1 + math.exp(-l0v-0.289)) - 1.0
 
     # if we think we should have the lead car going faster, verify we are not too close to the lead car
     # before applying this fully
@@ -285,11 +285,11 @@ class CarController:
         max_lead_adj = lead_speed + lead_time_ideal_offset
         # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
         # don't go much slower than the lead car, and cancel any sudden slowing that may be happening
-        fasterleadcar_imposed_speed_limit = max(clu11_speed - 2.0, lead_speed - 2.3)
+        fasterleadcar_imposed_speed_limit = max(clu11_speed - 1.75, lead_speed - 2.3)
         if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
           max_lead_adj = fasterleadcar_imposed_speed_limit # slowly make space between cars
-        elif dont_sudden_slow and max_lead_adj < clu11_speed - 2.0:
-          max_lead_adj = clu11_speed - 2.0 # slow down, but not aggresively
+        elif dont_sudden_slow and max_lead_adj < clu11_speed - 1.75:
+          max_lead_adj = clu11_speed - 1.75 # slow down, but not aggresively
         elif not leadcar_going_faster and self.lead_seen_counter < 150 and max_lead_adj > clu11_speed:
           max_lead_adj = clu11_speed # dont speed up if we see a new car and its not going faster than us
         # cap our desired_speed to this final max speed
@@ -313,8 +313,8 @@ class CarController:
       CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     elif desired_speed > 0:
       # does the model think we should be really slowing down?
-      if self.usingAccel and avg_accel_min < clu11_speed * 0.5 and desired_speed > clu11_speed - 1:
-        desired_speed = clu11_speed - 1
+      if self.usingAccel and avg_accel_min < clu11_speed - 10 and desired_speed > clu11_speed - 1.75:
+        desired_speed = clu11_speed - 1.75
 
       # clamp for the following divisions
       desired_speed = clamp(desired_speed, 0.001, max_speed_in_mph)
@@ -340,7 +340,7 @@ class CarController:
         else:
           self.lead_accel_accum = 0.0
         # if it seems like we should be slowing down enough over time, kill cruise to brake harder
-        if self.lead_accel_accum < (-1.5 if self.sensitiveSlow else -2.0):
+        if self.lead_accel_accum < (-1.5 if self.sensitiveSlow else -2.0) and clu11_speed - desired_speed >= 1.85:
           desired_speed = 0
     else:
       # we are stopping for some other reason, clear our lead accumulator
