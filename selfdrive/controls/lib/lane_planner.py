@@ -238,14 +238,18 @@ class LanePlanner:
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # clamp the path to the lane this spot is closest to
+        # to prevent corner cutting, shift this point wide depending on the curve
+        turn_shift_room = (final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
+        if turn_shift_room > 0:
+          ideal_point += clamp((2.0 / (1.0 + math.exp(1.5*vcurv[index]))) - 1.0, -turn_shift_room, turn_shift_room)
+        # clamp the path to the lane we are closest to
         if abs(self.rll_y[0]) > abs(self.lll_y[0]):
           # closer to the left lane
           ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor)
         else:
           # closer to right lane
           ideal_point = clamp(ideal_point, left_anchor, right_anchor - use_min_lane_distance)
-        # add it to our ultimate path with centering force
+        # add it to our ultimate path
         self.ultimate_path[index] = ideal_point
 
       # do we want to mix in the model path a little bit if lanelines are going south?
