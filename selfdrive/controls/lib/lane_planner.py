@@ -13,6 +13,7 @@ TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
+MAX_LANE_CENTERING_AWAY = 1.85
 KEEP_MIN_DISTANCE_FROM_LANE = 1.35
 KEEP_MIN_DISTANCE_FROM_EDGELANE = 1.15
 
@@ -206,9 +207,21 @@ class LanePlanner:
         if target_centering > 0.0:
           # want to center more right
           self.center_force = clamp(self.center_force + target_centering * 0.015, 0.0, target_centering)
+          # also clamp centering force to not go so far away from our left lane
+          max_centering_right = MAX_LANE_CENTERING_AWAY + self.lll_y[0]
+          if max_centering_right > 0:
+            self.center_force = clamp(self.center_force, 0.0, max_centering_right)
+          else:
+            self.center_force = 0.0
         else:
           # want to center more left
           self.center_force = clamp(self.center_force + target_centering * 0.015, target_centering, 0.0)
+          # also clamp centering force to not go so far away from our right lane
+          max_centering_left = MAX_LANE_CENTERING_AWAY - self.rll_y[0]
+          if max_centering_left > 0:
+            self.center_force = clamp(self.center_force, -max_centering_left, 0.0)
+          else:
+            self.center_force = 0.0
         # clamp to wiggle room
         self.center_force = clamp(self.center_force, -wiggle_room, wiggle_room)
       else:
@@ -241,16 +254,11 @@ class LanePlanner:
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
         # to prevent corner cutting, shift this point wide depending on the curve
-        turn_shift_room = (final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
+        turn_shift_room = clamp((final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE, 0.0, 0.3)
         if turn_shift_room > 0 and math.isfinite(vcurv[index]):
           ideal_point += clamp((2.0 / (1.0 + math.exp(1.5*vcurv[index]))) - 1.0, -turn_shift_room, turn_shift_room)
-        # clamp the path to the lane we are closest to
-        if abs(self.rll_y[0]) > abs(self.lll_y[0]):
-          # closer to the left lane
-          ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor)
-        else:
-          # closer to right lane
-          ideal_point = clamp(ideal_point, left_anchor, right_anchor - use_min_lane_distance)
+        # clamp point inside the lane
+        ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
         # add it to our ultimate path
         self.ultimate_path[index] = ideal_point
 
