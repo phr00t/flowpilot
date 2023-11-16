@@ -217,6 +217,8 @@ class LanePlanner:
       self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
       self.center_force *= interp(lane_tightness, [2.6, 2.8], [0.0, 1.0])
+      # apply less lane centering for straights
+      self.center_force *= interp(abs(vcurv[0]), [0.0, 0.4], [0.5, 1.0])
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
@@ -240,7 +242,7 @@ class LanePlanner:
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
         # to prevent corner cutting, shift this point wide depending on the curve
         turn_shift_room = (final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
-        if turn_shift_room > 0:
+        if turn_shift_room > 0 and math.isfinite(vcurv[index]):
           ideal_point += clamp((2.0 / (1.0 + math.exp(1.5*vcurv[index]))) - 1.0, -turn_shift_room, turn_shift_room)
         # clamp the path to the lane we are closest to
         if abs(self.rll_y[0]) > abs(self.lll_y[0]):
@@ -256,7 +258,7 @@ class LanePlanner:
       ultimate_path_mix = 0.0
       if not self.UseModelPath:
         if self.LanePreferred:
-          ultimate_path_mix = clamp(lane_trust * 3, 0.0, 1.0)
+          ultimate_path_mix = clamp(lane_trust * 2, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 5.0, 6.0], [1.0, 0.75, 0.25])
         else:
           ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
       final_ultimate_path_mix = self.lane_change_multiplier * ultimate_path_mix
