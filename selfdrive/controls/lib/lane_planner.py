@@ -232,6 +232,8 @@ class LanePlanner:
       self.center_force *= interp(lane_tightness, [2.6, 2.8], [0.0, 1.0])
       # apply less lane centering for straights
       self.center_force *= interp(abs(vcurv[0]), [0.0, 0.4], [0.5, 1.0])
+      # finally apply a cap centering force
+      self.center_force = clamp(self.center_force, -0.75, 0.75)
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
