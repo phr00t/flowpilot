@@ -215,27 +215,24 @@ class CarController:
     # ok, get a good estimate of the lead car speed
     lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
-    # store distance history of lead car to merge with l0v to get a better speed relative value
+    # if we are using the distspeed feature, monitor distance to better estimate speed within standard deviation
     l0v_distval_mph = 0
     if l0prob > 0.5 and self.usingDistSpeed:
-      # ok, start averaging this distance value
+      # ok, start collecting data on the lead car
       self.lead_distance_hist.append(l0d)
-      # if we've got enough data to calculate an average distance, do so now
-      if len(self.lead_distance_hist) > 60:
-        self.lead_distance_distavg.append(statistics.fmean(reject_outliers(self.lead_distance_hist)))
-        self.lead_distance_times.append(datetime.datetime.now())
+      self.lead_distance_times.append(datetime.datetime.now())
+      # if we've got enough data to calculate a distspeed
+      if len(self.lead_distance_hist) > 75:
+        time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
+        dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
+        distspeed = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, (l0v - l0vstd) * CV.MS_TO_MPH, (l0v + l0vstd) * CV.MS_TO_MPH)
+        self.lead_distance_distavg.append(distspeed)
         self.lead_distance_hist.pop(0)
+        self.lead_distance_times.pop(0)
         # do we have enough distances over time to get a distspeed estimate?
-        if len(self.lead_distance_distavg) > 30:
-          time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
-          dist_diff = self.lead_distance_distavg[-1] - self.lead_distance_distavg[0]
+        if len(self.lead_distance_distavg) > 25:
+          l0v_distval_mph = lead_vdiff_mph = statistics.fmean(self.lead_distance_distavg)
           self.lead_distance_distavg.pop(0)
-          self.lead_distance_times.pop(0)
-          l0v_distval_mph = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, lead_vdiff_mph - 15, lead_vdiff_mph + 15)
-          # reduce confidence of large values different from model's values
-          difference_factor = clamp(1.0 - ((abs(l0v_distval_mph - lead_vdiff_mph) / 15.0) ** 1.5), 0.0, 1.0)
-          if difference_factor > 0:
-            lead_vdiff_mph = lerp(lead_vdiff_mph, l0v_distval_mph, difference_factor * 0.5)
     else:
       # no lead, clear data
       self.lead_distance_hist.clear()
