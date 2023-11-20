@@ -54,7 +54,6 @@ class LanePlanner:
     self.Options = Params()
     self.UseModelPath = self.Options.get_bool("UseModelPath")
     self.BigModel = self.Options.get_bool("F3")
-    self.LanePreferred = self.Options.get_bool("LanePlannerPreferred")
     self.updateOptions = 100
     self.tire_stiffness_multiplier = 1.0
 
@@ -74,7 +73,6 @@ class LanePlanner:
     self.updateOptions -= 1
     if self.updateOptions <= 0:
       self.updateOptions = 100
-      self.LanePreferred = self.Options.get_bool("LanePlannerPreferred")
       self.UseModelPath = self.Options.get_bool("UseModelPath")
 
     lane_lines = md.laneLines
@@ -268,10 +266,7 @@ class LanePlanner:
       # do we want to mix in the model path a little bit if lanelines are going south?
       ultimate_path_mix = 0.0
       if not self.UseModelPath:
-        if self.LanePreferred:
-          ultimate_path_mix = clamp(lane_trust * 2, 0.0, 1.0) * interp(max_lane_width_seen, [4.0, 5.0, 6.0], [1.0, 0.75, 0.25])
-        else:
-          ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
+        ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
       final_ultimate_path_mix = self.lane_change_multiplier * ultimate_path_mix
 
       # debug
