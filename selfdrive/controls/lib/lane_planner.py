@@ -256,9 +256,9 @@ class LanePlanner:
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
         # to prevent corner cutting, shift this point wide depending on the curve
-        turn_shift_room = clamp((final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE, 0.0, 0.3)
-        if turn_shift_room > 0 and math.isfinite(vcurv[index]):
-          ideal_point += clamp((1.25 / (1.0 + math.exp(1.5*vcurv[index]))) - 0.625, -turn_shift_room, turn_shift_room)
+        #turn_shift_room = clamp((final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE, 0.0, 0.3)
+        #if turn_shift_room > 0 and math.isfinite(vcurv[index]):
+        #  ideal_point += clamp((1.25 / (1.0 + math.exp(1.5*vcurv[index]))) - 0.625, -turn_shift_room, turn_shift_room)
         # clamp point inside the lane
         ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
         # add it to our ultimate path
