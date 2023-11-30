@@ -175,13 +175,15 @@ class LanePlanner:
       r_prob = r_vis / total_prob
 
       # Find current lanewidth
+      width_trust = min(l_vis, r_vis)
       raw_current_width = abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0]))
       current_lane_width = clamp(raw_current_width, MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
       self.lane_width_estimate.update(current_lane_width)
-      self.lane_width = self.lane_width_estimate.x
+      speed_lane_width = interp(v_ego, [0., 31.], [2.7, 3.4])
+      self.lane_width = lerp(speed_lane_width, self.lane_width_estimate.x, width_trust)
 
       # should we tighten up steering if the lane is really tight?
-      lane_tightness = min(raw_current_width, self.lane_width)
+      lane_tightness = min(raw_current_width, self.lane_width_estimate.x)
       self.tire_stiffness_multiplier = interp(lane_tightness, [2.6, 2.8], [0.6667, 1.0])
 
       # track how wide the lanes are getting up ahead
@@ -246,8 +248,7 @@ class LanePlanner:
         if lane_width > max_lane_width_seen and index <= half_len:
           max_lane_width_seen = lane_width
         # how much do we trust this? we want to be seeing both pretty well
-        width_trust = min(l_vis, r_vis)
-        final_lane_width = min(lane_width, lerp(self.lane_width, lane_width, width_trust))
+        final_lane_width = min(lane_width, self.lane_width)
         use_min_lane_distance = min(final_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
         # ok, get ideal point from each lane
         ideal_left = left_anchor + final_lane_width * 0.5
