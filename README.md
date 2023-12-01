@@ -2,7 +2,7 @@
 
 I am only making changes I can test for my 2019 Hyundai Kona EV *WITHOUT* Smart Cruise Control on my LG G8. I also focus on MPH and not everything may follow metric settings. These specifics are generally part of the selfdrive/car/hyundai folder. I do this to optimize results for my needs. If this is what you've got, this fork might work very well for you "out of the box". I'm also working on keeping the model updated. Navigation features don't work and I don't plan on adding it anytime soon (too experimental for practical use).
 
-To make it easier to keep updated with models, I only maintain the THNEED Model Runner (Android Snapdragon devices). Desktop and other phones won't work.
+To make it easier to keep updated with models, I only maintain the THNEED Model Runner. Desktops will probably not work.
 
 # Install it on your phone with simplified instructions!
 
