@@ -1,8 +1,14 @@
-# This fork will likely not work with your car or device!
+# This fork will likely not work with your car or device "out of the box" -- BUT it can get you started with compatible hardware!
 
-I am only making changes I can test for my 2019 Hyundai Kona EV *WITHOUT* Smart Cruise Control on my LG G8. I also focus on MPH and not everything may follow metric settings. I do this to optimize results for my needs. If this is what you've got, this fork might work very well for you. I'm also working on keeping the model updated (currently on Moonrise). Navigation features don't work and I don't plan on adding it anytime soon (too experimental for practical use).
+I am only making changes I can test for my 2019 Hyundai Kona EV *WITHOUT* Smart Cruise Control on my LG G8. I also focus on MPH and not everything may follow metric settings. These specifics are generally part of the selfdrive/car/hyundai folder. I do this to optimize results for my needs. If this is what you've got, this fork might work very well for you "out of the box". I'm also working on keeping the model updated. Navigation features don't work and I don't plan on adding it anytime soon (too experimental for practical use).
 
-To make it easier to keep updated with models, I only maintain the SNPE Model Runner (Android Snapdragon devices). Desktop and other phones won't work.
+To make it easier to keep updated with models, I only maintain the THNEED Model Runner (Android Snapdragon devices). Desktop and other phones won't work.
+
+# Install it on your phone with simplified instructions!
+
+https://github.com/phr00t/flowpilot/wiki/Simplified-Flow-Pilot-Install-Process
+
+This will get you up and running for the most part. Customizing your phone and car is the next step, which you should be able to port much from other Open Pilot forks.
 
 # [Learn how to make your LG G8 drive a car here!](https://github.com/phr00t/flowpilot/wiki/How-to-make-an-LG-G8-Flow-Pilot-Device)
 
