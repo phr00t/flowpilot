@@ -158,17 +158,17 @@ class LanePlanner:
 
   def get_nlp_path(self, CS, v_ego, path_t, path_xyz, vcurv):
     # how visible is each lane?
-    l_vis = (self.lll_prob * 0.6667 + 0.3333) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
-    r_vis = (self.rll_prob * 0.6667 + 0.3333) * interp(self.rll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
+    l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
+    r_vis = (self.rll_prob * 0.9 + 0.1) * interp(self.rll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
     lane_trust = clamp(1.1 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
       # give a boost to closer lanes
-      distance = self.rll_y[0] - self.lll_y[0]
-      left_ratio = 0.25 + (self.rll_y[0] / distance) * 0.5 # if rll_y is big, we are more left
-      l_vis *= left_ratio
-      r_vis *= (1.0 - left_ratio)
+      #distance = self.rll_y[0] - self.lll_y[0]
+      #left_ratio = 0.25 + (self.rll_y[0] / distance) * 0.5 # if rll_y is big, we are more left
+      #l_vis *= left_ratio
+      #r_vis *= (1.0 - left_ratio)
       # normalize to 1
       total_prob = l_vis + r_vis
       l_prob = l_vis / total_prob
@@ -248,8 +248,8 @@ class LanePlanner:
         if lane_width > max_lane_width_seen and index <= half_len:
           max_lane_width_seen = lane_width
         # how much do we trust this? we want to be seeing both pretty well
-        final_lane_width = min(lane_width, self.lane_width)
-        use_min_lane_distance = min(final_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
+        final_lane_width = clamp(min(lane_width, self.lane_width), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
+        #use_min_lane_distance = min(final_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
         # ok, get ideal point from each lane
         ideal_left = left_anchor + final_lane_width * 0.5
         ideal_right = right_anchor - final_lane_width * 0.5
@@ -259,8 +259,8 @@ class LanePlanner:
         #turn_shift_room = clamp((final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE, 0.0, 0.3)
         #if turn_shift_room > 0 and math.isfinite(vcurv[index]):
         #  ideal_point += clamp((1.25 / (1.0 + math.exp(1.5*vcurv[index]))) - 0.625, -turn_shift_room, turn_shift_room)
-        # clamp point inside the lane
-        ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
+        # clamp point inside the lane (commenting out, as our anchors might be tar lines we want to ignore!)
+        #ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
         # add it to our ultimate path
         self.ultimate_path[index] = ideal_point
 
