@@ -469,8 +469,8 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     # does our lateral planner want to adjust the tire stiffness dynamically?
-    if lat_plan.cProbDEPRECATED > 0:
-      self.VM.update_params(lat_plan.cProbDEPRECATED, 13.42)
+    #if lat_plan.cProbDEPRECATED > 0:
+    #  self.VM.update_params(lat_plan.cProbDEPRECATED, 13.42)
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
