@@ -306,10 +306,10 @@ class CarController:
       self.usingDistSpeed = self.Options.get_bool("UseDistSpeed")
       self.sensitiveSlow = self.Options.get_bool("SensitiveSlow")
 
-    if self.usingAccel and (avg_accel_min < 8.0 or stoplinesp > 0.7) and clu11_speed < 45:
+    if self.usingAccel and (avg_accel_min < 8.0 or stoplinesp > 0.7) and clu11_speed <= 40:
       # stop sign or red light, stop!
       desired_speed = 0
-      CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
+      #CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     elif desired_speed > 0:
       # does the model think we should be really slowing down?
       if self.usingAccel and avg_accel_min < clu11_speed - 10 and desired_speed > clu11_speed - 1.75:
