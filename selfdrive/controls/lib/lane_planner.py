@@ -14,7 +14,8 @@ CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
 MAX_LANE_CENTERING_AWAY = 1.85
-KEEP_MIN_DISTANCE_FROM_LANE = 1.35
+WIGGLE_ROOM_LANE_WIDTH = 1.325
+KEEP_MIN_DISTANCE_FROM_LANE = 1.375
 KEEP_MIN_DISTANCE_FROM_EDGELANE = 1.15
 
 def clamp(num, min_value, max_value):
@@ -189,7 +190,7 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # additional centering force, if needed
-      wiggle_room = (lane_tightness * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE
+      wiggle_room = (lane_tightness * 0.5) - WIGGLE_ROOM_LANE_WIDTH
       target_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
       # wait, are we looking at a lane near an edge?
       left_keep_min = KEEP_MIN_DISTANCE_FROM_EDGELANE if abs(self.lll_y[0] - self.le_y[0]) < MIN_LANE_DISTANCE * 0.5 else KEEP_MIN_DISTANCE_FROM_LANE
