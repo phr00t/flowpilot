@@ -83,6 +83,7 @@ class CarController:
     self.last_button_frame = 0
     self.lkas11_cnt = 0
     self.mdpsBus = 0
+    self.prevent_heavy_steer_timer = 0
 
     self.speed_ratios =  [0.0, 1.0,  1.05,  1.1,  1.15,  1.2,  1.25,  1.3]
     self.target_accels = [2.0, 0.0,  -0.3, -0.7,  -1.2, -1.8,  -2.5, -3.0]
@@ -103,7 +104,11 @@ class CarController:
     apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     # if we are disabled, or the driver is doing a sharp turn themselves, don't apply any additional steering
-    if not CC.latActive or abs(CS.out.steeringAngleDeg) > 89 and CS.out.steeringPressed:
+    if CS.out.steeringPressed:
+      self.prevent_heavy_steer_timer = 50
+    elif self.prevent_heavy_steer_timer > 0:
+      self.prevent_heavy_steer_timer -= 1
+    if not CC.latActive or abs(CS.out.steeringAngleDeg) > 89 and (CS.out.steeringPressed or self.prevent_heavy_steer_timer > 0):
       apply_steer = 0
 
     self.apply_steer_last = apply_steer
