@@ -149,7 +149,6 @@ class LateralPlanner:
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
 
-    lateralPlan.cProbDEPRECATED = float(self.LP.tire_stiffness_multiplier)
     lateralPlan.desire = self.DH.desire
     lateralPlan.useLaneLines = True
     lateralPlan.laneChangeState = self.DH.lane_change_state
