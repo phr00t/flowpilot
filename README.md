@@ -1,35 +1,4 @@
-# Read this FAQ before anything else:
-
-https://github.com/phr00t/flowpilot/wiki/FlowPilot:-FAQ
-
-.
-.
-.
-.
-.
-.
-
-# What is Flowpilot?
-
-Flowpilot is an open source driver assistance system built on top of openpilot, that can run on most windows/linux and android powered machines. It performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), Lane Departure Warning (LDW) and Driver Monitoring (DM) for a growing variety of supported car makes, models, and model years maintened by the community.
-
-# Running on a Car
-
-For running flowpilot on your car, you need: 
-
- - A supported machine to run flowpilot i.e. A windows/linux PC or an android phone.
- - A white / grey panda with giraffe or a black/red panda with car harness. 
- - 1x USB-A to USB-A cable for connecting panda to PC and aditionally, an OTG cable is required if connecting panda to phone.
- - One of the [200+ supported cars](https://github.com/commaai/openpilot/blob/master/docs/CARS.md). The community supports Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car is not supported but has adaptive cruise control and lane-keeping assist, it's likely able to run flowpilot.
- 
- For a more detailed overview, see the [wiring and hardware wiki](https://github.com/flowdriveai/flowpilot/wiki/Connecting-to-Car).
- 
-# Installation:
-See the [installation wiki](https://github.com/flowdriveai/flowpilot/wiki/Installation).
-
-# Running With a Virtual Car
-
-It is recommended to develop on a virtual car / simulation before jumping onto testing on a real car. Flowpilot supports CARLA simulation. Optionally, you can use FlowStreamer to test flowpilot with any videogame. For more thorough testing, in addition to simulation, real panda hardware can be put in the loop for a more [thorough testing](https://twitter.com/flowdrive_ai/status/1566680576962478086).
+# Read this FAQ before anything else: https://github.com/phr00t/flowpilot/wiki/FlowPilot:-FAQ
 
 # Community
 
