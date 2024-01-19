@@ -190,41 +190,19 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # additional centering force, if needed
-      wiggle_room = (lane_tightness * 0.5) - WIGGLE_ROOM_LANE_WIDTH
-      target_centering = (self.rll_y[0] + self.lll_y[0]) * 0.5
-      # wait, are we looking at a lane near an edge?
-      left_keep_min = KEEP_MIN_DISTANCE_FROM_EDGELANE if abs(self.lll_y[0] - self.le_y[0]) < MIN_LANE_DISTANCE * 0.5 else KEEP_MIN_DISTANCE_FROM_LANE
-      right_keep_min = KEEP_MIN_DISTANCE_FROM_EDGELANE if abs(self.rll_y[0] - self.re_y[0]) < MIN_LANE_DISTANCE * 0.5 else KEEP_MIN_DISTANCE_FROM_LANE
-      if self.lll_y[0] > -left_keep_min:
-        # too close to a left lane, apply full right centering force
-        self.center_force = max(target_centering, min(0.5, left_keep_min + self.lll_y[0]))
-      elif self.rll_y[0] < right_keep_min:
-        # too close to a right lane, apply full left centering force
-        self.center_force = min(target_centering, max(-0.5, self.rll_y[0] - right_keep_min))
-      elif wiggle_room > 0:
-        # we've got some wiggle room inside the lane
-        if target_centering > 0.0:
-          # want to center more right
-          self.center_force = clamp(self.center_force + target_centering * 0.015, 0.0, target_centering)
-          # also clamp centering force to not go so far away from our left lane
-          max_centering_right = MAX_LANE_CENTERING_AWAY + self.lll_y[0]
-          if max_centering_right > 0:
-            self.center_force = clamp(self.center_force, 0.0, max_centering_right)
-          else:
-            self.center_force = 0.0
-        else:
-          # want to center more left
-          self.center_force = clamp(self.center_force + target_centering * 0.015, target_centering, 0.0)
-          # also clamp centering force to not go so far away from our right lane
-          max_centering_left = MAX_LANE_CENTERING_AWAY - self.rll_y[0]
-          if max_centering_left > 0:
-            self.center_force = clamp(self.center_force, -max_centering_left, 0.0)
-          else:
-            self.center_force = 0.0
-        # clamp to wiggle room
-        self.center_force = clamp(self.center_force, -wiggle_room, wiggle_room)
-      else:
-        self.center_force = 0.0
+      nearRightEdge = abs(self.rll_y[0] - self.re_y[0]) < MIN_LANE_DISTANCE * 0.5
+      nearLeftEdge = abs(self.lll_y[0] - self.le_y[0]) < MIN_LANE_DISTANCE * 0.5
+      targetRightCentering = self.rll_y[0]
+      targetLeftCentering = self.lll_y[0]
+      if nearRightEdge:
+        targetRightCentering = min(self.rll_y[0] + lane_tightness * 0.1, self.re_y[0])
+      if nearLeftEdge:
+        targetLeftCentering = max(self.lll_y[0] - lane_tightness * 0.1, self.le_y[0])
+      target_centering = targetRightCentering + targetLeftCentering
+      maxLeftCentering = targetLeftCentering + KEEP_MIN_DISTANCE_FROM_LANE
+      maxRightCentering = targetRightCentering - KEEP_MIN_DISTANCE_FROM_LANE
+      howFarToMax = abs(1.0 - maxLeftCentering if target_centering > 0 else 1.0 - maxRightCentering) * 0.5
+      self.center_force = howFarToMax * target_centering
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
