@@ -545,10 +545,12 @@ public class OnRoadScreen extends ScreenAdapter {
         }
     }
 
+    public static float LatestvEgo;
+
     public void updateCarState() {
         Definitions.Event.Reader event = sh.recv(carStateTopic);
-        float vel = event.getCarState().getVEgo();
-        vel = isMetric ? vel * 3.6f : vel * 2.237f;
+        LatestvEgo = event.getCarState().getVEgo();
+        float vel = isMetric ? LatestvEgo * 3.6f : LatestvEgo * 2.237f;
         velocityLabel.setText(Integer.toString((int)vel));
     }
 

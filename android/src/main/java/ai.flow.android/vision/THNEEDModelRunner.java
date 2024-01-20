@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import ai.flow.app.OnRoadScreen;
 import ai.flow.modeld.CommonModelF3;
 import ai.flow.modeld.ModelRunner;
 
@@ -36,7 +37,9 @@ public class THNEEDModelRunner extends ModelRunner {
         createStdString(modelPath);
         getArray(CommonModelF3.NET_OUTPUT_SIZE);
         initThneed();
-        inputBuffer = new float[2 * (1572864 / 4) + (3200 / 4)];
+        inputBuffer = new float[2 * (1572864 / 4) + (3200 / 4) + 2];
+        // new LA model input
+        inputBuffer[inputBuffer.length - 1] = 0.33f; // steering actuator delay
     }
 
     @Override
@@ -44,6 +47,9 @@ public class THNEEDModelRunner extends ModelRunner {
         // prepare input
         int img_len = 1572864 / 4;
         int desire_len = 3200 / 4;
+        // new inputs for LA
+        inputBuffer[inputBuffer.length - 2] = OnRoadScreen.LatestvEgo; // speed in m/s
+        // ok regular inputs
         inputMap.get("input_imgs").data().asNioFloat().get(inputBuffer, 0, img_len);
         inputMap.get("big_input_imgs").data().asNioFloat().get(inputBuffer, img_len , img_len);
         inputMap.get("desire").data().asNioFloat().get(inputBuffer, img_len * 2, desire_len);

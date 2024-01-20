@@ -12,7 +12,7 @@ public class utils {
         ONNX, // DOESNT WORK
         SNPE, // Nicki Minaj Model
         TNN, // DOESNT WORK
-        THNEED, // NLPv3
+        THNEED, // Latest
         EXTERNAL_TINYGRAD // DOESNT WORK
     }
     public static boolean F2 = false, NLPModel = false, LAModel = true;

@@ -822,7 +822,7 @@ void ThneedModel::execute() {
 const int TRAJECTORY_SIZE = 33;
 const int FEATURE_LEN = 512;
 const int HISTORY_BUFFER_LEN = 99;
-const int OUTPUT_SIZE = 5978 + 12 + (4 * TRAJECTORY_SIZE * 2);
+const int OUTPUT_SIZE = 5978 + 12 + 1;
 const int LATERAL_CONTROL_PARAMS_LEN = 2;
 const int PREV_DESIRED_CURVS_LEN = 20;
 const int DESIRED_CURV_WIDTH = 1;
@@ -833,6 +833,7 @@ jint output_len;
 ThneedModel *thneed;
 float *zero_buf;
 float *features_buf;
+float *prev_curvs_buf;
 int zero_len = 1024 / 4;
 int features_len = HISTORY_BUFFER_LEN * FEATURE_LEN;
 
@@ -853,10 +854,13 @@ extern "C" {
         output_len = size;
         zero_buf = new float[zero_len];
         features_buf = new float[features_len];
+        prev_curvs_buf = new float[PREV_DESIRED_CURVS_LEN];
         for (int i=0; i<zero_len; i++)
             zero_buf[i] = 0;
         for (int i=0; i<features_len; i++)
             features_buf[i] = 0;
+        for (int i=0; i<PREV_DESIRED_CURVS_LEN; i++)
+            prev_curvs_buf[i] = 0;
     }
 
     void JNICALL Java_ai_flow_android_vision_THNEEDModelRunner_initThneed(JNIEnv *env, jobject obj) {
@@ -875,12 +879,13 @@ extern "C" {
         float* input_imgs_buf = &input_buf[0];
         float* big_input_imgs_buf = &input_buf[input_imgs_len];
         float* desire_buf = &input_buf[input_imgs_len * 2];
+        float* lat_params = &input_buf[6052];
 
         thneed->setInputBuffer("input_imgs", input_imgs_buf, input_imgs_len);
         thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, input_imgs_len);
         thneed->setInputBuffer("desire", desire_buf, desire_len);
-        thneed->setInputBuffer("lateral_control_params", zero_buf, LATERAL_CONTROL_PARAMS_LEN);
-        thneed->setInputBuffer("prev_desired_curvs", zero_buf, PREV_DESIRED_CURVS_LEN);
+        thneed->setInputBuffer("lateral_control_params", lat_params, LATERAL_CONTROL_PARAMS_LEN);
+        thneed->setInputBuffer("prev_desired_curvs", prev_curvs_buf, PREV_DESIRED_CURVS_LEN);
         thneed->setInputBuffer("traffic_convention", zero_buf, 8/4);
         thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
         thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
@@ -895,6 +900,10 @@ extern "C" {
         // handle features
         std::memmove(&features_buf[0], &features_buf[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
         std::memcpy(&features_buf[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &outputs[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
+
+        // handle previous curves
+        std::memmove(&prev_curvs_buf[0], &prev_curvs_buf[1], PREV_DESIRED_CURVS_LEN - 1);
+        prev_curvs_buf[PREV_DESIRED_CURVS_LEN - 1] = outputs[OUTPUT_SIZE - 2];
 
         // get the outputs
         jfloatArray result = env->NewFloatArray(output_len);
