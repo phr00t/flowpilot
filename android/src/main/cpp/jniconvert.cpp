@@ -823,7 +823,9 @@ const int TRAJECTORY_SIZE = 33;
 const int FEATURE_LEN = 512;
 const int HISTORY_BUFFER_LEN = 99;
 const int OUTPUT_SIZE = 5978 + 12 + (4 * TRAJECTORY_SIZE * 2);
-const int LAT_PLANNER_STATE_LEN = 4;
+const int LATERAL_CONTROL_PARAMS_LEN = 2;
+const int PREV_DESIRED_CURVS_LEN = 20;
+const int DESIRED_CURV_WIDTH = 1;
 
 std::string *pathString;
 jfloat* outputs;
@@ -877,7 +879,8 @@ extern "C" {
         thneed->setInputBuffer("input_imgs", input_imgs_buf, input_imgs_len);
         thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, input_imgs_len);
         thneed->setInputBuffer("desire", desire_buf, desire_len);
-        thneed->setInputBuffer("lat_planner_state", zero_buf, LAT_PLANNER_STATE_LEN);
+        thneed->setInputBuffer("lateral_control_params", zero_buf, LATERAL_CONTROL_PARAMS_LEN);
+        thneed->setInputBuffer("prev_desired_curvs", zero_buf, PREV_DESIRED_CURVS_LEN);
         thneed->setInputBuffer("traffic_convention", zero_buf, 8/4);
         thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
         thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);

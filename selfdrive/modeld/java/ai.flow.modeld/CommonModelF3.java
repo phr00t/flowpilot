@@ -19,10 +19,10 @@ public class CommonModelF3 {
     public static final int TRAFFIC_CONVENTION_LEN = 2;
     public static final int DRIVING_STYLE_LEN = 12;
     public static final int MODEL_FREQ = 20;
-    public static final int OUTPUT_SIZE = 5978 + (utils.Runner == utils.USE_MODEL_RUNNER.SNPE ? 0 : 12 + (utils.NLPModel ? (4 * TRAJECTORY_SIZE * 2) : 0)); // +12 from ModelOutputRoadTransform
+    public static final int OUTPUT_SIZE = 5978 + (utils.Runner == utils.USE_MODEL_RUNNER.SNPE ? 0 : 12 + (utils.NLPModel ? (4 * TRAJECTORY_SIZE * 2) : (utils.LAModel ? 1 : 0))); // +12 from ModelOutputRoadTransform
                                                          // +4*... from LateralPlannerOutput in NLP
     // Padding to final get output shape as multiple of 4
-    public static final int PAD_SIZE = 2;
+    public static final int PAD_SIZE = utils.LAModel ? 1 : 2;
     public static final int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
     public static final float[] T_IDXS = {0.f, 0.00976562f, 0.0390625f, 0.08789062f, 0.15625f, 0.24414062f,  0.3515625f,  0.47851562f,
         0.625f, 0.79101562f, 0.9765625f, 1.18164062f,  1.40625f,  1.65039062f,  1.9140625f,

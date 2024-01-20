@@ -250,6 +250,10 @@ struct LateralPlannerOutput {
 };
 static_assert(sizeof(LateralPlannerOutput) == (sizeof(LateralPlannerOutputElement)*TRAJECTORY_SIZE*2));
 
+struct LateralAction {
+    float desired_curvatures;
+};
+
 struct ModelOutput {
   const ModelOutputPlans plans;
   const ModelOutputLaneLines lane_lines;
@@ -260,7 +264,8 @@ struct ModelOutput {
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
   const ModelOutputTemporalPose temporal_pose;
   const ModelOutputRoadTransform road_transform; // added after Nikki
-  const LateralPlannerOutput lateral_planner_solution; // NLP thing
+  //const LateralPlannerOutput lateral_planner_solution; // NLP thing
+  const LateralAction action; // LA-model thing (in replacement of NLP)
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
