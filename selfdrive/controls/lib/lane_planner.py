@@ -199,7 +199,7 @@ class LanePlanner:
       # if we are in a small lane, reduce centering force to prevent pingponging
       self.center_force *= interp(self.lane_width, [2.6, 2.8], [0.0, 1.0])
       # apply a cap centering force
-      self.center_force = clamp(self.center_force, -0.8, 0.8)
+      self.center_force = clamp(self.center_force, -0.9, 0.9)
       # apply less lane centering for a direction we are already turning
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
         self.center_force *= 0.5
