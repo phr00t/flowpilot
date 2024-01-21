@@ -199,9 +199,7 @@ class LanePlanner:
       if nearLeftEdge:
         targetLeftCentering = max(self.lll_y[0] - lane_tightness * 0.1, self.le_y[0])
       target_centering = targetRightCentering + targetLeftCentering
-      maxLeftCentering = targetLeftCentering + KEEP_MIN_DISTANCE_FROM_LANE
-      maxRightCentering = targetRightCentering - KEEP_MIN_DISTANCE_FROM_LANE
-      howFarToMax = abs(1.0 - maxLeftCentering if target_centering > 0 else 1.0 - maxRightCentering) * 0.5
+      howFarToMax = abs(target_centering) / lane_tightness
       self.center_force = howFarToMax * target_centering
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
