@@ -822,7 +822,7 @@ void ThneedModel::execute() {
 const int TRAJECTORY_SIZE = 33;
 const int FEATURE_LEN = 512;
 const int HISTORY_BUFFER_LEN = 99;
-const int OUTPUT_SIZE = 5978 + 12 + 1;
+const int OUTPUT_SIZE = 5992;
 const int LATERAL_CONTROL_PARAMS_LEN = 2;
 const int PREV_DESIRED_CURVS_LEN = 20;
 const int DESIRED_CURV_WIDTH = 1;
@@ -879,14 +879,14 @@ extern "C" {
         float* input_imgs_buf = &input_buf[0];
         float* big_input_imgs_buf = &input_buf[input_imgs_len];
         float* desire_buf = &input_buf[input_imgs_len * 2];
-        float* lat_params = &input_buf[6052];
+        float* lat_params = &input_buf[input_imgs_len * 2 + desire_len];
 
         thneed->setInputBuffer("input_imgs", input_imgs_buf, input_imgs_len);
         thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, input_imgs_len);
         thneed->setInputBuffer("desire", desire_buf, desire_len);
+        thneed->setInputBuffer("traffic_convention", zero_buf, 8/4);
         thneed->setInputBuffer("lateral_control_params", lat_params, LATERAL_CONTROL_PARAMS_LEN);
         thneed->setInputBuffer("prev_desired_curvs", prev_curvs_buf, PREV_DESIRED_CURVS_LEN);
-        thneed->setInputBuffer("traffic_convention", zero_buf, 8/4);
         thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
         thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
         thneed->setInputBuffer("features_buffer", features_buf, features_len);
@@ -903,7 +903,7 @@ extern "C" {
 
         // handle previous curves
         std::memmove(&prev_curvs_buf[0], &prev_curvs_buf[1], PREV_DESIRED_CURVS_LEN - 1);
-        prev_curvs_buf[PREV_DESIRED_CURVS_LEN - 1] = outputs[OUTPUT_SIZE - 2];
+        prev_curvs_buf[PREV_DESIRED_CURVS_LEN - 1] = outputs[5990];
 
         // get the outputs
         jfloatArray result = env->NewFloatArray(output_len);
