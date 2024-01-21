@@ -164,11 +164,6 @@ class LanePlanner:
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
-      # give a boost to closer lanes
-      #distance = self.rll_y[0] - self.lll_y[0]
-      #left_ratio = 0.25 + (self.rll_y[0] / distance) * 0.5 # if rll_y is big, we are more left
-      #l_vis *= left_ratio
-      #r_vis *= (1.0 - left_ratio)
       # normalize to 1
       total_prob = l_vis + r_vis
       l_prob = l_vis / total_prob
@@ -181,8 +176,6 @@ class LanePlanner:
       self.lane_width_estimate.update(current_lane_width)
       speed_lane_width = interp(v_ego, [0., 31.], [2.7, 3.4])
       self.lane_width = lerp(speed_lane_width, self.lane_width_estimate.x, width_trust)
-
-      # should we tighten up steering if the lane is really tight?
       lane_tightness = min(raw_current_width, self.lane_width_estimate.x)
 
       # track how wide the lanes are getting up ahead
@@ -199,12 +192,12 @@ class LanePlanner:
       if nearLeftEdge:
         targetLeftCentering = max(self.lll_y[0] - lane_tightness * 0.1, self.le_y[0])
       target_centering = targetRightCentering + targetLeftCentering
-      howFarToMax = abs(target_centering) / lane_tightness
+      howFarToMax = abs(target_centering) / self.lane_width
       self.center_force = howFarToMax * target_centering
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
-      self.center_force *= interp(lane_tightness, [2.6, 2.8], [0.0, 1.0])
+      self.center_force *= interp(self.lane_width, [2.6, 2.8], [0.0, 1.0])
       # apply a cap centering force
       self.center_force = clamp(self.center_force, -0.8, 0.8)
       # apply less lane centering for a direction we are already turning
@@ -224,18 +217,11 @@ class LanePlanner:
           max_lane_width_seen = lane_width
         # how much do we trust this? we want to be seeing both pretty well
         final_lane_width = clamp(min(lane_width, self.lane_width), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
-        #use_min_lane_distance = min(final_lane_width * 0.5, KEEP_MIN_DISTANCE_FROM_LANE)
         # ok, get ideal point from each lane
         ideal_left = left_anchor + final_lane_width * 0.5
         ideal_right = right_anchor - final_lane_width * 0.5
         # merge them to get an ideal center point, based on which value we want to prefer
         ideal_point = lerp(ideal_left, ideal_right, r_prob)
-        # to prevent corner cutting, shift this point wide depending on the curve
-        #turn_shift_room = clamp((final_lane_width * 0.5) - KEEP_MIN_DISTANCE_FROM_LANE, 0.0, 0.3)
-        #if turn_shift_room > 0 and math.isfinite(vcurv[index]):
-        #  ideal_point += clamp((1.25 / (1.0 + math.exp(1.5*vcurv[index]))) - 0.625, -turn_shift_room, turn_shift_room)
-        # clamp point inside the lane (commenting out, as our anchors might be tar lines we want to ignore!)
-        #ideal_point = clamp(ideal_point, left_anchor + use_min_lane_distance, right_anchor - use_min_lane_distance)
         # add it to our ultimate path
         self.ultimate_path[index] = ideal_point
 
