@@ -191,7 +191,7 @@ class LanePlanner:
         targetRightCentering = min(self.rll_y[0] + lane_tightness * 0.1, self.re_y[0])
       if nearLeftEdge:
         targetLeftCentering = max(self.lll_y[0] - lane_tightness * 0.1, self.le_y[0])
-      target_centering = targetRightCentering + targetLeftCentering
+      target_centering = 0.6 * (targetRightCentering + targetLeftCentering)
       howFarToMax = clamp(abs(target_centering) / (self.lane_width - KEEP_MIN_DISTANCE_FROM_LANE), 0.0, 1.0)
       self.center_force = howFarToMax * target_centering
       # if we are lane changing, cut center force
@@ -202,7 +202,7 @@ class LanePlanner:
       self.center_force = clamp(self.center_force, -0.9, 0.9)
       # apply less lane centering for a direction we are already turning
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.5
+        self.center_force *= 0.6
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
