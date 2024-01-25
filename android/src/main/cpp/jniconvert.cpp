@@ -824,7 +824,7 @@ const int FEATURE_LEN = 512;
 const int HISTORY_BUFFER_LEN = 99;
 const int OUTPUT_SIZE = 5992;
 const int LATERAL_CONTROL_PARAMS_LEN = 2;
-const int PREV_DESIRED_CURVS_LEN = 20;
+const int PREV_DESIRED_CURVS_LEN = 1 * (HISTORY_BUFFER_LEN + 1);
 const int DESIRED_CURV_WIDTH = 1;
 
 std::string *pathString;
