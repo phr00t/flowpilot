@@ -202,7 +202,7 @@ class LanePlanner:
       self.center_force = clamp(self.center_force, -0.9, 0.9)
       # apply less lane centering for a direction we are already turning
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.5
+        self.center_force *= 0.6
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
