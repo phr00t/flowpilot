@@ -13,10 +13,9 @@ TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
-MAX_LANE_CENTERING_AWAY = 1.85
-WIGGLE_ROOM_LANE_WIDTH = 1.325
+TYPICAL_MIN_LANE_DISTANCE = 2.7
+TYPICAL_MAX_LANE_DISTANCE = 3.4
 KEEP_MIN_DISTANCE_FROM_LANE = 1.375
-KEEP_MIN_DISTANCE_FROM_EDGELANE = 1.15
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -174,7 +173,7 @@ class LanePlanner:
       raw_current_width = abs(min(self.rll_y[0], self.re_y[0]) - max(self.lll_y[0], self.le_y[0]))
       current_lane_width = clamp(raw_current_width, MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
       self.lane_width_estimate.update(current_lane_width)
-      speed_lane_width = interp(v_ego, [0., 31.], [2.7, 3.4])
+      speed_lane_width = interp(v_ego, [0., 31.], [TYPICAL_MIN_LANE_DISTANCE, TYPICAL_MAX_LANE_DISTANCE])
       self.lane_width = lerp(speed_lane_width, self.lane_width_estimate.x, width_trust)
       lane_tightness = min(raw_current_width, self.lane_width_estimate.x)
 
@@ -191,9 +190,13 @@ class LanePlanner:
         targetRightCentering = min(self.rll_y[0] + lane_tightness * 0.1, self.re_y[0])
       if nearLeftEdge:
         targetLeftCentering = max(self.lll_y[0] - lane_tightness * 0.1, self.le_y[0])
-      target_centering = 0.7 * (targetRightCentering + targetLeftCentering)
-      howFarToMax = clamp(abs(target_centering) / (self.lane_width - KEEP_MIN_DISTANCE_FROM_LANE), 0.0, 1.0)
-      self.center_force = howFarToMax * target_centering
+      # ok, how far off of center are we, considering we want to be closer to edges of the road?
+      target_centering = targetRightCentering + targetLeftCentering
+      # fancy smooth increasing centering force based on lane width
+      self.center_force = 0.5 * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering * target_centering
+      # make sure we get the sign right after squaring
+      if target_centering < 0:
+        self.center_force = -self.center_force
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
@@ -202,7 +205,7 @@ class LanePlanner:
       self.center_force = clamp(self.center_force, -0.8, 0.8)
       # apply less lane centering for a direction we are already turning
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.55
+        self.center_force *= 0.5
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
