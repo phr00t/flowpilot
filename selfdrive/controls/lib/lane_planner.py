@@ -182,8 +182,14 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # additional centering force, if needed
-      # ok, how far off of center are we
-      target_centering = self.rll_y[0] + self.lll_y[0]
+      rightBorder = min(self.re_y[0], self.rll_y[1])
+      leftBorder = max(self.le_y[0], self.lll_y[1])
+      nearRightEdge = abs(self.rll_y[0] - rightBorder) < MIN_LANE_DISTANCE * 0.7
+      nearLeftEdge = abs(self.lll_y[0] - leftBorder) < MIN_LANE_DISTANCE * 0.7
+      targetRightCentering = min(self.rll_y[0] + 0.15, rightBorder) if nearRightEdge else self.rll_y[0]
+      targetLeftCentering = max(self.lll_y[0] - 0.15, leftBorder) if nearLeftEdge else self.lll_y[0]
+      # ok, how far off of center are we, considering we want to be closer to edges of the road?
+      target_centering = targetRightCentering + targetLeftCentering
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering * target_centering
       # make sure we get the sign right after squaring
