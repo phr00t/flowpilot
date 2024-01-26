@@ -16,6 +16,7 @@ MAX_LANE_DISTANCE = 3.7
 TYPICAL_MIN_LANE_DISTANCE = 2.7
 TYPICAL_MAX_LANE_DISTANCE = 3.4
 KEEP_MIN_DISTANCE_FROM_LANE = 1.375
+CENTER_FORCE_GENERAL_SCALE = 0.333
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -193,7 +194,7 @@ class LanePlanner:
       # ok, how far off of center are we, considering we want to be closer to edges of the road?
       target_centering = targetRightCentering + targetLeftCentering
       # fancy smooth increasing centering force based on lane width
-      self.center_force = 0.5 * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering * target_centering
+      self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering * target_centering
       # make sure we get the sign right after squaring
       if target_centering < 0:
         self.center_force = -self.center_force
