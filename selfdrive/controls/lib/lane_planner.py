@@ -191,10 +191,7 @@ class LanePlanner:
       # ok, how far off of center are we, considering we want to be closer to edges of the road?
       target_centering = targetRightCentering + targetLeftCentering
       # fancy smooth increasing centering force based on lane width
-      self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering * target_centering
-      # make sure we get the sign right after squaring
-      if target_centering < 0:
-        self.center_force = -self.center_force
+      self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
