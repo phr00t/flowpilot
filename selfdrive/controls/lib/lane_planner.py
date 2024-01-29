@@ -15,7 +15,7 @@ MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
 TYPICAL_MIN_LANE_DISTANCE = 2.7
 TYPICAL_MAX_LANE_DISTANCE = 3.4
-CENTER_FORCE_GENERAL_SCALE = 0.35
+CENTER_FORCE_GENERAL_SCALE = 0.38
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
