@@ -1657,14 +1657,6 @@ BO_ 1348 Navi_HU: 8 XXX
  SG_ SpeedLim_Nav_General : 29|1@0+ (1,0) [0|1] "" XXX
  SG_ SpeedLim_Nav_Cam : 30|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 512 VCU_200: 6 XXX
- SG_ UNK_STATUS_CLIMATE_DRIVE : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ CURRENT_GEAR : 11|3@1+ (1,0) [0|7] "" XXX
- SG_ CF_Ems_PumpTPres : 16|8@1+ (3.137254902,0) [0|800] "kPa" XXX
- SG_ NEW_SIGNAL_1 : 24|8@1+ (1,0) [0|255] "" XXX
- SG_ Split_Stat : 32|1@1+ (1,0) [0|1] "" XXX
- SG_ uwe_accpedal : 32|8@1+ (1,0) [0|255] "" XXX
-
 BO_ 513 VCU_201: 8 XXX
  SG_ Counter_1 : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Unk_Motor_Related : 8|8@1+ (1,0) [0|255] "" XXX
