@@ -162,6 +162,7 @@ class CarState(CarStateBase):
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.mdps12 = copy.copy(cp.vl["MDPS12"])
     self.elect = copy.copy(cp.vl["ELECT_GEAR"])
+    self.vcu = copy.copy(cp.vl["VCU_202"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = cruiseUpDownNow
@@ -297,6 +298,7 @@ class CarState(CarStateBase):
       ("AVH_LAMP", "TCS15"),
 
       ("Elect_Gear_Step", "ELECT_GEAR"),
+      ("REGEN_LEVEL" ,"VCU_202"),
 
       ("Cruise_Limit_Target", "E_EMS11"),
 

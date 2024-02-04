@@ -30,6 +30,7 @@ const CanMsg HYUNDAI_TX_MSGS[] = {
   {1265, 0, 4}, // CLU11 Bus 0
   {1157, 0, 4}, // LFAHDA_MFC Bus 0
   {882, 0, 8}, {882, 1, 8}, {882, 2, 8}, // ELECT_GEAR Bus 0, 1, 2
+  {514, 0, 8}, {514, 1, 8}, // REGEN_LEVEL Bus 0, 1
 };
 
 const CanMsg HYUNDAI_LONG_TX_MSGS[] = {
