@@ -142,10 +142,10 @@ def create_cpress(packer, clu11, button):
   values["CF_Clu_CruiseSwState"] = button
   return packer.make_can_msg("CLU11", 0, values)
 
-def create_regenmode(packer, elect, value):
+def create_regenmode(packer, elect, value, bus = 0):
   values = elect
   values["Elect_Gear_Step"] = value
-  return packer.make_can_msg("ELECT_GEAR", 0, values)
+  return packer.make_can_msg("ELECT_GEAR", bus, values)
 
 def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   values = {
