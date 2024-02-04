@@ -30,7 +30,7 @@ const CanMsg HYUNDAI_COMMUNITY_TX_MSGS[] = {
   {1155, 0, 8}, //   FCA12,  Bus 0
   {909, 0, 8},  //   FCA11,  Bus 0
   {2000, 0, 8},  // SCC_DIAG, Bus 0
-  {882, 0, 8}, {882, 1, 8}, // ELECT_GEAR Bus 0, 1, 2
+  {882, 0, 8}, {882, 1, 8}, {882, 2, 8}, // ELECT_GEAR Bus 0, 1, 2
 };
 
 // older hyundai models have less checks due to missing counters and checksums
