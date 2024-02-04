@@ -394,10 +394,10 @@ class CarController:
         self.temp_disable_spamming = 3 # take a break
 
     # debug reduce regen level test (unfortunately this just wiggles the dashboard, doesn't stick or change behavior)
-    if self.frame % 5 == 0:
-      can_sends.append(hyundaican.create_regenmode(self.packer, CS.vcu, 1, 0))
-      can_sends.append(hyundaican.create_regenmode(self.packer, CS.vcu, 1, 1))
-      can_sends.append(hyundaican.create_regenmode(self.packer, CS.vcu, 1, 2))
+    #if self.frame % 5 == 0:
+    #  can_sends.append(hyundaican.create_regenmode(self.packer, CS.elect, 1, 0))
+    #  can_sends.append(hyundaican.create_regenmode(self.packer, CS.elect, 1, 1))
+    #  can_sends.append(hyundaican.create_regenmode(self.packer, CS.elect, 1, 2))
 
     # are we using the auto resume feature?
     if CS.out.cruiseState.nonAdaptive and self.temp_disable_spamming <= 0 and allow_reenable_cruise:
