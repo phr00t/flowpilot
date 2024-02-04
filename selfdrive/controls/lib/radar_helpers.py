@@ -15,6 +15,9 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
+LEAD_SPEED_VISION_SMOOTH = 20
+LEAD_DATA_COUNT_BEFORE_VALID = 5
+
 def reject_outliers(data, m=2.):
   data = np.array(data)
   d = np.abs(data - np.median(data))
@@ -150,14 +153,14 @@ class Cluster():
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0])
-      if len(Dists) > 10:
+      if len(Dists) > LEAD_SPEED_VISION_SMOOTH:
         Dists.pop(0)
         vLeads.pop(0)
       Weights = list(range(1, len(Dists) + 1))
       finald = np.average(Dists, weights=Weights)
       finalv = np.average(vLeads, weights=Weights)
       # only consider we've got a lead when we've collected some data on it
-      if len(vLeads) >= 3:
+      if len(vLeads) >= LEAD_DATA_COUNT_BEFORE_VALID:
         finalp = float(lead_msg.prob)
 
     return {
