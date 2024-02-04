@@ -370,7 +370,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " pr" + str(int(CS.out.cruiseState.nonAdaptive)) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(l0v_distval_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " st" + "{:.2f}".format(CS.out.steeringAngleDeg))
+    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " pr" + str(int(CS.out.cruiseState.nonAdaptive)) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(l0v_distval_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " st" + "{:.1f}".format(CS.out.engineRpm))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
@@ -392,6 +392,10 @@ class CarController:
         for x in range(cruise_difference_max):
           can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.RES_ACCEL)) #speed cruise
         self.temp_disable_spamming = 3 # take a break
+
+    # debug reduce regen level test
+    if self.frame % 5 == 0:
+      can_sends.append(hyundaican.create_regenmode(self.packer, CS.elect, 1))
 
     # are we using the auto resume feature?
     if CS.out.cruiseState.nonAdaptive and self.temp_disable_spamming <= 0 and allow_reenable_cruise:

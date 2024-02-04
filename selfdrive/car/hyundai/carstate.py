@@ -91,6 +91,7 @@ class CarState(CarStateBase):
         self.cluster_speed = math.floor(self.cluster_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH)
 
     ret.vEgoCluster = self.cluster_speed * speed_conv
+    ret.engineRpm = cp.vl["ELECT_GEAR"]["Elect_Gear_Step"]
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"] + 2.0 # kona ev steering offset
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
@@ -160,6 +161,7 @@ class CarState(CarStateBase):
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.mdps12 = copy.copy(cp.vl["MDPS12"])
+    self.elect = copy.copy(cp.vl["ELECT_GEAR"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = cruiseUpDownNow
@@ -293,6 +295,8 @@ class CarState(CarStateBase):
 
       ("ESC_Off_Step", "TCS15"),
       ("AVH_LAMP", "TCS15"),
+
+      ("Elect_Gear_Step", "ELECT_GEAR"),
 
       ("Cruise_Limit_Target", "E_EMS11"),
 
