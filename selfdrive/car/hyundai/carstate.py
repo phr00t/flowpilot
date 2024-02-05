@@ -112,7 +112,7 @@ class CarState(CarStateBase):
     ret.cruiseState.available = ret.cruiseState.enabled = self.openPilotEnabled
     #ret.cruiseState.standstill = False
 
-    ret.brake = cp.vl["IEB_2A2"]["Regen_Maybe"]
+    ret.brake = 0 #cp.vl["IEB_2A2"]["Regen_Maybe"]
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
     ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2  # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
@@ -297,7 +297,7 @@ class CarState(CarStateBase):
       ("AVH_LAMP", "TCS15"),
 
       ("Elect_Gear_Step", "ELECT_GEAR"),
-      ("Regen_Maybe", "IEB_2A2"),
+      #("Regen_Maybe", "IEB_2A2"),
       #("REGEN_LEVEL" ,"VCU_202"),
 
       ("Cruise_Limit_Target", "E_EMS11"),
