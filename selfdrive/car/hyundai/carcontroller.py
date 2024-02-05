@@ -344,7 +344,7 @@ class CarController:
         else:
           self.lead_accel_accum = 0.0
         # if it seems like we should be slowing down enough over time, kill cruise to brake harder
-        if self.lead_accel_accum < (-1.35 if self.sensitiveSlow else -1.85) and clu11_speed - desired_speed >= 1.85:
+        if self.lead_accel_accum < (-1.4 if self.sensitiveSlow else -1.5) and clu11_speed - desired_speed >= 1.85:
           desired_speed = 0
     else:
       # we are stopping for some other reason, clear our lead accumulator
