@@ -228,7 +228,7 @@ class CarController:
       self.lead_distance_hist.append(l0d)
       self.lead_distance_times.append(datetime.datetime.now())
       # if we've got enough data to calculate a distspeed
-      if len(self.lead_distance_hist) >= 80:
+      if len(self.lead_distance_hist) >= 90:
         time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
         dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
         max_allowed = (l0v + l0vstd) * CV.MS_TO_MPH
@@ -238,7 +238,7 @@ class CarController:
         self.lead_distance_hist.pop(0)
         self.lead_distance_times.pop(0)
         # do we have enough distances over time to get a distspeed estimate?
-        if len(self.lead_distance_distavg) >= 20:
+        if len(self.lead_distance_distavg) >= 10:
           l0v_distval_mph = lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
           self.lead_distance_distavg.pop(0)
     else:
