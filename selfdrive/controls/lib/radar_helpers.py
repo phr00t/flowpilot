@@ -16,7 +16,7 @@ RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
 LEAD_SPEED_VISION_SMOOTH = 20
-LEAD_DATA_COUNT_BEFORE_VALID = 5
+LEAD_DATA_COUNT_BEFORE_VALID = 4
 
 def reject_outliers(data, m=2.):
   data = np.array(data)
