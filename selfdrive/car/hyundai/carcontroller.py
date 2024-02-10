@@ -23,6 +23,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
+TICKS_FOR_HARDSTEERING_SMOOTHING = 50
 
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
@@ -105,11 +106,15 @@ class CarController:
 
     # if we are disabled, or the driver is doing a sharp turn themselves, don't apply any additional steering
     if CS.out.steeringPressed:
-      self.prevent_heavy_steer_timer = 50
+      self.prevent_heavy_steer_timer = TICKS_FOR_HARDSTEERING_SMOOTHING
     elif self.prevent_heavy_steer_timer > 0:
       self.prevent_heavy_steer_timer -= 1
-    if not CC.latActive or abs(CS.out.steeringAngleDeg) > 89 and (CS.out.steeringPressed or self.prevent_heavy_steer_timer > 0):
+
+    if not CC.latActive:
       apply_steer = 0
+    elif abs(CS.out.steeringAngleDeg) > 89 and self.prevent_heavy_steer_timer > 0:
+      # gradually bring steering back in on sharp turns
+      apply_steer = lerp(apply_steer, 0, self.prevent_heavy_steer_timer / TICKS_FOR_HARDSTEERING_SMOOTHING)
 
     self.apply_steer_last = apply_steer
 
