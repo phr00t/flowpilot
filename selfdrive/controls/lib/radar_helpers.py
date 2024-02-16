@@ -2,7 +2,7 @@ from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
 import statistics
 import numpy as np
-import time
+import datetime
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
@@ -71,7 +71,7 @@ class Track():
 class Cluster():
   def __init__(self):
     self.tracks = set()
-    self.start_time = time.time()
+    self.start_time = datetime.datetime.now()
 
   def add(self, t):
     # add the first track
@@ -172,7 +172,7 @@ class Cluster():
       "vLead": float(finalv),
       "vLeadK": float(lead_msg.vStd[0]),
       "aLeadK": float(lead_msg.xStd[0]),
-      "aLeadTau": time.time(),
+      "aLeadTau": float((datetime.datetime.now() - self.start_time).total_seconds()),
       "fcw": False,
       "modelProb": finalp,
       "radar": False,
