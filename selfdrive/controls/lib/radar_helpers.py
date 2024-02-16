@@ -19,6 +19,8 @@ RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 LEAD_SPEED_VISION_SMOOTH = 15
 LEAD_DATA_COUNT_BEFORE_VALID = 4
 
+PROGRAM_START = datetime.datetime.now()
+
 def reject_outliers(data, m=2.):
   data = np.array(data)
   d = np.abs(data - np.median(data))
@@ -71,7 +73,6 @@ class Track():
 class Cluster():
   def __init__(self):
     self.tracks = set()
-    self.start_time = datetime.datetime.now()
 
   def add(self, t):
     # add the first track
@@ -172,7 +173,7 @@ class Cluster():
       "vLead": float(finalv),
       "vLeadK": float(lead_msg.vStd[0]),
       "aLeadK": float(lead_msg.xStd[0]),
-      "aLeadTau": float((datetime.datetime.now() - self.start_time).total_seconds()),
+      "aLeadTau": float((datetime.datetime.now() - PROGRAM_START).total_seconds()),
       "fcw": False,
       "modelProb": finalp,
       "radar": False,
