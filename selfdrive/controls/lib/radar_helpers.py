@@ -172,7 +172,7 @@ class Cluster():
       "vLead": float(finalv),
       "vLeadK": float(lead_msg.vStd[0]),
       "aLeadK": float(lead_msg.xStd[0]),
-      "aLeadTau": float(time.time() - self.start_time),
+      "aLeadTau": 1.5,
       "fcw": False,
       "modelProb": finalp,
       "radar": False,
