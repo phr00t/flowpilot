@@ -228,29 +228,31 @@ class CarController:
     lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
     # if we are using the distspeed feature, monitor distance to better estimate speed within standard deviation
-    l0v_distval_mph = 0
     if l0prob > 0.5 and self.usingDistSpeed:
       # ok, start collecting data on the lead car
-      self.lead_distance_hist.append(l0d)
-      self.lead_distance_times.append(l0time)
+      # only add if a newer time
+      if len(self.lead_distance_times) == 0 or self.lead_distance_times[-1] < l0time:
+          self.lead_distance_hist.append(l0d)
+          self.lead_distance_times.append(l0time)
       # if we've got enough data to calculate a distspeed
-      if len(self.lead_distance_hist) >= 90:
+      if len(self.lead_distance_hist) >= 2:
         time_diff = self.lead_distance_times[-1] - self.lead_distance_times[0]
-        dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
-        # clamp speed to model's speed uncertainty window
-        max_allowed = (l0v + l0vstd) * CV.MS_TO_MPH
-        min_allowed = (l0v - l0vstd) * CV.MS_TO_MPH
-        distspeed = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, min_allowed, max_allowed)
-        # wait, if we have a bunch of distance uncertainty, use the model speed more
-        distspeed = interp(l0dstd, [3.5, 10.0], [distspeed, l0v * CV.MS_TO_MPH])
-        # add this value to be averaged later
-        self.lead_distance_distavg.append(distspeed)
-        self.lead_distance_hist.pop(0)
-        self.lead_distance_times.pop(0)
-        # do we have enough distances over time to get a distspeed estimate?
-        if len(self.lead_distance_distavg) >= 10:
-          l0v_distval_mph = lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
-          self.lead_distance_distavg.pop(0)
+        if time_diff >= 0.8:
+            dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
+            # clamp speed to model's speed uncertainty window
+            max_allowed = (l0v + l0vstd) * CV.MS_TO_MPH
+            min_allowed = (l0v - l0vstd) * CV.MS_TO_MPH
+            distspeed = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, min_allowed, max_allowed)
+            # wait, if we have a bunch of distance uncertainty, use the model speed more
+            distspeed = interp(l0dstd, [3.5, 10.0], [distspeed, l0v * CV.MS_TO_MPH])
+            # add this value to be averaged later
+            self.lead_distance_distavg.append(distspeed)
+            self.lead_distance_hist.pop(0)
+            self.lead_distance_times.pop(0)
+            # do we have enough distances over time to get a distspeed estimate?
+            if len(self.lead_distance_distavg) >= 10:
+              lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
+              self.lead_distance_distavg.pop(0)
     else:
       # no lead, clear data
       self.lead_distance_hist.clear()
@@ -381,7 +383,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " pr" + str(int(CS.out.cruiseState.nonAdaptive)) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(lead_vdiff_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " du" + "{:.2f}".format(l0dstd))
+    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.1f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " pr" + str(int(CS.out.cruiseState.nonAdaptive)) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(lead_vdiff_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " lt" + "{:.1f}".format(l0time) + " du" + "{:.2f}".format(l0dstd))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?

@@ -71,6 +71,7 @@ class Track():
 class Cluster():
   def __init__(self):
     self.tracks = set()
+    self.start_time = time.time()
 
   def add(self, t):
     # add the first track
@@ -171,7 +172,7 @@ class Cluster():
       "vLead": float(finalv),
       "vLeadK": float(lead_msg.vStd[0]),
       "aLeadK": float(lead_msg.xStd[0]),
-      "aLeadTau": float(time.time()),
+      "aLeadTau": float(time.time() - self.start_time),
       "fcw": False,
       "modelProb": finalp,
       "radar": False,
