@@ -234,7 +234,7 @@ class CarController:
       self.lead_distance_hist.append(l0d)
       self.lead_distance_times.append(l0time)
       # if we've got enough data to calculate a distspeed
-      if len(self.lead_distance_hist) >= 80:
+      if len(self.lead_distance_hist) >= 90:
         time_diff = self.lead_distance_times[-1] - self.lead_distance_times[0]
         dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
         # clamp speed to model's speed uncertainty window
