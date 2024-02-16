@@ -213,6 +213,7 @@ class CarController:
     l0dstd = radarState.leadOne.aLeadK
     l0v = radarState.leadOne.vRel
     l0vstd = radarState.leadOne.vLeadK
+    l0time = radarState.leadOne.aLeadTau
 
     # adjust l0v based on l0vstd and l0v
     l0vstd_multiplier = 1.75 / (1 + math.exp(-l0v-0.289)) - 1.0
@@ -231,10 +232,10 @@ class CarController:
     if l0prob > 0.5 and self.usingDistSpeed:
       # ok, start collecting data on the lead car
       self.lead_distance_hist.append(l0d)
-      self.lead_distance_times.append(datetime.datetime.now())
+      self.lead_distance_times.append(l0time)
       # if we've got enough data to calculate a distspeed
-      if len(self.lead_distance_hist) >= 85:
-        time_diff = (self.lead_distance_times[-1] - self.lead_distance_times[0]).total_seconds()
+      if len(self.lead_distance_hist) >= 80:
+        time_diff = self.lead_distance_times[-1] - self.lead_distance_times[0]
         dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
         # clamp speed to model's speed uncertainty window
         max_allowed = (l0v + l0vstd) * CV.MS_TO_MPH
@@ -247,7 +248,7 @@ class CarController:
         self.lead_distance_hist.pop(0)
         self.lead_distance_times.pop(0)
         # do we have enough distances over time to get a distspeed estimate?
-        if len(self.lead_distance_distavg) >= 15:
+        if len(self.lead_distance_distavg) >= 10:
           l0v_distval_mph = lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
           self.lead_distance_distavg.pop(0)
     else:
