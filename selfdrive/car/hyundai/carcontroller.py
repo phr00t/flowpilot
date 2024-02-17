@@ -239,9 +239,8 @@ class CarController:
             # add this value to be averaged later
             self.lead_distance_distavg.append(distspeed)
             # clean out existing entries
-            while len(self.lead_distance_times) >= 2 and self.lead_distance_times[-1] - self.lead_distance_times[0] > DISTSPEED_TIMEFRAME:
-              self.lead_distance_hist.pop(0)
-              self.lead_distance_times.pop(0)
+            self.lead_distance_hist.pop(0)
+            self.lead_distance_times.pop(0)
             # do we have enough distances over time to get a distspeed estimate?
             if len(self.lead_distance_distavg) >= DISTSPEED_AVERAGING:
               use_basic_speedadj = False
