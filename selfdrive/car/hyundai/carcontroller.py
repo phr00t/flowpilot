@@ -24,6 +24,8 @@ MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 TICKS_FOR_HARDSTEERING_SMOOTHING = 50
+DISTSPEED_TIMEFRAME = 0.9
+DISTSPEED_AVERAGING = 7
 
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
@@ -226,7 +228,7 @@ class CarController:
       # if we've got enough data to calculate a distspeed
       if len(self.lead_distance_hist) >= 2:
         time_diff = self.lead_distance_times[-1] - self.lead_distance_times[0]
-        if time_diff >= 0.9:
+        if time_diff >= DISTSPEED_TIMEFRAME:
             dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
             # clamp speed to model's speed uncertainty window
             max_allowed = (l0v + l0vstd) * CV.MS_TO_MPH
@@ -236,10 +238,12 @@ class CarController:
             distspeed = interp(l0dstd, [3.5, 10.0], [distspeed, l0v * CV.MS_TO_MPH])
             # add this value to be averaged later
             self.lead_distance_distavg.append(distspeed)
-            self.lead_distance_hist.pop(0)
-            self.lead_distance_times.pop(0)
+            # clean out existing entries
+            while len(self.lead_distance_times) >= 2 and self.lead_distance_times[-1] - self.lead_distance_times[0] > DISTSPEED_TIMEFRAME:
+              self.lead_distance_hist.pop(0)
+              self.lead_distance_times.pop(0)
             # do we have enough distances over time to get a distspeed estimate?
-            if len(self.lead_distance_distavg) >= 7:
+            if len(self.lead_distance_distavg) >= DISTSPEED_AVERAGING:
               use_basic_speedadj = False
               lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
               self.lead_distance_distavg.pop(0)
