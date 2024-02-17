@@ -221,10 +221,8 @@ class CarController:
     # if we are using the distspeed feature, monitor distance to better estimate speed within standard deviation
     if l0prob > 0.5 and self.usingDistSpeed:
       # ok, start collecting data on the lead car
-      # only add if a newer time
-      if len(self.lead_distance_times) == 0 or self.lead_distance_times[-1] < l0time:
-          self.lead_distance_hist.append(l0d)
-          self.lead_distance_times.append(l0time)
+      self.lead_distance_hist.append(l0d)
+      self.lead_distance_times.append(l0time)
       # if we've got enough data to calculate a distspeed
       if len(self.lead_distance_hist) >= 2:
         time_diff = self.lead_distance_times[-1] - self.lead_distance_times[0]
