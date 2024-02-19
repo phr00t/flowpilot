@@ -155,7 +155,7 @@ class Cluster():
       vLeads.clear()
     else:
       Dists.append(lead_msg.x[0])
-      vLeads.append(lead_msg.v[0])
+      vLeads.append(lead_msg.v[0] - v_ego)
       if len(Dists) > LEAD_SPEED_VISION_SMOOTH:
         Dists.pop(0)
         vLeads.pop(0)
@@ -169,8 +169,8 @@ class Cluster():
     return {
       "dRel": float(finald - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
-      "vRel": float(finalv - v_ego),
-      "vLead": float(finalv),
+      "vRel": float(finalv),
+      "vLead": float(finalv + v_ego),
       "vLeadK": float(lead_msg.vStd[0]),
       "aLeadK": float(lead_msg.xStd[0]),
       "aLeadTau": float((datetime.datetime.now() - PROGRAM_START).total_seconds()),
