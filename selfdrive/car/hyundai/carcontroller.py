@@ -292,7 +292,7 @@ class CarController:
         if target_time < 2:
           target_time = 2
         # calculate the speed difference we should be going
-        adjust_speed = (lead_vdiff_mph * 1.33) + ((7.5 * (lead_time - target_time))/target_time) ** 3
+        adjust_speed = (lead_vdiff_mph * 1.33) + ((5.5 * (lead_time - target_time))/target_time) ** 3
         # don't sudden slow for certain situations, as this causes significant braking
         # 1) if the lead car is far away in either time or distance
         # 2) if the lead car is moving away from us
