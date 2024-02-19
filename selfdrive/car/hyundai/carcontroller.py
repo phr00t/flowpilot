@@ -279,9 +279,7 @@ class CarController:
     if l0prob > 0.5:
       self.lead_seen_counter += 1
       if clu11_speed > 5:
-        # amplify large lead car speed differences a bit so we react faster
-        #lead_vdiff_mph *= ((abs(lead_vdiff_mph) * 0.033) ** 1.2) + 1
-        # calculate an estimate of the lead car's speed for purposes of setting our speed
+        # calculate an estimate of the lead car's speed
         lead_speed = clu11_speed + lead_vdiff_mph
         # calculate lead car time
         speed_in_ms = clu11_speed * 0.44704
@@ -289,31 +287,27 @@ class CarController:
         # caculate a target lead car time, which is generally 3 seconds unless we are driving fast
         # then we need to be a little closer to keep car within good visible range
         # and prevent big gaps where cars always are cutting in
-        target_time = 3 - ((clu11_speed / 72) ** 3)
+        target_time = 3 - ((clu11_speed / 70) ** 3)
         # do not go under a certain lead car time for safety
-        if target_time < 2.1:
-          target_time = 2.1
-        # calculate the difference of our current lead time and desired lead time
-        lead_time_ideal_offset = lead_time - target_time
+        if target_time < 2:
+          target_time = 2
+        # calculate the speed difference we should be going
+        adjust_speed = (lead_vdiff_mph * 1.33) + ((7.5 * (lead_time - target_time))/target_time) ** 3
         # don't sudden slow for certain situations, as this causes significant braking
         # 1) if the lead car is far away in either time or distance
         # 2) if the lead car is moving away from us
         leadcar_going_faster = lead_vdiff_mph >= 0.6
-        dont_sudden_slow = lead_time_ideal_offset > target_time * 0.39 or l0d >= 80 or leadcar_going_faster
-        # depending on slowing down or speeding up, scale
-        if lead_time_ideal_offset < 0:
-          lead_time_ideal_offset = -(-lead_time_ideal_offset * (10.5 / target_time)) ** 1.4  # exponentially slow down if getting closer and closer
-        else:
-          lead_time_ideal_offset = (lead_time_ideal_offset * 2) ** 1.2  # exponentially not consider lead car the further away
         # calculate the final max speed we should be going based on lead car
-        max_lead_adj = lead_speed + lead_time_ideal_offset
+        max_lead_adj = clu11_speed + adjust_speed
         # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
         # don't go much slower than the lead car, and cancel any sudden slowing that may be happening
-        fasterleadcar_imposed_speed_limit = max(clu11_speed - 1.75, lead_speed - 2.3)
+        fasterleadcar_imposed_speed_limit = max(clu11_speed - 1.5, lead_speed - 2.3)
         if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
-          max_lead_adj = fasterleadcar_imposed_speed_limit # slowly make space between cars
-        elif dont_sudden_slow and max_lead_adj < clu11_speed - 1.75:
-          max_lead_adj = clu11_speed - 1.75 # slow down, but not aggresively
+          # slowly make space between cars
+          max_lead_adj = fasterleadcar_imposed_speed_limit
+        elif leadcar_going_faster and max_lead_adj < clu11_speed - 1.5:
+          # slow down, but not aggresively
+          max_lead_adj = clu11_speed - 1.5
         elif not leadcar_going_faster and self.lead_seen_counter < 150 and max_lead_adj > clu11_speed:
           max_lead_adj = clu11_speed # dont speed up if we see a new car and its not going faster than us
         # cap our desired_speed to this final max speed
@@ -337,8 +331,8 @@ class CarController:
       #CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     elif desired_speed > 0:
       # does the model think we should be really slowing down?
-      if self.usingAccel and avg_accel_min < clu11_speed - 10 and desired_speed > clu11_speed - 1.75:
-        desired_speed = clu11_speed - 1.75
+      if self.usingAccel and avg_accel_min < clu11_speed - 10 and desired_speed > clu11_speed - 1.5:
+        desired_speed = clu11_speed - 1.5
 
       # clamp for the following divisions
       desired_speed = clamp(desired_speed, 0.001, max_speed_in_mph)
