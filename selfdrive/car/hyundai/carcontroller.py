@@ -354,7 +354,7 @@ class CarController:
       else:
         # we might want to slow for a lead car infront of us, but we don't want to make quick small brakes
         # lets see if we should be braking enough before doing so
-        lead_accel_diff = signsquare(1.1 * (0.165 + target_accel_lead - CS.out.aEgo))
+        lead_accel_diff = signsquare(1.75 * (0.23 + target_accel_lead - CS.out.aEgo))
         if lead_accel_diff < 0:
           self.lead_accel_accum += lead_accel_diff * (20/100) # based off of 20 fps model and this function @ 100hz
         else:
