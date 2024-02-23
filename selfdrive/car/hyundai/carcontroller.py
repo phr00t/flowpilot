@@ -27,6 +27,9 @@ TICKS_FOR_HARDSTEERING_SMOOTHING = 50
 DISTSPEED_TIMEFRAME = 0.9
 DISTSPEED_AVERAGING = 7
 
+def signsquare(x):
+  return x * abs(x)
+
 def clamp(num, min_value, max_value):
   return max(min(num, max_value), min_value)
 
@@ -341,18 +344,17 @@ class CarController:
       target_speed_ratio = clu11_speed / desired_speed
       target_accel_lead = interp(target_speed_ratio, self.speed_ratios, self.target_accels)
       target_accel_curv = interp(curve_speed_ratio, self.speed_ratios, self.target_accels)
-      target_accel = min(target_accel_curv, target_accel_lead)
-      if target_accel >= 0 or target_accel > CS.out.aEgo:
-        # we don't need to break this hard for any case, re-enable cruise
+      if min(target_accel_curv, target_accel_lead) >= 0 or target_accel > CS.out.aEgo:
+        # we don't need to brake this hard for any case, re-enable cruise
         allow_reenable_cruise = True
         self.lead_accel_accum = 0.0
-      elif target_accel_curv < CS.out.aEgo - 0.25 and clu11_speed - desired_speed > 1.5:
+      elif target_accel_curv < CS.out.aEgo - 0.2 and clu11_speed - desired_speed > 1.25:
         # easy check to slow down for a curve
         desired_speed = 0
       else:
         # we might want to slow for a lead car infront of us, but we don't want to make quick small brakes
         # lets see if we should be braking enough before doing so
-        lead_accel_diff = (target_accel_lead - CS.out.aEgo) + 0.3
+        lead_accel_diff = signsquare(1.1 * (0.19 + target_accel_lead - CS.out.aEgo))
         if lead_accel_diff < 0:
           self.lead_accel_accum += lead_accel_diff * (20/100) # based off of 20 fps model and this function @ 100hz
         else:
