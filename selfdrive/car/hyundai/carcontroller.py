@@ -344,7 +344,8 @@ class CarController:
       target_speed_ratio = clu11_speed / desired_speed
       target_accel_lead = interp(target_speed_ratio, self.speed_ratios, self.target_accels)
       target_accel_curv = interp(curve_speed_ratio, self.speed_ratios, self.target_accels)
-      if min(target_accel_curv, target_accel_lead) >= 0 or target_accel > CS.out.aEgo:
+      target_accel = min(target_accel_curv, target_accel_lead)
+      if target_accel >= 0 or target_accel > CS.out.aEgo:
         # we don't need to brake this hard for any case, re-enable cruise
         allow_reenable_cruise = True
         self.lead_accel_accum = 0.0
