@@ -387,7 +387,7 @@ class CarController:
       self.temp_disable_spamming -= 1
 
     # print debug data
-    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.2f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " lt" + str(int(use_basic_speedadj)) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(lead_vdiff_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " du" + "{:.1f}".format(l0dstd))
+    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.2f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " la" + "{:.1f}".format(self.lead_accel_accum) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(lead_vdiff_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " du" + "{:.1f}".format(l0dstd))
 
     cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
     cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
