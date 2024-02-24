@@ -16,7 +16,7 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
-LEAD_SPEED_VISION_SMOOTH = 15
+LEAD_SPEED_VISION_SMOOTH = 10
 LEAD_DATA_COUNT_BEFORE_VALID = 4
 
 PROGRAM_START = datetime.datetime.now()
@@ -159,9 +159,8 @@ class Cluster():
       if len(Dists) > LEAD_SPEED_VISION_SMOOTH:
         Dists.pop(0)
         vLeads.pop(0)
-      Weights = list(range(1, len(Dists) + 1))
-      finald = np.average(Dists, weights=Weights)
-      finalv = np.average(vLeads, weights=Weights)
+      finald = np.average(reject_outliers(Dists))
+      finalv = np.average(reject_outliers(vLeads))
       # only consider we've got a lead when we've collected some data on it
       if len(vLeads) >= LEAD_DATA_COUNT_BEFORE_VALID:
         finalp = float(lead_msg.prob)
