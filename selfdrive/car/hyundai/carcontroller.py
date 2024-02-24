@@ -236,7 +236,8 @@ class CarController:
             # clamp speed to model's speed uncertainty window
             max_allowed = (l0v + l0vstd) * CV.MS_TO_MPH
             min_allowed = (l0v - l0vstd) * CV.MS_TO_MPH
-            distspeed = clamp((dist_diff / time_diff) * CV.MS_TO_MPH, min_allowed, max_allowed)
+            raw_distspeed = dist_diff / time_diff
+            distspeed = clamp((raw_distspeed + l0v) * 0.5 * CV.MS_TO_MPH, min_allowed, max_allowed)
             # wait, if we have a bunch of distance uncertainty, use the model speed more
             distspeed = interp(l0dstd, [3.5, 10.0], [distspeed, l0v * CV.MS_TO_MPH])
             # add this value to be averaged later
@@ -355,7 +356,7 @@ class CarController:
       else:
         # we might want to slow for a lead car infront of us, but we don't want to make quick small brakes
         # lets see if we should be braking enough before doing so
-        lead_accel_diff = signsquare(0.6 * (0.2 + target_accel_lead - CS.out.aEgo))
+        lead_accel_diff = signsquare(0.7 * (0.25 + target_accel_lead - CS.out.aEgo))
         if lead_accel_diff < 0:
           self.lead_accel_accum += lead_accel_diff * (20/100) # based off of 20 fps model and this function @ 100hz
         else:
