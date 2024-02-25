@@ -16,10 +16,16 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
-LEAD_SPEED_VISION_SMOOTH = 10
+LEAD_DATA_MAX_COUNT = 150
+DATA_AVERAGING_RATE = 30
 LEAD_DATA_COUNT_BEFORE_VALID = 4
 
 PROGRAM_START = datetime.datetime.now()
+
+
+def weightedAverage(data):
+  Weights = list(range(1, len(data) + 1))
+  return np.average(data, weights=Weights)
 
 def reject_outliers(data, m=2.):
   data = np.array(data)
@@ -156,11 +162,14 @@ class Cluster():
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0] - v_ego)
-      if len(Dists) > LEAD_SPEED_VISION_SMOOTH:
+      if len(Dists) > LEAD_DATA_MAX_COUNT:
         Dists.pop(0)
         vLeads.pop(0)
-      finald = np.average(reject_outliers(Dists))
-      finalv = np.average(reject_outliers(vLeads))
+      # how much lead car values do we want to average?
+      dcount = min(len(Dists), max(LEAD_DATA_COUNT_BEFORE_VALID, int(round(DATA_AVERAGING_RATE * lead_msg.xStd[0]))))
+      vcount = min(len(vLeads), max(LEAD_DATA_COUNT_BEFORE_VALID, int(round(DATA_AVERAGING_RATE * lead_msg.vStd[0]))))
+      finald = weightedAverage(Dists[-dcount:])
+      finalv = weightedAverage(vLeads[-vcount:])
       # only consider we've got a lead when we've collected some data on it
       if len(vLeads) >= LEAD_DATA_COUNT_BEFORE_VALID:
         finalp = float(lead_msg.prob)

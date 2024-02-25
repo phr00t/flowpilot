@@ -24,8 +24,8 @@ MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 TICKS_FOR_HARDSTEERING_SMOOTHING = 50
-DISTSPEED_TIMEFRAME = 0.9
-DISTSPEED_AVERAGING = 7
+DISTSPEED_TIMEFRAME = 1.0
+DISTSPEED_AVERAGING = 4
 SLOW_THRESHOLD = 1.4
 
 def signsquare(x):
@@ -357,7 +357,7 @@ class CarController:
       else:
         # we might want to slow for a lead car infront of us, but we don't want to make quick small brakes
         # lets see if we should be braking enough before doing so
-        lead_accel_diff = signsquare(0.7 * (0.25 + target_accel_lead - CS.out.aEgo))
+        lead_accel_diff = signsquare(0.75 * (0.25 + target_accel_lead - CS.out.aEgo))
         lead_accel_adj = lead_accel_diff * (20/100) # based off of 20 fps model and this function @ 100hz
         if lead_accel_diff < 0:
           self.lead_accel_accum += lead_accel_adj
