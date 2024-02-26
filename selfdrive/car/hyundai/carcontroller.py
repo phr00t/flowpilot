@@ -240,7 +240,7 @@ class CarController:
             raw_distspeed = dist_diff / time_diff
             distspeed = clamp((raw_distspeed + l0v) * 0.5 * CV.MS_TO_MPH, min_allowed, max_allowed)
             # wait, if we have a bunch of distance uncertainty, use the model speed more
-            distspeed = interp(l0dstd, [3.5, 10.0], [distspeed, l0v * CV.MS_TO_MPH])
+            distspeed = interp(l0dstd, [3.5, 9.0], [distspeed, l0v * CV.MS_TO_MPH])
             # add this value to be averaged later
             self.lead_distance_distavg.append(distspeed)
             # clean out existing entries
