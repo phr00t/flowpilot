@@ -291,13 +291,9 @@ class CarController:
         # calculate lead car time
         speed_in_ms = clu11_speed * 0.44704
         lead_time = l0d / speed_in_ms
-        # caculate a target lead car time, which is generally 3 seconds unless we are driving fast
-        # then we need to be a little closer to keep car within good visible range
-        # and prevent big gaps where cars always are cutting in
-        target_time = 3 - ((clu11_speed / 70) ** 3)
-        # do not go under a certain lead car time for safety
-        if target_time < 2.1:
-          target_time = 2.1
+        # caculate a target lead car time, which is 3 seconds at slow speeds, but gradually max_allowed
+        # closer for faster speeds
+        target_time = interp(clu11_speed, [20.0, 70.0], [3.0, 2.1])
         # calculate the speed difference we should be going
         adjust_speed = (lead_vdiff_mph * 1.33) + ((5.5 * (lead_time - target_time))/target_time) ** 3
         # don't sudden slow for certain situations, as this causes significant braking
