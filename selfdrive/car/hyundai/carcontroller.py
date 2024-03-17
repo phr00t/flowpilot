@@ -234,12 +234,15 @@ class CarController:
         time_diff = self.lead_distance_times[-1] - self.lead_distance_times[0]
         if time_diff >= DISTSPEED_TIMEFRAME:
             dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
-            distspeed = (dist_diff / time_diff) * CV.MS_TO_KPH
-            mph_lead_speed = l0v * CV.MS_TO_MPH
+            # clamp speed to model's speed uncertainty window
+            # l0vstd is usually too tight, so allow distspeed more wiggle room
+            range_allowed = l0vstd * 1.75
+            max_allowed = (l0v + range_allowed) * CV.MS_TO_MPH
+            min_allowed = (l0v - range_allowed) * CV.MS_TO_MPH
+            raw_distspeed = dist_diff / time_diff
+            distspeed = clamp((raw_distspeed + l0v) * 0.5 * CV.MS_TO_MPH, min_allowed, max_allowed)
             # wait, if we have a bunch of distance uncertainty, use the model speed more
-            distspeed = interp(l0dstd, [3.5, 9.0], [distspeed, mph_lead_speed])
-            # if the distspeed is far off from the model speed, reduce its influence
-            distspeed = interp(abs(mph_lead_speed - distspeed), [3.0, 15.0], [distspeed, mph_lead_speed])
+            distspeed = interp(l0dstd, [3.5, 9.0], [distspeed, l0v * CV.MS_TO_MPH])
             # add this value to be averaged later
             self.lead_distance_distavg.append(distspeed)
             # clean out existing entries
@@ -248,7 +251,7 @@ class CarController:
             # do we have enough distances over time to get a distspeed estimate?
             if len(self.lead_distance_distavg) >= DISTSPEED_AVERAGING:
               use_basic_speedadj = False
-              lead_vdiff_mph = statistics.fmean(self.lead_distance_distavg)
+              lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
               self.lead_distance_distavg.pop(0)
     else:
       # no lead, clear data
