@@ -186,21 +186,26 @@ class LanePlanner:
       leftBorder = max(self.le_y[0], self.lll_y[1])
       nearRightEdge = abs(self.rll_y[0] - rightBorder) < MIN_LANE_DISTANCE * 0.7
       nearLeftEdge = abs(self.lll_y[0] - leftBorder) < MIN_LANE_DISTANCE * 0.7
-      targetRightCentering = min(self.rll_y[0] + 0.15, rightBorder) if nearRightEdge else self.rll_y[0]
-      targetLeftCentering = max(self.lll_y[0] - 0.15, leftBorder) if nearLeftEdge else self.lll_y[0]
       # ok, how far off of center are we, considering we want to be closer to edges of the road?
-      target_centering = targetRightCentering + targetLeftCentering
+      target_centering = self.rll_y[0] + self.lll_y[0]
+      # if we are not near an edge, center harder away from it (since it is probably another lane)
+      if target_centering > 0 and not nearLeftEdge:
+        # we want to push right and not near a left edge
+        target_centering *= 1.4
+      elif target_centering < 0 and not nearRightEdge:
+        # we want to push left and not near a right edge
+        target_centering *= 1.4
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
-      self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [2.6, 2.8], [0.0, 1.0])
+      self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [2.55, 2.75], [0.0, 1.0])
       # apply a cap centering force
       self.center_force = clamp(self.center_force, -0.8, 0.8)
       # apply less lane centering for a direction we are already turning
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.6
+        self.center_force *= 0.5
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
