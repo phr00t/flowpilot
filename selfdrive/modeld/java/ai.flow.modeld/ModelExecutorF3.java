@@ -48,16 +48,16 @@ public class ModelExecutorF3 extends ModelExecutor {
     public static int[] desireTensorShape;
     public static final int[] trafficTensorShape = {1, CommonModelF3.TRAFFIC_CONVENTION_LEN};
     public static final int[] outputTensorShape = {1, CommonModelF3.NET_OUTPUT_SIZE};
-    public static final int[] navFeaturesTensorShape = {1, CommonModelF3.NAV_FEATURE_LEN};
-    public static final int[] navInstructionsTensorShape = {1, 150};
+    //public static final int[] navFeaturesTensorShape = {1, CommonModelF3.NAV_FEATURE_LEN};
+    //public static final int[] navInstructionsTensorShape = {1, 150};
 
     public static final Map<String, int[]> inputShapeMap = new HashMap<>();
     public static final Map<String, int[]> outputShapeMap = new HashMap<>();
     public INDArray desireNDArr;
     public INDArray trafficNDArr;
     public INDArray featuresNDArr;
-    public INDArray navfeaturesNDArr;
-    public INDArray navinstructNDArr;
+    //public INDArray navfeaturesNDArr;
+    //public INDArray navinstructNDArr;
     public final float[] netOutputs = new float[(int)numElements(outputTensorShape)];
     public final float[]prevDesire = new float[CommonModelF3.DESIRE_LEN];
     public final float[]desireIn = new float[CommonModelF3.DESIRE_LEN];
@@ -213,8 +213,8 @@ public class ModelExecutorF3 extends ModelExecutor {
         desireNDArr = Nd4j.zeros(desireTensorShape);
         trafficNDArr = Nd4j.zeros(trafficTensorShape);
         featuresNDArr = Nd4j.zeros(featureTensorShape);
-        navfeaturesNDArr = Nd4j.zeros(navFeaturesTensorShape);
-        navinstructNDArr = Nd4j.zeros(navInstructionsTensorShape);
+        //navfeaturesNDArr = Nd4j.zeros(navFeaturesTensorShape);
+        //navinstructNDArr = Nd4j.zeros(navInstructionsTensorShape);
 
         ph.createPublishers(Arrays.asList("modelRaw"));
         sh.createSubscribers(Arrays.asList("pulseDesire", "liveCalibration", "lateralPlan"));
@@ -224,14 +224,14 @@ public class ModelExecutorF3 extends ModelExecutor {
         inputShapeMap.put("features_buffer", featureTensorShape);
         inputShapeMap.put("desire", desireTensorShape);
         inputShapeMap.put("traffic_convention", trafficTensorShape);
-        inputShapeMap.put("nav_features", navFeaturesTensorShape);
-        if (utils.Runner != utils.USE_MODEL_RUNNER.SNPE)
-            inputShapeMap.put("nav_instructions", navInstructionsTensorShape);
+        //inputShapeMap.put("nav_features", navFeaturesTensorShape);
+        //if (utils.Runner != utils.USE_MODEL_RUNNER.SNPE)
+        //    inputShapeMap.put("nav_instructions", navInstructionsTensorShape);
         outputShapeMap.put("outputs", outputTensorShape);
 
-        inputMap.put("nav_features", navfeaturesNDArr);
-        if (utils.Runner != utils.USE_MODEL_RUNNER.SNPE)
-            inputMap.put("nav_instructions", navinstructNDArr);
+        //inputMap.put("nav_features", navfeaturesNDArr);
+        //if (utils.Runner != utils.USE_MODEL_RUNNER.SNPE)
+        //    inputMap.put("nav_instructions", navinstructNDArr);
         inputMap.put("features_buffer", featuresNDArr);
         inputMap.put("desire", desireNDArr);
         inputMap.put("traffic_convention", trafficNDArr);
