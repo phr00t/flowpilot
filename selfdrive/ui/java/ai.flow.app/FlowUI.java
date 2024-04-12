@@ -68,6 +68,7 @@ public class FlowUI extends Game {
                         if (!isOnRoad) {
                             modelExecutor.stop();
                         } else {
+                            OnRoadScreen.HideInfoTable = true;
                             modelExecutor.start();
                         }
                     }
