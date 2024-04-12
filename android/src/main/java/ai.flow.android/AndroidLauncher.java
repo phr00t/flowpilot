@@ -9,6 +9,7 @@ import ai.flow.app.FlowUI;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
+import ai.flow.common.transformations.Model;
 import ai.flow.common.utils;
 import ai.flow.hardware.HardwareManager;
 import ai.flow.launcher.Launcher;
@@ -38,6 +39,8 @@ import com.termux.shared.termux.TermuxConstants;
 import org.acra.ACRA;
 import org.acra.ErrorReporter;
 import org.jetbrains.annotations.NotNull;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -73,6 +76,24 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			Camera.CenterX = numbers[2];
 			Camera.CenterY = numbers[3];
 			Camera.UseCameraID = (int)numbers[4];
+
+			// recalculate values using loaded new stuff
+			Camera.actual_cam_focal_length = (Camera.FocalX + Camera.FocalY) * 0.5f;
+			Camera.digital_zoom_apply = Camera.actual_cam_focal_length / (utils.F2 ? Model.MEDMODEL_F2_FL : Model.MEDMODEL_FL);
+			Camera.OffsetX = Camera.CenterX - (Camera.frameSize[0]*0.5f);
+			Camera.OffsetY = Camera.CenterY - (Camera.frameSize[1]*0.5f);
+
+			Camera.CameraIntrinsics = new float[] {
+					Camera.FocalX, 0.0f, Camera.frameSize[0] * 0.5f + Camera.OffsetX * Camera.digital_zoom_apply,
+					0.0f, Camera.FocalY, Camera.frameSize[1] * 0.5f + Camera.OffsetY * Camera.digital_zoom_apply,
+					0.0f,   0.0f, 1.0f
+			};
+
+			Camera.cam_intrinsics = Nd4j.createFromArray(new float[][]{
+					{ Camera.CameraIntrinsics[0],  0.0f,  Camera.CameraIntrinsics[2]},
+					{0.0f,  Camera.CameraIntrinsics[4],  Camera.CameraIntrinsics[5]},
+					{0.0f,  0.0f,  1.0f}
+			});
 
 		} catch (IOException e) {
 			e.printStackTrace();
