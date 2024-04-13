@@ -195,6 +195,9 @@ class LanePlanner:
       elif target_centering < 0 and not nearRightEdge:
         # we want to push left and not near a right edge
         target_centering *= 1.4
+      else
+        # less important lane centering adjustment
+        target_centering *= 0.8
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
       # if we are lane changing, cut center force
@@ -206,8 +209,9 @@ class LanePlanner:
       # apply a cap centering force
       self.center_force = clamp(self.center_force, -0.8, 0.8)
       # apply less lane centering for a direction we are already turning
+      # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.5
+        self.center_force *= 0.625
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
