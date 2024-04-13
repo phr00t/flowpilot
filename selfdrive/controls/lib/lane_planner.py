@@ -195,7 +195,7 @@ class LanePlanner:
       elif target_centering < 0 and not nearRightEdge:
         # we want to push left and not near a right edge
         target_centering *= 1.4
-      else
+      else:
         # less important lane centering adjustment
         target_centering *= 0.8
       # fancy smooth increasing centering force based on lane width
