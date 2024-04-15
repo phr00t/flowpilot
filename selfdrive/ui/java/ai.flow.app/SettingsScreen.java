@@ -33,9 +33,10 @@ public class SettingsScreen extends ScreenAdapter {
     Stage stage;
     TextButton buttonDevice, buttonCalibrate, buttonWideCalibrate, buttonCalibrateExtrinsic,
             buttonTraining, buttonPowerOff, buttonReboot, buttonSoftware,
-            buttonUninstall, buttonToggle, buttonCheckUpdate, buttonLogOut;
+            buttonUninstall, buttonToggle, buttonCheckUpdate, buttonLogOut,
+            buttonVehicles;
     ImageButton closeButton;
-
+    SelectBox<String> carBrandSelectBox;
     SpriteBatch batch;
     Table rootTable, settingTable, scrollTable, currentSettingTable;
     Texture lineTex = Utils.getLineTexture(700, 1, Color.WHITE);
@@ -64,6 +65,12 @@ public class SettingsScreen extends ScreenAdapter {
         }
         else
             table.row();
+    }
+
+    public void addKeyValueTable(Table table, String key, SelectBox<String> value, boolean addLine) {
+        table.add(new Label(key, appContext.skin, "default-font", "white")).left().pad(30);
+        table.add(value).right().pad(30);
+        table.row();
     }
 
     public void fillDeviceSettings(){
@@ -105,6 +112,16 @@ public class SettingsScreen extends ScreenAdapter {
             addKeyValueTable(currentSettingTable, AdditionalToggles.get(i*2), ToggleButtons.get(i), true);
         }
     }
+
+    public void fillVehiclesSettings(){
+        currentSettingTable.clear();
+        addKeyValueTable(currentSettingTable, "Set car", carBrandSelectBox, false);
+        // TODO have to make this components on top?
+        for(int i=0; i < 20; i++){
+            addKeyValueTable(currentSettingTable, " ", " ", false);
+        }
+    }
+
 
     public SettingsScreen(FlowUI appContext) {
         this.appContext = appContext;
@@ -179,6 +196,16 @@ public class SettingsScreen extends ScreenAdapter {
             }
         });
         settingTable.add(buttonToggle).pad(10).align(Align.right);
+        settingTable.row();
+
+        buttonVehicles = getPaddedButton("Vehicles", appContext.skin, "no-bg-bold", 5);
+        buttonVehicles.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                fillVehiclesSettings();
+            }
+        });
+        settingTable.add(buttonVehicles).pad(10).align(Align.right);
         settingTable.row();
 
         buttonCalibrate = getPaddedButton("RESET", appContext.skin, 5);
@@ -289,9 +316,25 @@ public class SettingsScreen extends ScreenAdapter {
             ToggleButtons.add(nb);
         }
 
+        String allCars = new utils().readFile("/sdcard/flowpilot/allcars.txt");
+        String[] carArray = allCars.split("\n");
+        carBrandSelectBox = new SelectBox<>(appContext.skin);
+        carBrandSelectBox.setItems(carArray);
+        String mycar = params.exists("Mycar") ? params.getString("Mycar"): "";
+        carBrandSelectBox.setSelected(mycar);
+        carBrandSelectBox.addListener(new ChangeListener(){
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                String selectedBrand = carBrandSelectBox.getSelected();
+                if(null != selectedBrand && !selectedBrand.equals("--Select Cars--")){
+                    params.put("Mycar", selectedBrand);
+                }
+            }
+        });
+
         fillDeviceSettings();
 
-        ButtonGroup buttonGroup = new ButtonGroup(buttonDevice, buttonSoftware, buttonToggle);
+        ButtonGroup buttonGroup = new ButtonGroup(buttonDevice, buttonSoftware, buttonToggle, buttonVehicles);
         buttonGroup.setMaxCheckCount(1);
         buttonGroup.setUncheckLast(true);
 

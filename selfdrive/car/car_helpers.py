@@ -74,9 +74,11 @@ interfaces = load_interfaces(interface_names)
 
 # **** for use live only ****
 def fingerprint(logcan, sendcan, num_pandas):
-  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
-  ecu_rx_addrs = set()
   params = Params()
+  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
+  if not fixed_fingerprint:
+    fixed_fingerprint = params.get("Mycar")
+  ecu_rx_addrs = set()
 
   # just skip VIN to speed things up
   vin, vin_rx_addr = VIN_UNKNOWN, 0
