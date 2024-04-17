@@ -21,6 +21,10 @@ export FINGERPRINT="HYUNDAI KONA ELECTRIC 2019"
 ## android specific ##
 export USE_SNPE="1" # only works for snapdragon devices.
 
+## get all cars
+mkdir -p /sdcard/flowpilot
+cat selfdrive/car/*/values.py|grep '= "'|grep -v ':'|awk -F'"' '{print $(NF-1)}' | sort > /sdcard/flowpilot/allcars.txt
+sed -i '1s/^/--Select Cars--\n/' /sdcard/flowpilot/allcars.txt
 
 if ! command -v tmux &> /dev/null
 then
