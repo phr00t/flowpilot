@@ -191,10 +191,10 @@ class LanePlanner:
       # if we are not near an edge, center harder away from it (since it is probably another lane)
       if target_centering > 0 and not nearLeftEdge:
         # we want to push right and not near a left edge
-        target_centering *= 1.4
+        target_centering *= 1.5
       elif target_centering < 0 and not nearRightEdge:
         # we want to push left and not near a right edge
-        target_centering *= 1.4
+        target_centering *= 1.5
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
       # if we are lane changing, cut center force
