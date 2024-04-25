@@ -150,7 +150,7 @@ def main() -> NoReturn:
         health = panda.health()
         if health["heartbeat_lost"]:
           params.put_bool("PandaHeartbeatLost", True)
-          print("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+          print("heartbeat lost")
 
         if first_run:
           print(f"Resetting panda {panda.get_usb_serial()}")
