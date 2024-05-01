@@ -107,8 +107,8 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743.}.get(candidate, 1275.) + STD_CARGO_KG
       ret.wheelbase = 2.6
-      ret.steerRatio = 10.25
-      tire_stiffness_factor = 0.4
+      ret.steerRatio = 10.75
+      tire_stiffness_factor = 0.3925
       ret.lateralTuning.torque.kf = 1.0 # overall turn multiplier
       ret.lateralTuning.torque.kp = 1.0 # overall error multiplier
     elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019, CAR.IONIQ_HEV_2022, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV):
