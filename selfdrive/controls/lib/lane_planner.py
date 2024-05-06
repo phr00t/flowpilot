@@ -159,7 +159,7 @@ class LanePlanner:
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
     r_vis = (self.rll_prob * 0.9 + 0.1) * interp(self.rll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
-    lane_trust = clamp(1.1 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
+    lane_trust = clamp(1.2 * max(l_vis, r_vis) ** 0.5, 0.0, 1.0)
     # make sure we have something with lanelines to work with
     # otherwise, we will default to laneless
     if lane_trust > 0.025 and len(vcurv) == len(self.lll_y):
@@ -184,23 +184,23 @@ class LanePlanner:
       # additional centering force, if needed
       rightBorder = min(self.re_y[0], self.rll_y[1])
       leftBorder = max(self.le_y[0], self.lll_y[1])
-      nearRightEdge = abs(self.rll_y[0] - rightBorder) < MIN_LANE_DISTANCE * 0.7
-      nearLeftEdge = abs(self.lll_y[0] - leftBorder) < MIN_LANE_DISTANCE * 0.7
+      nearRightEdge = abs(self.rll_y[0] - rightBorder) < MIN_LANE_DISTANCE * 0.8
+      nearLeftEdge = abs(self.lll_y[0] - leftBorder) < MIN_LANE_DISTANCE * 0.8
       # ok, how far off of center are we, considering we want to be closer to edges of the road?
       target_centering = self.rll_y[0] + self.lll_y[0]
       # if we are not near an edge, center harder away from it (since it is probably another lane)
-      if target_centering > 0 and not nearLeftEdge:
-        # we want to push right and not near a left edge
-        target_centering *= 1.5
-      elif target_centering < 0 and not nearRightEdge:
-        # we want to push left and not near a right edge
-        target_centering *= 1.5
+      if target_centering > 0:
+        # we want to push right, near a left edge?
+        target_centering *= 0.9 if nearLeftEdge else 1.4
+      elif target_centering < 0:
+        # we want to push left, not near a right edge?
+        target_centering *= 0.9 if nearRightEdge else 1.4
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
-      self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [2.55, 2.75], [0.0, 1.0])
+      self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [2.6, 2.8], [0.0, 1.0])
       # likewise if the lane is really big, reduce centering force to not throw us around in it
       self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [4.0, 6.0], [1.0, 0.0])
       # apply a cap centering force
@@ -208,7 +208,7 @@ class LanePlanner:
       # apply less lane centering for a direction we are already turning
       # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.6
+        self.center_force *= 0.75
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
@@ -235,7 +235,7 @@ class LanePlanner:
       ultimate_path_mix = 0.0
       if not self.UseModelPath:
         ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
-      final_ultimate_path_mix = self.lane_change_multiplier * ultimate_path_mix
+      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8) # always have at least 20% model path in there
 
       # debug
       sLogger.Send("Cf" + "{:.2f}".format(self.center_force) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
