@@ -3,6 +3,7 @@ from opendbc.can.packer import CANPacker
 from common.numpy_fast import clip
 from common.conversions import Conversions as CV
 from common.realtime import DT_CTRL
+from common.logger import sLogger
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.volkswagen import mqbcan, pqcan
 from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
@@ -69,6 +70,7 @@ class CarController:
       self.apply_steer_last = apply_steer
       can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, hcaEnabled))
 
+    sLogger.Send("0all set")
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
