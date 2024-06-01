@@ -42,7 +42,7 @@ public class THNEEDModelRunner extends ModelRunner {
         initThneed();
         inputBuffer = new float[2 * (1572864 / 4) + (3200 / 4) + 2];
         // new LA model input
-        inputBuffer[img_len * 2 + desire_len + 1] = 0.2f; // steering actuator delay
+        inputBuffer[img_len * 2 + desire_len + 1] = 0.1f; // steering actuator delay
     }
 
     @Override
