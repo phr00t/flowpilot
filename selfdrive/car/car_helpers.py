@@ -78,6 +78,8 @@ def fingerprint(logcan, sendcan, num_pandas):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   if not fixed_fingerprint:
     fixed_fingerprint = params.get("Mycar")
+    if fixed_fingerprint is not None:
+      fixed_fingerprint = fixed_fingerprint.decode("utf-8")
   ecu_rx_addrs = set()
 
   # just skip VIN to speed things up
