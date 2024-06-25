@@ -220,10 +220,59 @@ class CarController:
     l0v = radarState.leadOne.vRel
     l0vstd = radarState.leadOne.vLeadK
     l0time = radarState.leadOne.aLeadTau
+    lead_vdiff_mph = 0.0
 
-    # always estimate the lead car is on the slowest for safety
-    # and most importantly, consistency
-    lead_vdiff_mph = (l0v - l0vstd) * 2.23694
+    # default use basic speed adjustment
+    use_basic_speedadj = True
+
+    # if we are using the distspeed feature, monitor distance to better estimate speed within standard deviation
+    if l0prob > 0.5 and self.usingDistSpeed:
+      # ok, start collecting data on the lead car
+      self.lead_distance_hist.append(l0d)
+      self.lead_distance_times.append(l0time)
+      # if we've got enough data to calculate a distspeed
+      if len(self.lead_distance_hist) >= 2:
+        time_diff = self.lead_distance_times[-1] - self.lead_distance_times[0]
+        if time_diff >= DISTSPEED_TIMEFRAME:
+            dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
+            # clamp speed to model's speed uncertainty window
+            # l0vstd is usually too tight, so allow distspeed more wiggle room
+            range_allowed = l0vstd * 1.5
+            max_allowed = (l0v + range_allowed) * CV.MS_TO_MPH
+            min_allowed = (l0v - range_allowed) * CV.MS_TO_MPH
+            raw_distspeed = dist_diff / time_diff
+            distspeed = clamp((raw_distspeed + l0v) * 0.5 * CV.MS_TO_MPH, min_allowed, max_allowed)
+            # wait, if we have a bunch of distance uncertainty, use the model speed more
+            distspeed = interp(l0dstd, [3.5, 9.0], [distspeed, l0v * CV.MS_TO_MPH])
+            # add this value to be averaged later
+            self.lead_distance_distavg.append(distspeed)
+            # clean out existing entries
+            self.lead_distance_hist.pop(0)
+            self.lead_distance_times.pop(0)
+            # do we have enough distances over time to get a distspeed estimate?
+            if len(self.lead_distance_distavg) >= DISTSPEED_AVERAGING:
+              use_basic_speedadj = False
+              lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
+              self.lead_distance_distavg.pop(0)
+    else:
+      # no lead, clear data
+      self.lead_distance_hist.clear()
+      self.lead_distance_times.clear()
+      self.lead_distance_distavg.clear()
+
+    # if we didn't get an adjusted lead car speed with distspeed estimate, use a basic speed adjustment system
+    if use_basic_speedadj:
+      # adjust l0v based on l0vstd and l0v
+      l0vstd_multiplier = 1.75 / (1 + math.exp(-l0v-0.289)) - 1.0
+
+      # if we think we should have the lead car going faster, verify we are not too close to the lead car
+      # before applying this fully
+      if l0vstd_multiplier > 0:
+        cutoff_distance = clamp(CS.out.vEgo * 1.75, 35, 60)
+        l0vstd_multiplier *= interp(l0d, [10.0, cutoff_distance], [0.0, 1.0])
+
+      # ok, get a good estimate of the lead car speed
+      lead_vdiff_mph = (l0v + l0vstd_multiplier * l0vstd) * 2.23694
 
     # start with our picked max speed
     desired_speed = max_speed_in_mph
