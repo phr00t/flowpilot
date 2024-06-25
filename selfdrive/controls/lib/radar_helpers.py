@@ -16,12 +16,10 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
-LEAD_DATA_MAX_COUNT = 150
-DATA_AVERAGING_RATE = 30
-LEAD_DATA_COUNT_BEFORE_VALID = 4
+LEAD_DATA_COUNT = 40
+LEAD_DATA_COUNT_BEFORE_VALID = 5
 
 PROGRAM_START = datetime.datetime.now()
-
 
 def weightedAverage(data):
   Weights = list(range(1, len(data) + 1))
@@ -150,26 +148,29 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Stds):
     # this data is a little noisy, let's smooth it out
     finalv = v_ego
     finald = 150.0
     finalp = 0.0
+    finals = 0.0
 
     if lead_msg.prob < 0.5:
       Dists.clear()
       vLeads.clear()
+      Stds.clear()
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0] - v_ego)
-      if len(Dists) > LEAD_DATA_MAX_COUNT:
+      Stds.append(lead_msg.vStd[0])
+      if len(Dists) > LEAD_DATA_COUNT:
         Dists.pop(0)
         vLeads.pop(0)
+        Stds.pop(0)
       # how much lead car values do we want to average?
-      dcount = min(len(Dists), max(LEAD_DATA_COUNT_BEFORE_VALID, int(round(DATA_AVERAGING_RATE * lead_msg.xStd[0]))))
-      vcount = min(len(vLeads), max(LEAD_DATA_COUNT_BEFORE_VALID, int(round(DATA_AVERAGING_RATE * lead_msg.vStd[0]))))
-      finald = weightedAverage(Dists[-dcount:])
-      finalv = weightedAverage(vLeads[-vcount:])
+      finald = np.average(Dists)
+      finalv = np.average(vLeads)
+      finals = np.average(Stds)
       # only consider we've got a lead when we've collected some data on it
       if len(vLeads) >= LEAD_DATA_COUNT_BEFORE_VALID:
         finalp = float(lead_msg.prob)
@@ -179,7 +180,7 @@ class Cluster():
       "yRel": float(-lead_msg.y[0]),
       "vRel": float(finalv),
       "vLead": float(finalv + v_ego),
-      "vLeadK": float(lead_msg.vStd[0]),
+      "vLeadK": float(finals),
       "aLeadK": float(lead_msg.xStd[0]),
       "aLeadTau": float((datetime.datetime.now() - PROGRAM_START).total_seconds()),
       "fcw": False,

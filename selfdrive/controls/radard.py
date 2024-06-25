@@ -64,7 +64,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
     return None
 
 
-def get_lead(v_ego, ready, clusters, lead_msg, vLeads, Dists, low_speed_override=True):
+def get_lead(v_ego, ready, clusters, lead_msg, vLeads, Dists, Stds, low_speed_override=True):
   # Determine leads, this is where the essential logic happens
   if len(clusters) > 0 and ready and lead_msg.prob > .5:
     cluster = match_vision_to_cluster(v_ego, lead_msg, clusters)
@@ -75,7 +75,7 @@ def get_lead(v_ego, ready, clusters, lead_msg, vLeads, Dists, low_speed_override
   if cluster is not None:
     lead_dict = cluster.get_RadarState(lead_msg.prob)
   elif (cluster is None) and ready:
-    lead_dict = Cluster().get_RadarState_from_vision(lead_msg, v_ego, vLeads, Dists)
+    lead_dict = Cluster().get_RadarState_from_vision(lead_msg, v_ego, vLeads, Dists, Stds)
 
   if low_speed_override:
     low_speed_clusters = [c for c in clusters if c.potential_low_speed_lead(v_ego)]
@@ -100,9 +100,11 @@ class RadarD():
     self.v_ego = 0.
     self.v_ego_hist = deque([0], maxlen=delay+1)
 
+    self.vStds0 = []
+    self.vStds1 = []
     self.vLeads0 = []
-    self.Dists0 = []
     self.vLeads1 = []
+    self.Dists0 = []
     self.Dists1 = []
 
     self.ready = False
@@ -175,8 +177,8 @@ class RadarD():
 
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
-      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], self.vLeads0, self.Dists0, low_speed_override=True)
-      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], self.vLeads1, self.Dists1, low_speed_override=False)
+      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], self.vLeads0, self.Dists0, self.vStds0, low_speed_override=True)
+      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], self.vLeads1, self.Dists1, self.vStds1, low_speed_override=False)
     return dat
 
 
