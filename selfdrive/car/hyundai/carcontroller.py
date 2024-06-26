@@ -237,13 +237,13 @@ class CarController:
             dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
             # clamp speed to model's speed uncertainty window
             # l0vstd is usually too tight, so allow distspeed more wiggle room
-            range_allowed = l0vstd * 1.5
+            range_allowed = l0vstd * 1.75
             max_allowed = (l0v + range_allowed) * CV.MS_TO_MPH
             min_allowed = (l0v - range_allowed) * CV.MS_TO_MPH
             raw_distspeed = dist_diff / time_diff
             distspeed = clamp((raw_distspeed + l0v) * 0.5 * CV.MS_TO_MPH, min_allowed, max_allowed)
             # wait, if we have a bunch of distance uncertainty, use the model speed more
-            distspeed = interp(l0dstd, [3.5, 9.0], [distspeed, l0v * CV.MS_TO_MPH])
+            distspeed = interp(l0dstd, [1.0, 9.0], [distspeed, l0v * CV.MS_TO_MPH])
             # add this value to be averaged later
             self.lead_distance_distavg.append(distspeed)
             # clean out existing entries
@@ -294,7 +294,7 @@ class CarController:
         lead_time = l0d / speed_in_ms
         # caculate a target lead car time, which is ~3 seconds at slow speeds, but gradually max_allowed
         # closer for faster speeds
-        target_time = interp(clu11_speed, [20.0, 70.0], [2.8, 2.1])
+        target_time = interp(clu11_speed, [20.0, 70.0], [2.7, 2.2])
         # calculate the speed difference we should be going
         adjust_speed = lead_vdiff_mph + signsquare(5 * (lead_time - target_time)/target_time)
         # don't sudden slow for certain situations, as this causes significant braking

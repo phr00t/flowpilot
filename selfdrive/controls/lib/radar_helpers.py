@@ -16,7 +16,8 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
-LEAD_DATA_COUNT = 20
+LEAD_DATA_COUNT_SPEED = 20
+LEAD_DATA_COUNT_DISTANCE = 30
 LEAD_DATA_COUNT_BEFORE_VALID = 5
 
 PROGRAM_START = datetime.datetime.now()
@@ -148,29 +149,35 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Stds):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Stds, dStds):
     # this data is a little noisy, let's smooth it out
     finalv = v_ego
     finald = 150.0
     finalp = 0.0
     finals = 0.0
+    finaldu = 0.0
 
     if lead_msg.prob < 0.5:
       Dists.clear()
       vLeads.clear()
       Stds.clear()
+      dStds.clear()
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0] - v_ego)
       Stds.append(lead_msg.vStd[0])
-      if len(Dists) > LEAD_DATA_COUNT:
-        Dists.pop(0)
+      dStds.append(lead_msg.xStd[0])
+      if len(vLeads) > LEAD_DATA_COUNT_SPEED:
         vLeads.pop(0)
         Stds.pop(0)
+      if len(Dists) > LEAD_DATA_COUNT_DISTANCE:
+        Dists.pop(0)
+        dStds.pop(0)
       # how much lead car values do we want to average?
-      finald = np.average(Dists)
-      finalv = np.average(vLeads)
-      finals = np.average(Stds)
+      finald = np.average(reject_outliers(Dists))
+      finalv = np.average(reject_outliers(vLeads))
+      finals = np.average(reject_outliers(Stds))
+      finaldu = np.average(reject_outliers(dStds))
       # only consider we've got a lead when we've collected some data on it
       if len(vLeads) >= LEAD_DATA_COUNT_BEFORE_VALID:
         finalp = float(lead_msg.prob)
@@ -181,7 +188,7 @@ class Cluster():
       "vRel": float(finalv),
       "vLead": float(finalv + v_ego),
       "vLeadK": float(finals),
-      "aLeadK": float(lead_msg.xStd[0]),
+      "aLeadK": float(finaldu),
       "aLeadTau": float((datetime.datetime.now() - PROGRAM_START).total_seconds()),
       "fcw": False,
       "modelProb": finalp,
