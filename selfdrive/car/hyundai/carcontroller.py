@@ -110,16 +110,17 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
-    # if we are disabled, or the driver is doing a sharp turn themselves, don't apply any additional steering
-    if CS.out.steeringPressed:
+    # if the driver is doing a sharp turn themselves, don't apply any additional steering
+    if CS.out.steeringPressed and abs(CS.out.steeringAngleDeg) > 89:
       self.prevent_heavy_steer_timer = TICKS_FOR_HARDSTEERING_SMOOTHING
     elif self.prevent_heavy_steer_timer > 0:
       self.prevent_heavy_steer_timer -= 1
 
     if not CC.latActive:
+      # not enabled
       apply_steer = 0
-    elif abs(CS.out.steeringAngleDeg) > 89 and self.prevent_heavy_steer_timer > 0:
-      # gradually bring steering back in on sharp turns
+    elif self.prevent_heavy_steer_timer > 0:
+      # gradually bring steering back in after driver-controlled sharp turns
       apply_steer = lerp(apply_steer, 0, self.prevent_heavy_steer_timer / TICKS_FOR_HARDSTEERING_SMOOTHING)
 
     self.apply_steer_last = apply_steer
