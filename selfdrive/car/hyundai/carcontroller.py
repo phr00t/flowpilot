@@ -26,7 +26,7 @@ MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 TICKS_FOR_HARDSTEERING_SMOOTHING = 50
 DISTSPEED_TIMEFRAME = 1.0
 DISTSPEED_AVERAGING = 4
-SLOW_THRESHOLD = 1.5
+SLOW_THRESHOLD = 1.45
 
 def signsquare(x):
   return x * abs(x)
@@ -370,7 +370,7 @@ class CarController:
           if self.lead_accel_accum > 0:
             self.lead_accel_accum = 0
         # if it seems like we should be slowing down enough over time, kill cruise to brake harder
-        if self.lead_accel_accum < (-SLOW_THRESHOLD if self.sensitiveSlow else -(SLOW_THRESHOLD + 0.25)) and clu11_speed - desired_speed >= 1.85:
+        if self.lead_accel_accum < (-SLOW_THRESHOLD if self.sensitiveSlow else -(SLOW_THRESHOLD + 0.1)) and clu11_speed - desired_speed >= 1.85:
           desired_speed = 0
     else:
       # we are stopping for some other reason, clear our lead accumulator
