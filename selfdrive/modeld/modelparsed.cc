@@ -149,7 +149,10 @@ int main(int argc, char **argv) {
     auto modelRaw = event.getModelRaw();
     auto model_raw = modelRaw.getRawPredictions();
 
-    assert(model_raw.size() == NET_OUTPUT_SIZE);
+    if (model_raw.size() != NET_OUTPUT_SIZE) {
+        printf("model_raw size was %d\n", model_raw.size());
+        assert(model_raw.size() == NET_OUTPUT_SIZE);
+    }
     for (int i=0; i<NET_OUTPUT_SIZE; i++)
       model_raw_preds[i] = model_raw[i];
 
