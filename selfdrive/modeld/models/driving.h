@@ -33,7 +33,7 @@ constexpr int LEAD_TRAJ_LEN = 6;
 constexpr int LEAD_PRED_DIM = 4;
 constexpr int LEAD_MHP_SELECTION = 3;
 // Padding to get output shape as multiple of 4
-constexpr int PAD_SIZE = 1;
+constexpr int PAD_SIZE = 0;
 
 constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
@@ -264,8 +264,8 @@ struct ModelOutput {
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
   const ModelOutputTemporalPose temporal_pose;
   const ModelOutputRoadTransform road_transform; // added after Nikki
-  //const LateralPlannerOutput lateral_planner_solution; // NLP thing
   const LateralAction action; // LA-model thing (in replacement of NLP)
+  const float unknown1, unknown2;
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
