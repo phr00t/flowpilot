@@ -221,8 +221,8 @@ class LanePlanner:
         # model path with very large lanes (that might be splitting into multiple lanes)
         if lane_width > max_lane_width_seen and index <= half_len:
           max_lane_width_seen = lane_width
-        # how much do we trust this? we want to be seeing both pretty well
-        final_lane_width = clamp(min(lane_width, self.lane_width), MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
+        # average lane widths from what we think we are on, and what we see at this point in the road
+        final_lane_width = clamp((lane_width + self.lane_width) * 0.5, MIN_LANE_DISTANCE, MAX_LANE_DISTANCE)
         # ok, get ideal point from each lane
         ideal_left = left_anchor + final_lane_width * 0.5
         ideal_right = right_anchor - final_lane_width * 0.5
