@@ -9,7 +9,7 @@ public class CommonModelF3 {
 
     public static final int LEAD_MHP_SELECTION = 3;
     public static final int TRAJECTORY_SIZE = 33;
-    public static final int FEATURE_LEN = utils.Runner == utils.USE_MODEL_RUNNER.SNPE ? 128 : 512;
+    public static final int FEATURE_LEN = 512;
     public static final int HISTORY_BUFFER_LEN = 99;
     public static final int DESIRE_LEN = 8;
     public static final int DESIRE_PRED_LEN = 4;
@@ -19,8 +19,9 @@ public class CommonModelF3 {
     public static final int TRAFFIC_CONVENTION_LEN = 2;
     public static final int DRIVING_STYLE_LEN = 12;
     public static final int MODEL_FREQ = 20;
-    public static final int OUTPUT_SIZE = 5992;
-    public static final int NET_OUTPUT_SIZE = 6504;
+    public static final int NET_OUTPUT_SIZE = 6512;
+    public static final int OUTPUT_SIZE = NET_OUTPUT_SIZE - FEATURE_LEN;
+
     public static final float[] T_IDXS = {0.f, 0.00976562f, 0.0390625f, 0.08789062f, 0.15625f, 0.24414062f,  0.3515625f,  0.47851562f,
         0.625f, 0.79101562f, 0.9765625f, 1.18164062f,  1.40625f,  1.65039062f,  1.9140625f,
         2.19726562f, 2.5f, 2.82226562f, 3.1640625f, 3.52539062f, 3.90625f, 4.30664062f, 4.7265625f, 5.16601562f,

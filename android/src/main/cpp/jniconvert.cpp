@@ -819,13 +819,33 @@ void ThneedModel::execute() {
     }
 }
 
-const int TRAJECTORY_SIZE = 33;
+/*
+ *
+ * Inputs:
+Name: input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 0
+Name: big_input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 393216
+Name: desire, Shape: [1, 100, 8], Size: 800, Offset: 786432
+Name: traffic_convention, Shape: [1, 2], Size: 2, Offset: 787232
+Name: lateral_control_params, Shape: [1, 2], Size: 2, Offset: 787234
+Name: prev_desired_curv, Shape: [1, 100, 1], Size: 100, Offset: 787236
+Name: features_buffer, Shape: [1, 99, 512], Size: 50688, Offset: 787336
+
+Outputs:
+Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0
+
+ */
+
+const int IMAGE_LEN = 393216;
+const int DESIRE_LEN = 800;
+const int TRAF_CONV_LEN = 2;
+const int PREV_DESIRED_CURVS_LEN = 100;
+const int FEATURE_BUF_LEN = 50688;
+const int LAT_CON_PARMS_LEN = 2;
+
+const int TOTAL_OUTPUT_SIZE = 6512;
 const int FEATURE_LEN = 512;
 const int HISTORY_BUFFER_LEN = 99;
-const int OUTPUT_SIZE = 5992;
-const int LATERAL_CONTROL_PARAMS_LEN = 2;
-const int PREV_DESIRED_CURVS_LEN = 1 * (HISTORY_BUFFER_LEN + 1);
-const int DESIRED_CURV_WIDTH = 1;
+const int OUTPUT_SIZE = TOTAL_OUTPUT_SIZE - FEATURE_LEN;
 
 std::string *pathString;
 jfloat* outputs;
@@ -835,7 +855,6 @@ float *zero_buf;
 float *features_buf;
 float *prev_curvs_buf;
 int zero_len = 1024 / 4;
-int features_len = HISTORY_BUFFER_LEN * FEATURE_LEN;
 
 extern "C" {
 
@@ -853,11 +872,11 @@ extern "C" {
         outputs = new jfloat[size];
         output_len = size;
         zero_buf = new float[zero_len];
-        features_buf = new float[features_len];
+        features_buf = new float[FEATURE_BUF_LEN];
         prev_curvs_buf = new float[PREV_DESIRED_CURVS_LEN];
         for (int i=0; i<zero_len; i++)
             zero_buf[i] = 0;
-        for (int i=0; i<features_len; i++)
+        for (int i=0; i<FEATURE_BUF_LEN; i++)
             features_buf[i] = 0;
         for (int i=0; i<PREV_DESIRED_CURVS_LEN; i++)
             prev_curvs_buf[i] = 0;
@@ -872,24 +891,20 @@ extern "C" {
         // buffers
         jfloat *input_buf = env->GetFloatArrayElements(input, 0);
 
-        // useful offsets
-        int input_imgs_len = 1572864 / 4;
-        int desire_len = 3200 / 4;
-
         float* input_imgs_buf = &input_buf[0];
-        float* big_input_imgs_buf = &input_buf[input_imgs_len];
-        float* desire_buf = &input_buf[input_imgs_len * 2];
-        float* lat_params = &input_buf[input_imgs_len * 2 + desire_len];
+        float* big_input_imgs_buf = &input_buf[IMAGE_LEN];
+        float* desire_buf = &input_buf[IMAGE_LEN * 2];
+        float* lat_params = &input_buf[IMAGE_LEN * 2 + DESIRE_LEN];
 
-        thneed->setInputBuffer("input_imgs", input_imgs_buf, input_imgs_len);
-        thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, input_imgs_len);
-        thneed->setInputBuffer("desire", desire_buf, desire_len);
-        thneed->setInputBuffer("traffic_convention", zero_buf, 8/4);
-        thneed->setInputBuffer("lateral_control_params", lat_params, LATERAL_CONTROL_PARAMS_LEN);
+        thneed->setInputBuffer("input_imgs", input_imgs_buf, IMAGE_LEN);
+        thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, IMAGE_LEN);
+        thneed->setInputBuffer("desire", desire_buf, DESIRE_LEN);
+        thneed->setInputBuffer("traffic_convention", zero_buf, TRAF_CONV_LEN);
+        thneed->setInputBuffer("lateral_control_params", lat_params, LAT_CON_PARMS_LEN);
         thneed->setInputBuffer("prev_desired_curvs", prev_curvs_buf, PREV_DESIRED_CURVS_LEN);
         //thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
         //thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
-        thneed->setInputBuffer("features_buffer", features_buf, features_len);
+        thneed->setInputBuffer("features_buffer", features_buf, FEATURE_BUF_LEN);
 
         // ok execute model
         thneed->execute();
@@ -903,7 +918,7 @@ extern "C" {
 
         // handle previous curves
         std::memmove(&prev_curvs_buf[0], &prev_curvs_buf[1], PREV_DESIRED_CURVS_LEN - 1);
-        prev_curvs_buf[PREV_DESIRED_CURVS_LEN - 1] = outputs[5990];
+        prev_curvs_buf[PREV_DESIRED_CURVS_LEN - 1] = outputs[OUTPUT_SIZE - 1];
 
         // get the outputs
         jfloatArray result = env->NewFloatArray(output_len);
