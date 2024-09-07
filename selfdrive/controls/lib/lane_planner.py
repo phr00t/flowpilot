@@ -208,7 +208,7 @@ class LanePlanner:
       # apply less lane centering for a direction we are already turning
       # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.7
+        self.center_force *= 0.5
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
