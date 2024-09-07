@@ -149,13 +149,7 @@ class LanePlanner:
 
     return path_xyz
 
-  def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv):
-    if self.BigModel:
-      return self.get_nlp_path(CS, v_ego, path_t, path_xyz, vcurv)
-
-    return self.get_stock_path(CS, v_ego, path_t, path_xyz, vcurv)
-
-  def get_nlp_path(self, CS, v_ego, path_t, path_xyz, vcurv):
+  def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv, desired_curve):
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
     r_vis = (self.rll_prob * 0.9 + 0.1) * interp(self.rll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
@@ -238,7 +232,7 @@ class LanePlanner:
       final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8) # always have at least 20% model path in there
 
       # debug
-      sLogger.Send("Cf" + "{:.2f}".format(self.center_force) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " vC" + "{:.2f}".format(vcurv[0]) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+      sLogger.Send("Cf" + "{:.2f}".format(self.center_force) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " dC" + "{:.2f}".format(desired_curve) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
       safe_idxs = np.isfinite(self.ll_t)
       if safe_idxs[0] and final_ultimate_path_mix > 0.0:

@@ -265,7 +265,7 @@ struct ModelOutput {
   const ModelOutputTemporalPose temporal_pose;
   const ModelOutputRoadTransform road_transform; // added after Nikki
   const LateralAction action; // LA-model thing (in replacement of NLP)
-  const float unknown1, unknown2;
+  const float padding, padding2;
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);

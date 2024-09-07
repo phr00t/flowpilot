@@ -833,8 +833,33 @@ Name: features_buffer, Shape: [1, 99, 512], Size: 50688, Offset: 787336
 Outputs:
 Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0
 
+ {'output_slices':
+ {'plan': slice(0, 4955, None),
+ 'lane_lines': slice(4955, 5483, None),
+ 'lane_lines_prob': slice(5483, 5491, None),
+ 'road_edges': slice(5491, 5755, None),
+ 'lead': slice(5755, 5857, None),
+ 'lead_prob': slice(5857, 5860, None),
+ 'desire_state': slice(5860, 5868, None),
+ 'meta': slice(5868, 5921, None),
+ 'desire_pred': slice(5921, 5953, None),
+ 'pose': slice(5953, 5965, None),
+ 'wide_from_device_euler': slice(5965, 5971, None),
+ 'sim_pose': slice(5971, 5983, None),
+ 'road_transform': slice(5983, 5995, None),
+ 'desired_curvature': slice(5995, 5997, None),
+ 'hidden_state': slice(5997, -3, None),
+ 'pad': slice(-3, None, None)},
+ 'input_shapes': {'input_imgs': (1, 12, 128, 256),
+ 'big_input_imgs': (1, 12, 128, 256),
+ 'desire': (1, 100, 8), 'traffic_convention':
+ (1, 2), 'lateral_control_params': (1, 2),
+ 'prev_desired_curv': (1, 100, 1),
+ 'features_buffer': (1, 99, 512)},
+ 'output_shapes': {'outputs': (1, 6512)}}
  */
 
+const int DESIRED_CURV_OFFSET = 5995;
 const int IMAGE_LEN = 393216;
 const int DESIRE_LEN = 800;
 const int TRAF_CONV_LEN = 2;
@@ -918,7 +943,7 @@ extern "C" {
 
         // handle previous curves
         std::memmove(&prev_curvs_buf[0], &prev_curvs_buf[1], PREV_DESIRED_CURVS_LEN - 1);
-        prev_curvs_buf[PREV_DESIRED_CURVS_LEN - 1] = outputs[OUTPUT_SIZE - 1];
+        prev_curvs_buf[PREV_DESIRED_CURVS_LEN - 1] = outputs[DESIRED_CURV_OFFSET];
 
         // get the outputs
         jfloatArray result = env->NewFloatArray(output_len);

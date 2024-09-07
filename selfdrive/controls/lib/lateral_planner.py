@@ -64,6 +64,7 @@ class LateralPlanner:
 
     # Parse model predictions
     md = sm['modelV2']
+    desired_curve = md.frameDropPerc
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
@@ -90,7 +91,7 @@ class LateralPlanner:
       self.LP.lane_change_multiplier = 1.0
 
     # lanelines calculation?
-    self.path_xyz = self.LP.get_d_path(CS, self.v_ego, self.t_idxs, self.path_xyz, self.vcurv)
+    self.path_xyz = self.LP.get_d_path(CS, self.v_ego, self.t_idxs, self.path_xyz, self.vcurv, desired_curve)
 
     self.lat_mpc.set_weights(PATH_COST, LATERAL_MOTION_COST,
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,

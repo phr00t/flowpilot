@@ -326,7 +326,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float desired_curve/*frame_drop*/,
                    const float* raw_pred, uint64_t timestamp_eof,
                    float model_execution_time, const bool valid) {
   ModelOutput net_outputs = *(ModelOutput*) raw_pred;
@@ -336,7 +336,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id
   framed.setFrameId(vipc_frame_id);
   framed.setFrameIdExtra(vipc_frame_id_extra);
   framed.setFrameAge(frame_age);
-  framed.setFrameDropPerc(frame_drop * 100);
+  framed.setFrameDropPerc(desired_curve/*frame_drop * 100*/);
   framed.setTimestampEof(timestamp_eof);
   //framed.setLocationMonoTime(timestamp_llk);
   framed.setModelExecutionTime(model_execution_time);
