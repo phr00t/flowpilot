@@ -64,7 +64,7 @@ class LateralPlanner:
 
     # Parse model predictions
     md = sm['modelV2']
-    desired_curve = md.frameDropPerc
+    desired_curve = md.frameDropPerc * 100 # this value is really small and needs to be scaled up
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
