@@ -206,7 +206,7 @@ class LanePlanner:
         self.center_force *= 0.6
 
       # merge desired_curve with centering force
-      self.center_force = (self.center_force + clamp(desired_curve * DESIRED_CURVE_SCALE, -2.0, 2.0)) * 0.5
+      #self.center_force = (self.center_force + clamp(desired_curve * DESIRED_CURVE_SCALE, -2.0, 2.0)) * 0.5
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):

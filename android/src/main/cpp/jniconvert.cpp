@@ -831,7 +831,7 @@ Name: prev_desired_curv, Shape: [1, 100, 1], Size: 100, Offset: 787236
 Name: features_buffer, Shape: [1, 99, 512], Size: 50688, Offset: 787336
 
 Outputs:
-Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0
+Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0 (notre dame)
 
  {'output_slices':
  {'plan': slice(0, 4955, None),
@@ -856,21 +856,19 @@ Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0
  (1, 2), 'lateral_control_params': (1, 2),
  'prev_desired_curv': (1, 100, 1),
  'features_buffer': (1, 99, 512)},
- 'output_shapes': {'outputs': (1, 6512)}}
+ 'output_shapes': {'outputs': (1, 6512)}} <-- from notre dame, duck amigo is 6504
  */
 
 const int DESIRED_CURV_OFFSET = 5995;
+const int FEATURE_BUF_OFFSET = 5997;
 const int IMAGE_LEN = 393216;
 const int DESIRE_LEN = 800;
 const int TRAF_CONV_LEN = 2;
 const int PREV_DESIRED_CURVS_LEN = 100;
 const int FEATURE_BUF_LEN = 50688;
 const int LAT_CON_PARMS_LEN = 2;
-
-const int TOTAL_OUTPUT_SIZE = 6512;
 const int FEATURE_LEN = 512;
 const int HISTORY_BUFFER_LEN = 99;
-const int OUTPUT_SIZE = TOTAL_OUTPUT_SIZE - FEATURE_LEN;
 
 std::string *pathString;
 jfloat* outputs;
@@ -939,7 +937,7 @@ extern "C" {
 
         // handle features
         std::memmove(&features_buf[0], &features_buf[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
-        std::memcpy(&features_buf[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &outputs[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
+        std::memcpy(&features_buf[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &outputs[FEATURE_BUF_OFFSET], sizeof(float) * FEATURE_LEN);
 
         // handle previous curves
         std::memmove(&prev_curvs_buf[0], &prev_curvs_buf[1], PREV_DESIRED_CURVS_LEN - 1);
