@@ -156,7 +156,7 @@ class LanePlanner:
     target_steering_angle = desired_curve / -0.04
     steer_disagreement = target_steering_angle - CS.steeringAngleDeg
     # need to flip sign, as if we want to steer left (positive), we need more left shift (negative)
-    steer_disagreement *= -clamp(steer_disagreement * 0.05, -1, 1)
+    steer_disagreement = -clamp(steer_disagreement * 0.05, -1, 1)
 
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
