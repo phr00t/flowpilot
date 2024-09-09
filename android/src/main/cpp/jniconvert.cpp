@@ -821,7 +821,7 @@ void ThneedModel::execute() {
 
 /*
  *
- * Inputs:
+ * Inputs: (NOTRE DAME)
 Name: input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 0
 Name: big_input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 393216
 Name: desire, Shape: [1, 100, 8], Size: 800, Offset: 786432
@@ -857,6 +857,33 @@ Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0 (notre dame)
  'prev_desired_curv': (1, 100, 1),
  'features_buffer': (1, 99, 512)},
  'output_shapes': {'outputs': (1, 6512)}} <-- from notre dame, duck amigo is 6504
+
+ DUCK AMIGO OUTPUT:
+
+ {'output_slices': {'plan': slice(0, 4955, None),
+ 'lane_lines': slice(4955, 5483, None),
+ 'lane_lines_prob': slice(5483, 5491, None),
+ 'road_edges': slice(5491, 5755, None),
+ 'lead': slice(5755, 5857, None),
+ 'lead_prob': slice(5857, 5860, None),
+ 'desire_state': slice(5860, 5868, None),
+ 'meta': slice(5868, 5916, None),
+ 'desire_pred': slice(5916, 5948, None),
+ 'pose': slice(5948, 5960, None),
+ 'wide_from_device_euler': slice(5960, 5966, None),
+ 'sim_pose': slice(5966, 5978, None),
+ 'road_transform': slice(5978, 5990, None),
+ 'desired_curvature': slice(5990, 5992, None),
+ 'hidden_state': slice(5992, None, None)},
+ 'input_shapes': {'input_imgs': (1, 12, 128, 256),
+ 'big_input_imgs': (1, 12, 128, 256),
+ 'desire': (1, 100, 8), 'traffic_convention': (1, 2),
+ 'lateral_control_params': (1, 2),
+ 'prev_desired_curv': (1, 100, 1),
+ 'nav_features': (1, 256),
+ 'nav_instructions': (1, 150),
+ 'features_buffer': (1, 99, 512)},
+ 'output_shapes': {'outputs': (1, 6504)}}
  */
 
 const int DESIRED_CURV_OFFSET = 5995;
