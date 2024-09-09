@@ -151,6 +151,10 @@ class LanePlanner:
     return path_xyz
 
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv, desired_curve):
+    # first consider our desired curve and how much we are steering now
+    # if they are off, we should try and correct that
+    steer_disagreement = clamp(desired_curve / 2.0, -1, 1) - clamp(CS.steeringAngleDeg / 45.0, -1, 1)
+
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
     r_vis = (self.rll_prob * 0.9 + 0.1) * interp(self.rll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
@@ -205,9 +209,6 @@ class LanePlanner:
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
         self.center_force *= 0.6
 
-      # merge desired_curve with centering force
-      #self.center_force = (self.center_force + clamp(desired_curve * DESIRED_CURVE_SCALE, -2.0, 2.0)) * 0.5
-
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
         # left/right lane or edge
@@ -236,7 +237,7 @@ class LanePlanner:
       final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8) # always have at least 20% model path in there
 
       # debug
-      sLogger.Send("Cf" + "{:.2f}".format(self.center_force) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " dC" + "{:.2f}".format(desired_curve) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
+      sLogger.Send("Cf" + "{:.2f}".format(self.center_force) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " Sd" + "{:.2f}".format(steer_disagreement) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " LP" + "{:.1f}".format(l_prob) + " RP" + "{:.1f}".format(r_prob) + " RS" + "{:.1f}".format(self.rll_std) + " LS" + "{:.1f}".format(self.lll_std))
 
       safe_idxs = np.isfinite(self.ll_t)
       if safe_idxs[0] and final_ultimate_path_mix > 0.0:
@@ -246,6 +247,6 @@ class LanePlanner:
       sLogger.Send("Lanes lost completely! Using model path entirely...")
 
     # apply camera offset and centering force after everything
-    path_xyz[:, 1] += CAMERA_OFFSET + self.center_force
+    path_xyz[:, 1] += CAMERA_OFFSET + self.center_force + steer_disagreement
 
     return path_xyz
