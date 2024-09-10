@@ -16,7 +16,8 @@ MAX_LANE_DISTANCE = 3.7
 TYPICAL_MIN_LANE_DISTANCE = 2.7
 TYPICAL_MAX_LANE_DISTANCE = 3.4
 CENTER_FORCE_GENERAL_SCALE = 0.4
-DESIRED_CURVE_SCALE = 0.4
+DESIRED_CURVE_TO_STEERANGLE_RATIO = -0.04
+STEER_DISAGREEMENT_SCALE = 0.07
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -153,10 +154,10 @@ class LanePlanner:
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv, desired_curve):
     # convert the desired_curve into a desired steering angle
     # this may be different for different steering ratios!
-    target_steering_angle = desired_curve / -0.04
+    target_steering_angle = desired_curve / DESIRED_CURVE_TO_STEERANGLE_RATIO
     steer_disagreement = target_steering_angle - CS.steeringAngleDeg
     # need to flip sign, as if we want to steer left (positive), we need more left shift (negative)
-    steer_disagreement = -clamp(steer_disagreement * 0.05, -1, 1)
+    steer_disagreement = -clamp(steer_disagreement * STEER_DISAGREEMENT_SCALE, -1, 1)
 
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
