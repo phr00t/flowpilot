@@ -227,7 +227,7 @@ class CarController:
     use_basic_speedadj = True
 
     # if we are using the distspeed feature, monitor distance to better estimate speed within standard deviation
-    if l0prob > 0.5 and self.usingDistSpeed:
+    if l0prob >= 0.4 and self.usingDistSpeed:
       # ok, start collecting data on the lead car
       self.lead_distance_hist.append(l0d)
       self.lead_distance_times.append(l0time)
