@@ -158,8 +158,8 @@ class LanePlanner:
     steer_disagreement = target_steering_angle - CS.steeringAngleDeg
     # need to flip sign, as if we want to steer left (positive), we need more left shift (negative)
     steer_disagreement = -clamp(steer_disagreement * STEER_DISAGREEMENT_SCALE, -1.1, 1.1)
-    # scale down steer_disagreement when <20mph to prevent slow-speed wobble
-    steer_disagreement *= interp(v_ego, [0.0, 8.9408], [0.0, 1.0])
+    # scale down steer_disagreement when slow to prevent slow-speed wobble
+    steer_disagreement *= interp(v_ego, [13.0, 33.0], [0.0, 1.0])
 
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
