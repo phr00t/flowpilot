@@ -157,7 +157,9 @@ class LanePlanner:
     target_steering_angle = desired_curve / DESIRED_CURVE_TO_STEERANGLE_RATIO
     steer_disagreement = target_steering_angle - CS.steeringAngleDeg
     # need to flip sign, as if we want to steer left (positive), we need more left shift (negative)
-    steer_disagreement = -clamp(steer_disagreement * STEER_DISAGREEMENT_SCALE, -1, 1)
+    steer_disagreement = -clamp(steer_disagreement * STEER_DISAGREEMENT_SCALE, -1.1, 1.1)
+    # scale down steer_disagreement when <20mph to prevent slow-speed wobble
+    steer_disagreement *= interp(v_ego, [0.0, 8.9408], [0.0, 1.0])
 
     # how visible is each lane?
     l_vis = (self.lll_prob * 0.9 + 0.1) * interp(self.lll_std, [0, 0.3, 0.9], [1.0, 0.4, 0.0])
@@ -200,8 +202,6 @@ class LanePlanner:
         target_centering *= 0.9 if nearRightEdge else 1.5
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
-      # if we are lane changing, cut center force
-      self.center_force *= self.lane_change_multiplier
       # if we are in a small lane, reduce centering force to prevent pingponging
       self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [2.6, 2.8], [0.0, 1.0])
       # likewise if the lane is really big, reduce centering force to not throw us around in it
@@ -212,6 +212,8 @@ class LanePlanner:
       # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
         self.center_force *= 0.6
+      # if we are lane changing, cut center force
+      self.center_force *= self.lane_change_multiplier
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
@@ -238,7 +240,13 @@ class LanePlanner:
       ultimate_path_mix = 0.0
       if not self.UseModelPath:
         ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
-      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8) # always have at least 20% model path in there
+
+      # always have at least 20% model path in there
+      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8)
+
+      # now that we have steer_disagreement as a solid guide, we don't always need to rely on center_force
+      # so, scale back center_force if we are not very confident in our lane lines
+      self.center_force *= ultimate_path_mix
 
       # debug
       sLogger.Send("Cf" + "{:.2f}".format(self.center_force) + " Mx" + "{:.2f}".format(final_ultimate_path_mix) + " Sd" + "{:.2f}".format(steer_disagreement) + " LX" + "{:.1f}".format(self.lll_y[0]) + " RX" + "{:.1f}".format(self.rll_y[0]) + " LW" + "{:.1f}".format(self.lane_width) + " SA" + "{:.1f}".format(CS.steeringAngleDeg) + " Dc" + "{:.2f}".format(desired_curve) + " tS" + "{:.1f}".format(target_steering_angle))
