@@ -886,8 +886,8 @@ Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0 (notre dame)
  'output_shapes': {'outputs': (1, 6504)}}
  */
 
-const int DESIRED_CURV_OFFSET = 5995;
-const int FEATURE_BUF_OFFSET = 5997;
+const int DESIRED_CURV_OFFSET = 5990;
+const int FEATURE_BUF_OFFSET = 5992;
 const int IMAGE_LEN = 393216;
 const int DESIRE_LEN = 800;
 const int TRAF_CONV_LEN = 2;

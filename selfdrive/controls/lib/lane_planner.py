@@ -242,7 +242,7 @@ class LanePlanner:
         ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
 
       # max out at 50% model/lane system
-      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.5)
+      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8)
 
       # now that we have steer_disagreement as a solid guide, we don't always need to rely on center_force
       # so, scale back center_force if we are not very confident in our lane lines

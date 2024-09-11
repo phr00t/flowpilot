@@ -19,7 +19,7 @@ public class CommonModelF3 {
     public static final int TRAFFIC_CONVENTION_LEN = 2;
     public static final int DRIVING_STYLE_LEN = 12;
     public static final int MODEL_FREQ = 20;
-    public static final int NET_OUTPUT_SIZE = 6512;
+    public static final int NET_OUTPUT_SIZE = 6504;
     public static final int OUTPUT_SIZE = NET_OUTPUT_SIZE - FEATURE_LEN;
 
     public static final float[] T_IDXS = {0.f, 0.00976562f, 0.0390625f, 0.08789062f, 0.15625f, 0.24414062f,  0.3515625f,  0.47851562f,
