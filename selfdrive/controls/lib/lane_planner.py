@@ -211,7 +211,7 @@ class LanePlanner:
       # apply less lane centering for a direction we are already turning
       # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.6
+        self.center_force *= 0.7
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
 
@@ -241,8 +241,8 @@ class LanePlanner:
       if not self.UseModelPath:
         ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
 
-      # always have at least 20% model path in there
-      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8)
+      # max out at 50% model/lane system
+      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.5)
 
       # now that we have steer_disagreement as a solid guide, we don't always need to rely on center_force
       # so, scale back center_force if we are not very confident in our lane lines
