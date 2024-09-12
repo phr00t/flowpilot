@@ -143,23 +143,14 @@ public class ModelExecutorF3 extends ModelExecutor {
         if (initialized) return;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-        featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), NDArrayIndex.all() };
-        featureRotateSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN), NDArrayIndex.all() };
-        featureTensorShape = new int[] {1, CommonModelF3.HISTORY_BUFFER_LEN, CommonModelF3.FEATURE_LEN };
-
         trafficNDArr = Nd4j.zeros(trafficTensorShape);
-        featuresNDArr = Nd4j.zeros(featureTensorShape);
 
         ph.createPublishers(Arrays.asList("modelRaw"));
         sh.createSubscribers(Arrays.asList("pulseDesire", "liveCalibration", "lateralPlan"));
 
         inputShapeMap.put("input_imgs", imgTensorShape);
         inputShapeMap.put("big_input_imgs", imgTensorShape);
-        inputShapeMap.put("features_buffer", featureTensorShape);
-        inputShapeMap.put("traffic_convention", trafficTensorShape);
         outputShapeMap.put("outputs", outputTensorShape);
-        inputMap.put("features_buffer", featuresNDArr);
-        inputMap.put("traffic_convention", trafficNDArr);
         outputMap.put("outputs", netOutputs);
 
         modelRunner.init(inputShapeMap, outputShapeMap);
