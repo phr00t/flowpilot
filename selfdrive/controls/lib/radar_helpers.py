@@ -16,8 +16,8 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
-LEAD_DATA_COUNT_SPEED = 20
-LEAD_DATA_COUNT_DISTANCE = 30
+LEAD_DATA_COUNT_SPEED = 25
+LEAD_DATA_COUNT_DISTANCE = 25
 LEAD_DATA_COUNT_BEFORE_VALID = 5
 
 PROGRAM_START = datetime.datetime.now()
@@ -26,7 +26,7 @@ def weightedAverage(data):
   Weights = list(range(1, len(data) + 1))
   return np.average(data, weights=Weights)
 
-def reject_outliers(data, m=2.):
+def reject_outliers(data, m=1.5):
   data = np.array(data)
   d = np.abs(data - np.median(data))
   mdev = np.median(d)

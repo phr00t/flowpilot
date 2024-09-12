@@ -978,8 +978,8 @@ extern "C" {
         thneed->setInputBuffer("traffic_convention", zero_buf, TRAF_CONV_LEN);
         thneed->setInputBuffer("lateral_control_params", lat_params, LAT_CON_PARMS_LEN);
         thneed->setInputBuffer("prev_desired_curvs", prev_curvs_buf, PREV_DESIRED_CURVS_LEN);
-        //thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
-        //thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
+        thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
+        thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
         thneed->setInputBuffer("features_buffer", features_buf, FEATURE_BUF_LEN);
 
         // ok execute model

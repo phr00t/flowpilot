@@ -25,7 +25,7 @@ MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 TICKS_FOR_HARDSTEERING_SMOOTHING = 50
 DISTSPEED_TIMEFRAME = 1.0
-DISTSPEED_AVERAGING = 4
+DISTSPEED_AVERAGING = 5
 SLOW_THRESHOLD = 1.45
 
 def signsquare(x):
@@ -285,7 +285,7 @@ class CarController:
     curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead worth making decisions on?
-    if l0prob > 0.5:
+    if l0prob >= 0.4:
       self.lead_seen_counter += 1
       if clu11_speed > 5:
         # calculate an estimate of the lead car's speed
