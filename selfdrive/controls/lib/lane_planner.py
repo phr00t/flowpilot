@@ -156,8 +156,10 @@ class LanePlanner:
     # this may be different for different steering ratios!
     target_steering_angle = desired_curve / DESIRED_CURVE_TO_STEERANGLE_RATIO
     steer_disagreement = target_steering_angle - CS.steeringAngleDeg
+    # lane changing can cause a quick steering disagreement, so cap its value here significantly if needed
+    max_steer_disagree = 1.1 if self.lane_change_multiplier >= 1.0 else 0.2
     # need to flip sign, as if we want to steer left (positive), we need more left shift (negative)
-    steer_disagreement = -clamp(steer_disagreement * STEER_DISAGREEMENT_SCALE, -1.1, 1.1)
+    steer_disagreement = -clamp(steer_disagreement * STEER_DISAGREEMENT_SCALE, -max_steer_disagree, max_steer_disagree)
     # scale down steer_disagreement when slow to prevent slow-speed wobble
     steer_disagreement *= interp(v_ego, [3.5, 9.8], [0.0, 1.0])
 
