@@ -212,8 +212,9 @@ class LanePlanner:
       # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
         self.center_force *= 0.7
-      # if we are lane changing, cut center force
-      self.center_force *= self.lane_change_multiplier
+      # if we are lane changing, cut center force completely
+      if self.lane_change_multiplier < 1:
+          self.center_force = 0.0
 
       # go through all points in our lanes...
       for index in range(len(self.lll_y) - 1, -1, -1):
