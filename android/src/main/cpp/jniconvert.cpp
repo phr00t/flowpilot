@@ -904,6 +904,8 @@ ThneedModel *thneed;
 float *zero_buf;
 float *features_buf;
 float *prev_curvs_buf;
+float *desire_buf;
+float *prev_desire_buf;
 int zero_len = 1024 / 4;
 
 extern "C" {
@@ -921,13 +923,19 @@ extern "C" {
         // Allocate a float array of the given size
         outputs = new jfloat[size];
         output_len = size;
+        desire_buf = new float[DESIRE_LEN];
+        prev_desire_buf = new float[8];
         zero_buf = new float[zero_len];
         features_buf = new float[FEATURE_BUF_LEN];
         prev_curvs_buf = new float[PREV_DESIRED_CURVS_LEN];
+        for (int i=0; i<8; i++)
+            prev_desire_buf[i] = 0;
         for (int i=0; i<zero_len; i++)
             zero_buf[i] = 0;
         for (int i=0; i<FEATURE_BUF_LEN; i++)
             features_buf[i] = 0;
+        for (int i=0; i<DESIRE_LEN; i++)
+            desire_buf[i] = 0;
         for (int i=0; i<PREV_DESIRED_CURVS_LEN; i++)
             prev_curvs_buf[i] = 0;
     }
@@ -941,10 +949,28 @@ extern "C" {
         // buffers
         jfloat *input_buf = env->GetFloatArrayElements(input, 0);
 
+        int desireIn = (int)input_buf[IMAGE_LEN * 2];
         float* input_imgs_buf = &input_buf[0];
         float* big_input_imgs_buf = &input_buf[IMAGE_LEN];
-        float* desire_buf = &input_buf[IMAGE_LEN * 2];
-        float* lat_params = &input_buf[IMAGE_LEN * 2 + DESIRE_LEN];
+        float* lat_params = &input_buf[IMAGE_LEN * 2 + 1];
+
+        float vec_desire[8] = {0};
+        if (desireIn >= 1 && desireIn <= 7) vec_desire[desireIn] = 1;
+
+        // Shift the elements in inputs_desire to the left by 8 (length of a single desire value)
+        memmove(desire_buf, desire_buf + DESIRE_LEN, (DESIRE_LEN - 8) * sizeof(float));
+
+        // Update the last 8 elements of inputs_desire
+        for (int i = 0; i < 8; i++) {
+            if (vec_desire[i] - prev_desire_buf[i] > 0.99) {
+                desire_buf[DESIRE_LEN - 8 + i] = vec_desire[i];
+            } else {
+                desire_buf[DESIRE_LEN - 8 + i] = 0;
+            }
+        }
+
+        // Update prev_desire
+        memcpy(prev_desire_buf, vec_desire, 8 * sizeof(float));
 
         thneed->setInputBuffer("input_imgs", input_imgs_buf, IMAGE_LEN);
         thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, IMAGE_LEN);

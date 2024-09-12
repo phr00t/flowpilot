@@ -40,27 +40,17 @@ public class ModelExecutorF3 extends ModelExecutor {
 
     public INDArrayIndex[] featureRotateSlice0;
     public INDArrayIndex[] featureRotateSlice1;
-    public INDArrayIndex[] desireFeatureSlice0;
-    public INDArrayIndex[] desireFeatureSlice1;
 
     public static int[] imgTensorShape = {1, 12, 128, 256};
     public static int[] featureTensorShape;
-    public static int[] desireTensorShape;
     public static final int[] trafficTensorShape = {1, CommonModelF3.TRAFFIC_CONVENTION_LEN};
     public static final int[] outputTensorShape = {1, CommonModelF3.NET_OUTPUT_SIZE};
-    //public static final int[] navFeaturesTensorShape = {1, CommonModelF3.NAV_FEATURE_LEN};
-    //public static final int[] navInstructionsTensorShape = {1, 150};
 
     public static final Map<String, int[]> inputShapeMap = new HashMap<>();
     public static final Map<String, int[]> outputShapeMap = new HashMap<>();
-    public INDArray desireNDArr;
     public INDArray trafficNDArr;
     public INDArray featuresNDArr;
-    //public INDArray navfeaturesNDArr;
-    //public INDArray navinstructNDArr;
     public final float[] netOutputs = new float[(int)numElements(outputTensorShape)];
-    public final float[]prevDesire = new float[CommonModelF3.DESIRE_LEN];
-    public final float[]desireIn = new float[CommonModelF3.DESIRE_LEN];
     public final Map<String, INDArray> inputMap =  new HashMap<>();
     public final Map<String, float[]> outputMap =  new HashMap<>();
 
@@ -75,7 +65,7 @@ public class ModelExecutorF3 extends ModelExecutor {
     public long start, end;
     public int lastFrameID = 0;
 
-    int desire;
+    public static int desire;
     public ModelRunner modelRunner;
     ByteBuffer imgBuffer;
     ByteBuffer wideImgBuffer;
@@ -113,25 +103,6 @@ public class ModelExecutorF3 extends ModelExecutor {
 
         if (sh.updated("lateralPlan")){
             desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
-            for (int i=0; i<CommonModelF3.DESIRE_LEN; i++)
-                desireIn[i] = i == desire && i > 0 ? 1f : 0f;
-        }
-
-        //std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
-        desireNDArr.put(desireFeatureSlice0, desireNDArr.get(desireFeatureSlice1));
-        for (int i=0; i<CommonModelF3.DESIRE_LEN; i++){
-            if (desireIn[i] - prevDesire[i] > 0.99f) {
-                if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE)
-                    desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, desireIn[i]);
-                else
-                    desireNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN, i, desireIn[i]);
-            } else {
-                if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE)
-                    desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, 0.0f);
-                else
-                    desireNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN, i,0.0f);
-            }
-            prevDesire[i] = desireIn[i];
         }
 
         if (sh.updated("liveCalibration")) {
@@ -147,30 +118,9 @@ public class ModelExecutorF3 extends ModelExecutor {
         netInputBuffer = imagePrepare.prepare(imgBuffer, wrapMatrix);
         netInputWideBuffer = imageWidePrepare.prepare(wideImgBuffer, wrapMatrixWide);
 
-        if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE){
-            try (MemoryWorkspace ws = Nd4j.getWorkspaceManager().getAndActivateWorkspace(wsConfig, "ModelD")) {
-                // NCHW to NHWC
-                netInputBuffer = netInputBuffer.permute(0, 2, 3, 1).dup();
-                netInputWideBuffer = netInputWideBuffer.permute(0, 2, 3, 1).dup();
-            }
-        }
-
         inputMap.put("input_imgs", netInputBuffer);
         inputMap.put("big_input_imgs", netInputWideBuffer);
         modelRunner.run(inputMap, outputMap);
-
-        // we handle features in JNI for THNEED
-        if (utils.Runner != utils.USE_MODEL_RUNNER.THNEED) {
-            // featureTensorShape, 1, FEATURE_LEN, HISTORY_LEN
-            featuresNDArr.put(featureRotateSlice0, featuresNDArr.get(featureRotateSlice1));
-            if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE) {
-                for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
-                    featuresNDArr.putScalar(0, i,CommonModelF3.HISTORY_BUFFER_LEN - 1, netOutputs[CommonModelF3.OUTPUT_SIZE + i]); // SNPE
-            } else {
-                for (int i = 0; i < CommonModelF3.FEATURE_LEN; i++)
-                    featuresNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN - 1, i, netOutputs[CommonModelF3.OUTPUT_SIZE + i]);
-            }
-        }
 
         // publish outputs
         end = System.currentTimeMillis();
@@ -193,28 +143,12 @@ public class ModelExecutorF3 extends ModelExecutor {
         if (initialized) return;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
-        if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE) {
-            imgTensorShape = new int[]{1, 128, 256, 12};
-            featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), }; // SNPE
-            featureRotateSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN) };
-            desireFeatureSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN) };
-            desireFeatureSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.all(), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN+1) };
-            featureTensorShape = new int[] {1, CommonModelF3.FEATURE_LEN, CommonModelF3.HISTORY_BUFFER_LEN};
-            desireTensorShape = new int[] {1, CommonModelF3.DESIRE_LEN, CommonModelF3.HISTORY_BUFFER_LEN+1};
-        } else {
-            featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), NDArrayIndex.all() };
-            featureRotateSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN), NDArrayIndex.all() };
-            desireFeatureSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN), NDArrayIndex.all() };
-            desireFeatureSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN+1), NDArrayIndex.all() };
-            featureTensorShape = new int[] {1, CommonModelF3.HISTORY_BUFFER_LEN, CommonModelF3.FEATURE_LEN };
-            desireTensorShape = new int[] {1, CommonModelF3.HISTORY_BUFFER_LEN+1, CommonModelF3.DESIRE_LEN };
-        }
+        featureRotateSlice0 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(0, CommonModelF3.HISTORY_BUFFER_LEN-1), NDArrayIndex.all() };
+        featureRotateSlice1 = new INDArrayIndex[]{NDArrayIndex.point(0), NDArrayIndex.interval(1, CommonModelF3.HISTORY_BUFFER_LEN), NDArrayIndex.all() };
+        featureTensorShape = new int[] {1, CommonModelF3.HISTORY_BUFFER_LEN, CommonModelF3.FEATURE_LEN };
 
-        desireNDArr = Nd4j.zeros(desireTensorShape);
         trafficNDArr = Nd4j.zeros(trafficTensorShape);
         featuresNDArr = Nd4j.zeros(featureTensorShape);
-        //navfeaturesNDArr = Nd4j.zeros(navFeaturesTensorShape);
-        //navinstructNDArr = Nd4j.zeros(navInstructionsTensorShape);
 
         ph.createPublishers(Arrays.asList("modelRaw"));
         sh.createSubscribers(Arrays.asList("pulseDesire", "liveCalibration", "lateralPlan"));
@@ -222,18 +156,9 @@ public class ModelExecutorF3 extends ModelExecutor {
         inputShapeMap.put("input_imgs", imgTensorShape);
         inputShapeMap.put("big_input_imgs", imgTensorShape);
         inputShapeMap.put("features_buffer", featureTensorShape);
-        inputShapeMap.put("desire", desireTensorShape);
         inputShapeMap.put("traffic_convention", trafficTensorShape);
-        //inputShapeMap.put("nav_features", navFeaturesTensorShape);
-        //if (utils.Runner != utils.USE_MODEL_RUNNER.SNPE)
-        //    inputShapeMap.put("nav_instructions", navInstructionsTensorShape);
         outputShapeMap.put("outputs", outputTensorShape);
-
-        //inputMap.put("nav_features", navfeaturesNDArr);
-        //if (utils.Runner != utils.USE_MODEL_RUNNER.SNPE)
-        //    inputMap.put("nav_instructions", navinstructNDArr);
         inputMap.put("features_buffer", featuresNDArr);
-        inputMap.put("desire", desireNDArr);
         inputMap.put("traffic_convention", trafficNDArr);
         outputMap.put("outputs", netOutputs);
 
