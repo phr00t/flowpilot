@@ -114,12 +114,12 @@ public class ModelExecutorF3 extends ModelExecutor {
         if (sh.updated("lateralPlan")){
             desire = sh.recv("lateralPlan").getLateralPlan().getDesire().ordinal();
             for (int i=0; i<CommonModelF3.DESIRE_LEN; i++)
-                desireIn[i] = i == desire ? 1f : 0f;
+                desireIn[i] = i == desire && i > 0 ? 1f : 0f;
         }
 
         //std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
         desireNDArr.put(desireFeatureSlice0, desireNDArr.get(desireFeatureSlice1));
-        for (int i=1; i<CommonModelF3.DESIRE_LEN; i++){
+        for (int i=0; i<CommonModelF3.DESIRE_LEN; i++){
             if (desireIn[i] - prevDesire[i] > 0.99f) {
                 if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE)
                     desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, desireIn[i]);
