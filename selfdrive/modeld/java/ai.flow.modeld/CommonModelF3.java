@@ -12,6 +12,7 @@ public class CommonModelF3 {
     public static final int FEATURE_LEN = 512;
     public static final int HISTORY_BUFFER_LEN = 99;
     public static final int DESIRE_LEN = 8;
+    public static final int DESIRE_WITH_HISTORY_LEN = 800;
     public static final int DESIRE_PRED_LEN = 4;
     public static final int NAV_INPUT_SIZE = 256*256;
     public static final int NAV_FEATURE_LEN = 64;

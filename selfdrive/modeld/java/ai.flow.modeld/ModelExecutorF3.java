@@ -61,6 +61,7 @@ public class ModelExecutorF3 extends ModelExecutor {
     public final float[] netOutputs = new float[(int)numElements(outputTensorShape)];
     public final float[]prevDesire = new float[CommonModelF3.DESIRE_LEN];
     public final float[]desireIn = new float[CommonModelF3.DESIRE_LEN];
+    public final float[]desireWorkingArray = new float[CommonModelF3.DESIRE_WITH_HISTORY_LEN];
     public final Map<String, INDArray> inputMap =  new HashMap<>();
     public final Map<String, float[]> outputMap =  new HashMap<>();
 
@@ -117,22 +118,33 @@ public class ModelExecutorF3 extends ModelExecutor {
                 desireIn[i] = i == desire ? 1f : 0f;
         }
 
-        //std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
-        desireNDArr.put(desireFeatureSlice0, desireNDArr.get(desireFeatureSlice1));
-        for (int i=1; i<CommonModelF3.DESIRE_LEN; i++){
-            if (desireIn[i] - prevDesire[i] > 0.99f) {
-                if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE)
-                    desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, desireIn[i]);
-                else
-                    desireNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN, i, desireIn[i]);
+        // Set the first element of inputs['desire'] to 0
+        desireIn[0] = 0;
+
+        // Shift the elements in self.inputs['desire'] to the left by ModelConstants.DESIRE_LEN
+        System.arraycopy(desireWorkingArray, CommonModelF3.DESIRE_LEN, desireWorkingArray, 0, desireWorkingArray.length - CommonModelF3.DESIRE_LEN);
+
+        // Update the last ModelConstants.DESIRE_LEN elements of self.inputs['desire']
+        for (int i = 0; i < CommonModelF3.DESIRE_LEN; i++) {
+            int index = desireWorkingArray.length - CommonModelF3.DESIRE_LEN + i;
+            if (desireIn[i] - prevDesire[i] > 0.99) {
+                desireWorkingArray[index] = desireIn[i];
             } else {
-                if (utils.Runner == utils.USE_MODEL_RUNNER.SNPE)
-                    desireNDArr.putScalar(0, i, CommonModelF3.HISTORY_BUFFER_LEN, 0.0f);
-                else
-                    desireNDArr.putScalar(0, CommonModelF3.HISTORY_BUFFER_LEN, i,0.0f);
+                desireWorkingArray[index] = 0;
             }
-            prevDesire[i] = desireIn[i];
         }
+
+        // Update prev_desire with the current inputs['desire']
+        System.arraycopy(desireIn, 0, prevDesire, 0, desireIn.length);
+
+        // Flatten the existing INDArray to match the shape of selfInputsDesire
+        INDArray flattenedDesireArray = desireNDArr.reshape(1, 800);
+
+        // Copy the data from selfInputsDesire into the flattened INDArray
+        flattenedDesireArray.assign(Nd4j.create(desireWorkingArray));
+
+        // Reshape back to the original shape {1, 100, ModelConstants.DESIRE_LEN}
+        desireNDArr = flattenedDesireArray.reshape(1, 100, CommonModelF3.DESIRE_LEN);
 
         if (sh.updated("liveCalibration")) {
             liveCalib = sh.recv("liveCalibration").getLiveCalibration();
