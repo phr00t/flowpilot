@@ -958,7 +958,7 @@ extern "C" {
         if (desireIn >= 1 && desireIn <= 7) vec_desire[desireIn] = 1;
 
         // Shift the elements in inputs_desire to the left by 8 (length of a single desire value)
-        memmove(desire_buf, desire_buf + DESIRE_LEN, (DESIRE_LEN - 8) * sizeof(float));
+        memmove(desire_buf, desire_buf + 8, (DESIRE_LEN - 8) * sizeof(float));
 
         // Update the last 8 elements of inputs_desire
         for (int i = 0; i < 8; i++) {
