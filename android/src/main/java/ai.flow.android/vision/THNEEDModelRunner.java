@@ -27,7 +27,6 @@ public class THNEEDModelRunner extends ModelRunner {
     public float[] inputBuffer;
 
     private final int img_len = 1572864 / 4;
-    private final int desire_len = 3200 / 4;
     private final int desire_number_len = 1;
     private final int lateral_len = 2;
 

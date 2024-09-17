@@ -96,8 +96,6 @@ int getServerSocket(int port) {
 	return server_conn_sock;
 }
 
-const int DESIRED_CURV_OFFSET = 5990;
-
 ExitHandler do_exit;
 float model_raw_preds[NET_OUTPUT_SIZE];
 
