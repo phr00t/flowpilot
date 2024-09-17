@@ -262,7 +262,7 @@ struct ModelOutput {
   const ModelOutputMeta meta;
   const ModelOutputPose pose;
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
-  const ModelOutputTemporalPose temporal_pose;
+  //const ModelOutputTemporalPose temporal_pose; // removed for CDv2
   const ModelOutputRoadTransform road_transform; // added after Nikki
   const LateralAction action; // LA-model thing (in replacement of NLP)
   const float padding, padding2;
@@ -275,7 +275,7 @@ constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE = 6504; //OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
+constexpr int NET_OUTPUT_SIZE = 6500; //OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {

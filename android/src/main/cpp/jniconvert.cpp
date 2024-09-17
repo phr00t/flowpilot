@@ -884,10 +884,46 @@ Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0 (notre dame)
  'nav_instructions': (1, 150),
  'features_buffer': (1, 99, 512)},
  'output_shapes': {'outputs': (1, 6504)}}
+
+ CLAIRVOYANT DRIVER v2:
+
+ Inputs:
+Name: input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 0
+Name: big_input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 393216
+Name: desire, Shape: [1, 100, 8], Size: 800, Offset: 786432
+Name: traffic_convention, Shape: [1, 2], Size: 2, Offset: 787232
+Name: lateral_control_params, Shape: [1, 2], Size: 2, Offset: 787234
+Name: prev_desired_curv, Shape: [1, 100, 1], Size: 100, Offset: 787236
+Name: features_buffer, Shape: [1, 99, 512], Size: 50688, Offset: 787336
+
+Outputs:
+Name: outputs, Shape: [1, 6500], Size: 6500, Offset: 0
+
+{'output_slices':
+ {'plan': slice(0, 4955, None),
+ 'lane_lines': slice(4955, 5483, None),
+ 'lane_lines_prob': slice(5483, 5491, None),
+ 'road_edges': slice(5491, 5755, None),
+ 'lead': slice(5755, 5857, None),
+ 'lead_prob': slice(5857, 5860, None),
+ 'desire_state': slice(5860, 5868, None),
+ 'meta': slice(5868, 5921, None),
+ 'desire_pred': slice(5921, 5953, None),
+ 'pose': slice(5953, 5965, None),
+ 'wide_from_device_euler': slice(5965, 5971, None),
+ 'road_transform': slice(5971, 5983, None),
+ 'desired_curvature': slice(5983, 5985, None),
+ 'hidden_state': slice(5985, -3, None),
+ 'pad': slice(-3, None, None)},
+ 'input_shapes': {'input_imgs': (1, 12, 128, 256), 'big_input_imgs': (1, 12, 128, 256),
+ 'desire': (1, 100, 8), 'traffic_convention': (1, 2), 'lateral_control_params': (1, 2),
+ 'prev_desired_curv': (1, 100, 1), 'features_buffer': (1, 99, 512)},
+ 'output_shapes': {'outputs': (1, 6500)}}
+
  */
 
-const int DESIRED_CURV_OFFSET = 5990;
-const int FEATURE_BUF_OFFSET = 5992;
+const int DESIRED_CURV_OFFSET = 5983;
+const int FEATURE_BUF_OFFSET = 5985;
 const int IMAGE_LEN = 393216;
 const int DESIRE_LEN = 800;
 const int TRAF_CONV_LEN = 2;
@@ -978,8 +1014,8 @@ extern "C" {
         thneed->setInputBuffer("traffic_convention", zero_buf, TRAF_CONV_LEN);
         thneed->setInputBuffer("lateral_control_params", lat_params, LAT_CON_PARMS_LEN);
         thneed->setInputBuffer("prev_desired_curvs", prev_curvs_buf, PREV_DESIRED_CURVS_LEN);
-        thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
-        thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
+        //thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
+        //thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
         thneed->setInputBuffer("features_buffer", features_buf, FEATURE_BUF_LEN);
 
         // ok execute model
