@@ -336,8 +336,8 @@ class CarController:
       #CS.time_cruise_cancelled = datetime.datetime(2000, 10, 1, 1, 1, 1,0)
     elif desired_speed > 0:
       # does the model think we should be really slowing down?
-      if self.usingAccel and avg_accel_min < clu11_speed - 10 and desired_speed > clu11_speed - 1.5:
-        desired_speed = clu11_speed - 1.5
+      if self.usingAccel and avg_accel_min < clu11_speed - 10 and desired_speed > clu11_speed - 1.1:
+        desired_speed = clu11_speed - 1.1
 
       # clamp for the following divisions
       desired_speed = clamp(desired_speed, 0.001, max_speed_in_mph)
