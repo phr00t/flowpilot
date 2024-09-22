@@ -10,14 +10,16 @@ from common.params import Params
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.1
+CAMERA_OFFSET = 0.08
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
 TYPICAL_MIN_LANE_DISTANCE = 2.7
 TYPICAL_MAX_LANE_DISTANCE = 3.4
 CENTER_FORCE_GENERAL_SCALE = 0.4
+# higher offset means steering more right
+DESIRED_CURVE_OFFSET = 0.2
 DESIRED_CURVE_TO_STEERANGLE_RATIO = -0.04
-STEER_DISAGREEMENT_SCALE = 0.07
+STEER_DISAGREEMENT_SCALE = 0.06
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -154,6 +156,7 @@ class LanePlanner:
   def get_d_path(self, CS, v_ego, path_t, path_xyz, vcurv, desired_curve):
     # convert the desired_curve into a desired steering angle
     # this may be different for different steering ratios!
+    desired_curve += DESIRED_CURVE_OFFSET
     target_steering_angle = desired_curve / DESIRED_CURVE_TO_STEERANGLE_RATIO
     steer_disagreement = target_steering_angle - CS.steeringAngleDeg
     # lane changing can cause a quick steering disagreement, so cap its value here significantly if needed
@@ -189,19 +192,10 @@ class LanePlanner:
       half_len = len(self.lll_y) // 2
 
       # additional centering force, if needed
-      rightBorder = min(self.re_y[0], self.rll_y[1])
-      leftBorder = max(self.le_y[0], self.lll_y[1])
-      nearRightEdge = abs(self.rll_y[0] - rightBorder) < MIN_LANE_DISTANCE * 0.8
-      nearLeftEdge = abs(self.lll_y[0] - leftBorder) < MIN_LANE_DISTANCE * 0.8
+      rightBorder = min(self.re_y[0], self.rll_y[0])
+      leftBorder = max(self.le_y[0], self.lll_y[0])
       # ok, how far off of center are we, considering we want to be closer to edges of the road?
-      target_centering = self.rll_y[0] + self.lll_y[0]
-      # if we are not near an edge, center harder away from it (since it is probably another lane)
-      if target_centering > 0:
-        # we want to push right, near a left edge?
-        target_centering *= 0.9 if nearLeftEdge else 1.5
-      elif target_centering < 0:
-        # we want to push left, not near a right edge?
-        target_centering *= 0.9 if nearRightEdge else 1.5
+      target_centering = rightBorder + leftBorder
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
       # if we are in a small lane, reduce centering force to prevent pingponging
@@ -213,7 +207,7 @@ class LanePlanner:
       # apply less lane centering for a direction we are already turning
       # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
-        self.center_force *= 0.7
+        self.center_force *= 0.6
       # if we are lane changing, cut center force
       self.center_force *= self.lane_change_multiplier
 
