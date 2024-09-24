@@ -221,7 +221,7 @@ class CarController:
     l0v = radarState.leadOne.vRel
     l0vstd = radarState.leadOne.vLeadK
     l0time = radarState.leadOne.aLeadTau
-    lead_vdiff_mph = 0.0
+    lead_vdiff_mph = l0v * CV.MS_TO_MPH
 
     # default use basic speed adjustment
     use_basic_speedadj = True
@@ -242,9 +242,7 @@ class CarController:
             max_allowed = (l0v + range_allowed) * CV.MS_TO_MPH
             min_allowed = (l0v - range_allowed) * CV.MS_TO_MPH
             raw_distspeed = dist_diff / time_diff
-            distspeed = clamp((raw_distspeed + l0v) * 0.5 * CV.MS_TO_MPH, min_allowed, max_allowed)
-            # wait, if we have a bunch of distance uncertainty, use the model speed more
-            distspeed = interp(l0dstd, [1.0, 9.0], [distspeed, l0v * CV.MS_TO_MPH])
+            distspeed = clamp(raw_distspeed * CV.MS_TO_MPH, min_allowed, max_allowed)
             # add this value to be averaged later
             self.lead_distance_distavg.append(distspeed)
             # clean out existing entries
@@ -253,7 +251,10 @@ class CarController:
             # do we have enough distances over time to get a distspeed estimate?
             if len(self.lead_distance_distavg) >= DISTSPEED_AVERAGING:
               use_basic_speedadj = False
-              lead_vdiff_mph = clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed)
+              # average the model and distspeed values
+              avg_speeds = 0.5 * (lead_vdiff_mph + clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed))
+              # use model speed more if there is poor distance confidence
+              lead_vdiff_mph = interp(l0dstd, [2.0, 8.0], [avg_speeds, lead_vdiff_mph])
               self.lead_distance_distavg.pop(0)
     else:
       # no lead, clear data
