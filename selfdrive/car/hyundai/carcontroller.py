@@ -387,8 +387,9 @@ class CarController:
     # if we recently pressed a cruise button, don't spam more to prevent errors for a little bit
     if CS.cruise_buttons != 0:
       self.temp_disable_spamming = 6
-    elif driver_doing_speed and abs(clu11_speed - CS.out.cruiseState.speed) > 4 and CS.out.cruiseState.speed >= 20 and clu11_speed >= 20 and self.temp_disable_spamming <= 0:
+    elif driver_doing_speed and abs(clu11_speed - CS.out.cruiseState.speed) > 4 and CS.out.cruiseState.speed >= 20 and clu11_speed >= 20 and desired_speed >= 20 and self.temp_disable_spamming <= 0:
       # if our cruise is on, but our speed is very different than our cruise speed, hit SET to set it
+      # make sure we want to be going >= 20 mph, or else we want to prioritize cancel
       can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
       self.temp_disable_spamming = 6
 
@@ -404,21 +405,23 @@ class CarController:
     if cruise_difference_max > 4:
       cruise_difference_max = 4 # do a max of presses at a time
 
-    # ok, apply cruise control button spamming to match desired speed, if we have cruise on and we are not taking a break
-    # also dont press buttons if the driver is hitting the gas or brake
-    if cruise_difference >= 0.666 and CS.out.cruiseState.speed >= 20 and self.temp_disable_spamming <= 0 and not driver_doing_speed:
+    # ok, are we pressing buttons?
+    # only press buttons if we have a cruisestate speed set and not pressing buttons already
+    if CS.out.cruiseState.speed >= 20 and self.temp_disable_spamming <= 0:
+      # always prioritize disabling cruise control
       if desired_speed < 20:
         can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL)) #disable cruise to come to a stop
         self.temp_disable_spamming = 6 # we disabled cruise, don't spam more cancels
         CS.time_cruise_cancelled = datetime.datetime.now() # timestamp when we disabled it, used for autoresuming
-      elif CS.out.cruiseState.speed > desired_speed:
-        for x in range(cruise_difference_max):
-          can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
-        self.temp_disable_spamming = 3 # take a break
-      elif CS.out.cruiseState.speed < desired_speed:
-        for x in range(cruise_difference_max):
-          can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.RES_ACCEL)) #speed cruise
-        self.temp_disable_spamming = 3 # take a break
+      elif cruise_difference >= 0.666 and not driver_doing_speed:
+        if CS.out.cruiseState.speed > desired_speed:
+          for x in range(cruise_difference_max):
+            can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
+          self.temp_disable_spamming = 3 # take a break
+        elif CS.out.cruiseState.speed < desired_speed:
+          for x in range(cruise_difference_max):
+            can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.RES_ACCEL)) #speed cruise
+          self.temp_disable_spamming = 3 # take a break
 
     # are we using the auto resume feature?
     if CS.out.cruiseState.nonAdaptive and self.temp_disable_spamming <= 0 and allow_reenable_cruise:
