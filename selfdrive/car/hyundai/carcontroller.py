@@ -227,7 +227,7 @@ class CarController:
     use_basic_speedadj = True
 
     # if we are using the distspeed feature, monitor distance to better estimate speed within standard deviation
-    if l0prob >= 0.4 and self.usingDistSpeed:
+    if l0prob >= 0.5 and self.usingDistSpeed:
       # ok, start collecting data on the lead car
       self.lead_distance_hist.append(l0d)
       self.lead_distance_times.append(l0time)
@@ -286,7 +286,7 @@ class CarController:
     curve_speed_ratio = clu11_speed / desired_speed
 
     # is there a lead worth making decisions on?
-    if l0prob >= 0.4:
+    if l0prob >= 0.5:
       self.lead_seen_counter += 1
       if clu11_speed > 5:
         # calculate an estimate of the lead car's speed
@@ -303,6 +303,7 @@ class CarController:
         # 1) if the lead car is far away in either time or distance
         # 2) if the lead car is moving away from us
         leadcar_going_faster = lead_vdiff_mph >= 0.0
+        car_far_away = l0d >= 80.0
         # calculate the final max speed we should be going based on lead car
         max_lead_adj = clu11_speed + adjust_speed
         # if the lead car is going faster than us, but we want to slow down for some reason (to make space etc)
@@ -311,7 +312,7 @@ class CarController:
         if leadcar_going_faster and max_lead_adj < fasterleadcar_imposed_speed_limit:
           # slowly make space between cars
           max_lead_adj = fasterleadcar_imposed_speed_limit
-        elif leadcar_going_faster and max_lead_adj < clu11_speed - 1.5:
+        elif (leadcar_going_faster or car_far_away) and max_lead_adj < clu11_speed - 1.5:
           # slow down, but not aggresively
           max_lead_adj = clu11_speed - 1.5
         elif not leadcar_going_faster and self.lead_seen_counter < 150 and max_lead_adj > clu11_speed:
@@ -384,49 +385,52 @@ class CarController:
     # then clamp
     desired_speed = clamp(desired_speed + speed_diff * 0.6, 0.0, max_speed_in_mph)
 
-    # if we recently pressed a cruise button, don't spam more to prevent errors for a little bit
-    if CS.cruise_buttons != 0:
-      self.temp_disable_spamming = 6
-    elif driver_doing_speed and abs(clu11_speed - CS.out.cruiseState.speed) > 4 and CS.out.cruiseState.speed >= 20 and clu11_speed >= 20 and desired_speed >= 20 and self.temp_disable_spamming <= 0:
-      # if our cruise is on, but our speed is very different than our cruise speed, hit SET to set it
-      # make sure we want to be going >= 20 mph, or else we want to prioritize cancel
-      can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
-      self.temp_disable_spamming = 6
-
     # count down self spamming timer
     if self.temp_disable_spamming > 0:
       self.temp_disable_spamming -= 1
 
-    # print debug data
-    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.2f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " la" + "{:.1f}".format(self.lead_accel_accum) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(lead_vdiff_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " du" + "{:.1f}".format(l0dstd))
-
-    cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
-    cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
-    if cruise_difference_max > 4:
-      cruise_difference_max = 4 # do a max of presses at a time
-
-    # ok, are we pressing buttons?
-    # only press buttons if we have a cruisestate speed set and not pressing buttons already
-    if CS.out.cruiseState.speed >= 20 and self.temp_disable_spamming <= 0:
-      # always prioritize disabling cruise control
-      if desired_speed < 20:
-        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL)) #disable cruise to come to a stop
+    if CS.cruise_buttons != 0:
+      # if driver recently pressed a cruise button, don't spam more to prevent errors for a little bit
+      self.temp_disable_spamming = 6
+    elif desired_speed < 20:
+      # we only want to be sending possible cancels, nothing else
+      if CS.out.cruiseState.speed > 10 and self.temp_disable_spamming <= 0:
+        # send it twice to make sure it gets heard, this is important
+        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
+        can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
         self.temp_disable_spamming = 6 # we disabled cruise, don't spam more cancels
         CS.time_cruise_cancelled = datetime.datetime.now() # timestamp when we disabled it, used for autoresuming
-      elif cruise_difference >= 0.666 and not driver_doing_speed:
-        if CS.out.cruiseState.speed > desired_speed:
-          for x in range(cruise_difference_max):
-            can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
-          self.temp_disable_spamming = 3 # take a break
-        elif CS.out.cruiseState.speed < desired_speed:
-          for x in range(cruise_difference_max):
-            can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.RES_ACCEL)) #speed cruise
-          self.temp_disable_spamming = 3 # take a break
+    elif driver_doing_speed and abs(clu11_speed - CS.out.cruiseState.speed) > 4 and CS.out.cruiseState.speed >= 20 and clu11_speed >= 20 and self.temp_disable_spamming <= 0:
+      # if our cruise is on, but our speed is very different than our cruise speed, hit SET to set it
+      # make sure we want to be going >= 20 mph, or else we want to prioritize cancel
+      can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
+      self.temp_disable_spamming = 6
+    elif self.temp_disable_spamming <= 0:
+      # ok no special cases, normal cruise control up/down
+      cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
+      cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
+      if cruise_difference_max > 4:
+        cruise_difference_max = 4 # do a max of presses at a time
 
-    # are we using the auto resume feature?
-    if CS.out.cruiseState.nonAdaptive and self.temp_disable_spamming <= 0 and allow_reenable_cruise:
-      can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) # re-enable cruise at our current speed
-      self.temp_disable_spamming = 5 # take a break
+      # should we adjust cruise control speed?
+      if CS.out.cruiseState.speed >= 20:
+        if cruise_difference >= 0.666 and not driver_doing_speed:
+          if CS.out.cruiseState.speed > desired_speed:
+            for x in range(cruise_difference_max):
+              can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
+            self.temp_disable_spamming = 3 # take a break
+          elif CS.out.cruiseState.speed < desired_speed:
+            for x in range(cruise_difference_max):
+              can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.RES_ACCEL)) #speed cruise
+            self.temp_disable_spamming = 3 # take a break
+
+      # are we using the auto resume feature?
+      if CS.out.cruiseState.nonAdaptive and allow_reenable_cruise:
+        can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) # re-enable cruise at our current speed
+        self.temp_disable_spamming = 5 # take a break
+
+    # print debug data
+    sLogger.Send("0ac" + "{:.2f}".format(CS.out.aEgo) + " c" + "{:.1f}".format(CS.out.cruiseState.speed) + " v" + "{:.2f}".format(l0v * 2.23694) + " ta" + "{:.2f}".format(target_accel) + " la" + "{:.1f}".format(self.lead_accel_accum) + " ds" + "{:.1f}".format(desired_speed) + " dv" + "{:.2f}".format(lead_vdiff_mph) + " vs" + "{:.2f}".format(l0vstd * 2.23694) + " ld" + "{:.1f}".format(l0d) + " ms" + "{:.1f}".format(avg_accel_min) + " du" + "{:.1f}".format(l0dstd))
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
