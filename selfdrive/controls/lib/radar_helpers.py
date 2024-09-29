@@ -16,8 +16,8 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
-LEAD_DATA_COUNT_SPEED = 30
-LEAD_DATA_COUNT_DISTANCE = 30
+LEAD_DATA_COUNT_SPEED = 20
+LEAD_DATA_COUNT_DISTANCE = 20
 LEAD_DATA_COUNT_BEFORE_VALID = 10
 
 PROGRAM_START = datetime.datetime.now()
