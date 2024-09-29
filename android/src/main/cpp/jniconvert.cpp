@@ -920,33 +920,10 @@ Name: outputs, Shape: [1, 6500], Size: 6500, Offset: 0
  'prev_desired_curv': (1, 100, 1), 'features_buffer': (1, 99, 512)},
  'output_shapes': {'outputs': (1, 6500)}}
 
- GAMEBOY:
-
- {'output_slices': {'plan': slice(0, 4955, None),
- 'lane_lines': slice(4955, 5483, None),
- 'lane_lines_prob': slice(5483, 5491, None),
- 'road_edges': slice(5491, 5755, None),
- 'lead': slice(5755, 5857, None),
- 'lead_prob': slice(5857, 5860, None),
- 'desire_state': slice(5860, 5868, None),
- 'meta': slice(5868, 5916, None),
- 'desire_pred': slice(5916, 5948, None),
- 'pose': slice(5948, 5960, None),
- 'wide_from_device_euler': slice(5960, 5966, None),
- 'sim_pose': slice(5966, 5978, None),
- 'road_transform': slice(5978, 5990, None),
-'desired_curvature': slice(5990, 5992, None),
- 'hidden_state': slice(5992, None, None)},
- 'input_shapes': {'input_imgs': (1, 12, 128, 256),
-'big_input_imgs': (1, 12, 128, 256), 'desire': (1, 100, 8),
- 'traffic_convention': (1, 2), 'lateral_control_params': (1, 2),
- 'prev_desired_curv': (1, 100, 1), 'features_buffer': (1, 99, 512)},
- 'output_shapes': {'outputs': (1, 6504)}}
-
  */
 
-const int DESIRED_CURV_OFFSET = 5990;
-const int FEATURE_BUF_OFFSET = 5992;
+const int DESIRED_CURV_OFFSET = 5983;
+const int FEATURE_BUF_OFFSET = 5985;
 const int IMAGE_LEN = 393216;
 const int DESIRE_LEN = 800;
 const int TRAF_CONV_LEN = 2;

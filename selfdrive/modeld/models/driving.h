@@ -268,7 +268,7 @@ struct ModelOutput {
   const float padding, padding2;
 };
 
-const int DESIRED_CURV_OFFSET = 5990;
+const int DESIRED_CURV_OFFSET = 5983;
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 
 #ifdef TEMPORAL
@@ -276,7 +276,7 @@ constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE = 6504; //OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
+constexpr int NET_OUTPUT_SIZE = 6500; //OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
