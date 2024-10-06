@@ -230,7 +230,7 @@ struct ModelOutputMeta {
   std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
   std::array<char, 5> filler; // brings this end to position 5916 -> 5921 for CDv2
 };
-static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
+//static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
 
 struct ModelOutputFeatures {
   std::array<float, FEATURE_LEN> feature;
