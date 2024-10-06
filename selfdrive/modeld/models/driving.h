@@ -269,6 +269,9 @@ struct ModelOutput {
   const float padding, padding2;
 };
 
+const int MODEL_POSE_OFFSET = 5953;
+const int ROAD_TRANSFORM_OFFSET = 5971;
+const int WIDE_DEVICE_EULER_OFFSET = 5965;
 const int DESIRED_CURV_OFFSET = 5983;
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 

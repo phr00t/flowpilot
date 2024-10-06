@@ -351,14 +351,17 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
                      const float* raw_pred, uint64_t timestamp_eof, const bool valid) {
   ModelOutput net_outputs = *(ModelOutput*) raw_pred;
   MessageBuilder msg;
-  const auto &v_mean = net_outputs.pose.velocity_mean;
-  const auto &r_mean = net_outputs.pose.rotation_mean;
-  const auto &t_mean = net_outputs.wide_from_device_euler.mean;
-  const auto &v_std = net_outputs.pose.velocity_std;
-  const auto &r_std = net_outputs.pose.rotation_std;
-  const auto &t_std = net_outputs.wide_from_device_euler.std;
-  const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean; // after nicki
-  const auto &road_transform_trans_std = net_outputs.road_transform.position_std; // after nicki
+  ModelOutputWideFromDeviceEuler wide_from_device_euler = *(ModelOutputWideFromDeviceEuler*)(&raw_pred[WIDE_DEVICE_EULER_OFFSET]);
+  ModelOutputRoadTransform road_transform = *(ModelOutputRoadTransform*)(&raw_pred[ROAD_TRANSFORM_OFFSET]);
+  ModelOutputPose pose = *(ModelOutputPose*)(&raw_pred[MODEL_POSE_OFFSET]);
+  const auto &v_mean = pose.velocity_mean;
+  const auto &r_mean = pose.rotation_mean;
+  const auto &t_mean = wide_from_device_euler.mean;
+  const auto &v_std = pose.velocity_std;
+  const auto &r_std = pose.rotation_std;
+  const auto &t_std = wide_from_device_euler.std;
+  const auto &road_transform_trans_mean = road_transform.position_mean; // after nicki
+  const auto &road_transform_trans_std = road_transform.position_std; // after nicki
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
 
