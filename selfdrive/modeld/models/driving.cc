@@ -349,7 +349,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const float* raw_pred, uint64_t timestamp_eof, const bool valid) {
-  ModelOutput net_outputs = *(ModelOutput*) raw_pred;
+  //ModelOutput net_outputs = *(ModelOutput*) raw_pred;
   MessageBuilder msg;
   ModelOutputWideFromDeviceEuler wide_from_device_euler = *(ModelOutputWideFromDeviceEuler*)(&raw_pred[WIDE_DEVICE_EULER_OFFSET]);
   ModelOutputRoadTransform road_transform = *(ModelOutputRoadTransform*)(&raw_pred[ROAD_TRANSFORM_OFFSET]);
