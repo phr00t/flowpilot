@@ -228,7 +228,7 @@ struct ModelOutputMeta {
   std::array<ModelOutputDisengageProb, DISENGAGE_LEN> disengage_prob;
   std::array<ModelOutputBlinkerProb, BLINKER_LEN> blinker_prob;
   std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
-  std::array<byte, 5> filler; // brings this end to position 5916 -> 5921 for CDv2
+  std::array<char, 5> filler; // brings this end to position 5916 -> 5921 for CDv2
 };
 static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
 
