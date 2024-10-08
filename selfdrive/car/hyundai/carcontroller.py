@@ -392,7 +392,7 @@ class CarController:
     if CS.cruise_buttons != 0:
       # if driver recently pressed a cruise button, don't spam more to prevent errors for a little bit
       self.temp_disable_spamming = 6
-    elif desired_speed < 20:
+    elif desired_speed < 20 and not driver_doing_speed:
       # we only want to be sending possible cancels, nothing else
       if CS.out.cruiseState.speed > 10 and self.temp_disable_spamming <= 0:
         # send it twice to make sure it gets heard, this is important
@@ -402,10 +402,10 @@ class CarController:
         CS.time_cruise_cancelled = datetime.datetime.now() # timestamp when we disabled it, used for autoresuming
     elif driver_doing_speed and abs(clu11_speed - CS.out.cruiseState.speed) > 4 and CS.out.cruiseState.speed >= 20 and clu11_speed >= 20 and self.temp_disable_spamming <= 0:
       # if our cruise is on, but our speed is very different than our cruise speed, hit SET to set it
-      # make sure we want to be going >= 20 mph, or else we want to prioritize cancel
+      # make sure we want to be going >= 20 mph
       can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
       self.temp_disable_spamming = 6
-    elif self.temp_disable_spamming <= 0:
+    elif self.temp_disable_spamming <= 0 and not driver_doing_speed:
       # ok no special cases, normal cruise control up/down
       cruise_difference = abs(CS.out.cruiseState.speed - desired_speed)
       cruise_difference_max = round(cruise_difference) # how many presses to do in bulk?
@@ -414,7 +414,7 @@ class CarController:
 
       # should we adjust cruise control speed?
       if CS.out.cruiseState.speed >= 20:
-        if cruise_difference >= 0.666 and not driver_doing_speed:
+        if cruise_difference >= 0.666:
           if CS.out.cruiseState.speed > desired_speed:
             for x in range(cruise_difference_max):
               can_sends.append(hyundaican.create_cpress(self.packer, CS.clu11, Buttons.SET_DECEL)) #slow cruise
