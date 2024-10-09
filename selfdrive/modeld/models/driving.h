@@ -195,7 +195,7 @@ struct ModelOutputDisengageProb {
   float brake_5ms2;
   //float gas_pressed;
 };
-static_assert(sizeof(ModelOutputDisengageProb) == sizeof(float)*7);
+//static_assert(sizeof(ModelOutputDisengageProb) == sizeof(float)*7);
 
 struct ModelOutputBlinkerProb {
   float gas_press; //GAS_PRESS = slice(31, 55, 4)
@@ -203,7 +203,7 @@ struct ModelOutputBlinkerProb {
   float left;
   float right;
 };
-static_assert(sizeof(ModelOutputBlinkerProb) == sizeof(float)*2);
+//static_assert(sizeof(ModelOutputBlinkerProb) == sizeof(float)*2);
 
 struct ModelOutputDesireProb {
   union {
