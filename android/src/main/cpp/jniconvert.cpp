@@ -963,10 +963,10 @@ const int IMAGE_LEN = 393216;
 const int DESIRE_LEN = 200;
 const int TRAF_CONV_LEN = 2;
 const int PREV_DESIRED_CURVS_LEN = 25;
-const int FEATURE_BUF_LEN = 12288;
 const int LAT_CON_PARMS_LEN = 2;
 const int FEATURE_LEN = 512;
-const int HISTORY_BUFFER_LEN = 24;
+const int INPUT_HISTORY_BUFFER_LEN = 24;
+const int FULL_HISTORY_BUFFER_LEN = 99;
 
 std::string *pathString;
 jfloat* outputs;
@@ -997,13 +997,13 @@ extern "C" {
         desire_buf = new float[DESIRE_LEN];
         prev_desire_buf = new float[8];
         zero_buf = new float[zero_len];
-        features_buf = new float[FEATURE_BUF_LEN];
+        features_buf = new float[FULL_HISTORY_BUFFER_LEN*FEATURE_LEN];
         prev_curvs_buf = new float[PREV_DESIRED_CURVS_LEN];
         for (int i=0; i<8; i++)
             prev_desire_buf[i] = 0;
         for (int i=0; i<zero_len; i++)
             zero_buf[i] = 0;
-        for (int i=0; i<FEATURE_BUF_LEN; i++)
+        for (int i=0; i<FULL_HISTORY_BUFFER_LEN*FEATURE_LEN; i++)
             features_buf[i] = 0;
         for (int i=0; i<DESIRE_LEN; i++)
             desire_buf[i] = 0;
@@ -1051,7 +1051,7 @@ extern "C" {
         thneed->setInputBuffer("prev_desired_curvs", prev_curvs_buf, PREV_DESIRED_CURVS_LEN);
         //thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
         //thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
-        thneed->setInputBuffer("features_buffer", features_buf, FEATURE_BUF_LEN);
+        thneed->setInputBuffer("features_buffer", features_buf, INPUT_HISTORY_BUFFER_LEN*FEATURE_LEN);
 
         // ok execute model
         thneed->execute();
@@ -1060,8 +1060,8 @@ extern "C" {
         env->ReleaseFloatArrayElements(input, input_buf, 0);
 
         // handle features
-        std::memmove(&features_buf[0], &features_buf[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
-        std::memcpy(&features_buf[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &outputs[FEATURE_BUF_OFFSET], sizeof(float) * FEATURE_LEN);
+        std::memmove(&features_buf[0], &features_buf[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(FULL_HISTORY_BUFFER_LEN-1));
+        std::memcpy(&features_buf[FEATURE_LEN*(FULL_HISTORY_BUFFER_LEN-1)], &outputs[FEATURE_BUF_OFFSET], sizeof(float) * FEATURE_LEN);
 
         // handle previous curves
         std::memmove(&prev_curvs_buf[0], &prev_curvs_buf[1], PREV_DESIRED_CURVS_LEN - 1);
