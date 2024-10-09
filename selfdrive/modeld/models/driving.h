@@ -15,7 +15,7 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 
 constexpr int FEATURE_LEN = 512; // 128 for nicki, 512 for latest
-constexpr int HISTORY_BUFFER_LEN = 99;
+constexpr int HISTORY_BUFFER_LEN = 24;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
@@ -193,11 +193,13 @@ struct ModelOutputDisengageProb {
   float brake_3ms2;
   float brake_4ms2;
   float brake_5ms2;
-  float gas_pressed;
+  //float gas_pressed;
 };
 static_assert(sizeof(ModelOutputDisengageProb) == sizeof(float)*7);
 
 struct ModelOutputBlinkerProb {
+  float gas_press; //GAS_PRESS = slice(31, 55, 4)
+  float brake_press; //BRAKE_PRESS = slice(32, 55, 4)
   float left;
   float right;
 };
@@ -222,15 +224,29 @@ struct ModelOutputDesireProb {
 };
 static_assert(sizeof(ModelOutputDesireProb) == sizeof(float)*DESIRE_LEN);
 
+/*class Meta: (SecretGoodOpenpilot/MLSIMv3)
+  ENGAGED = slice(0, 1)
+  # next 2, 4, 6, 8, 10 seconds
+  GAS_DISENGAGE = slice(1, 31, 6)
+  BRAKE_DISENGAGE = slice(2, 31, 6)
+  STEER_OVERRIDE = slice(3, 31, 6)
+  HARD_BRAKE_3 = slice(4, 31, 6)
+  HARD_BRAKE_4 = slice(5, 31, 6)
+  HARD_BRAKE_5 = slice(6, 31, 6)
+  # next 0, 2, 4, 6, 8, 10 seconds
+  GAS_PRESS = slice(31, 55, 4)
+  BRAKE_PRESS = slice(32, 55, 4)
+  LEFT_BLINKER = slice(33, 55, 4)
+  RIGHT_BLINKER = slice(34, 55, 4)*/
+
 struct ModelOutputMeta {
-  ModelOutputDesireProb desire_state_prob;
-  float engaged_prob;
-  std::array<ModelOutputDisengageProb, DISENGAGE_LEN> disengage_prob;
-  std::array<ModelOutputBlinkerProb, BLINKER_LEN> blinker_prob;
-  std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
-  std::array<char, 5> filler; // brings this end to position 5916 -> 5921 for CDv2
+  ModelOutputDesireProb desire_state_prob; // we'll just squeeze this in here before actual "meta"
+  float engaged_prob; // 1 (actual meta begins)
+  std::array<ModelOutputDisengageProb, DISENGAGE_LEN> disengage_prob; // 6*5+1=31 
+  std::array<ModelOutputBlinkerProb, BLINKER_LEN> blinker_prob; // 4*6=24+31=55
+  std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> desire_pred_prob; // this is technically after meta, but we squeeze it in here
 };
-//static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
+//static_assert(sizeof(ModelOutputMeta) == 55);
 
 struct ModelOutputFeatures {
   std::array<float, FEATURE_LEN> feature;
@@ -269,10 +285,10 @@ struct ModelOutput {
   const float padding, padding2;
 };
 
-const int MODEL_POSE_OFFSET = 5953;
-const int ROAD_TRANSFORM_OFFSET = 5971;
-const int WIDE_DEVICE_EULER_OFFSET = 5965;
-const int DESIRED_CURV_OFFSET = 5983;
+const int MODEL_POSE_OFFSET = 5955;
+const int ROAD_TRANSFORM_OFFSET = 5973;
+const int WIDE_DEVICE_EULER_OFFSET = 5967;
+const int DESIRED_CURV_OFFSET = 5985;
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 
 #ifdef TEMPORAL

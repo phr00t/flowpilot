@@ -919,19 +919,54 @@ Name: outputs, Shape: [1, 6500], Size: 6500, Offset: 0
  'desire': (1, 100, 8), 'traffic_convention': (1, 2), 'lateral_control_params': (1, 2),
  'prev_desired_curv': (1, 100, 1), 'features_buffer': (1, 99, 512)},
  'output_shapes': {'outputs': (1, 6500)}}
+ 
+ SECRETGOODOPENPILOT / MLSIMv3
+ 
+ $ python modelinfo.py supercombo-mlsimv3.onnx
+Inputs:
+Name: input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 0
+Name: big_input_imgs, Shape: [1, 12, 128, 256], Size: 393216, Offset: 393216
+Name: desire, Shape: [1, 25, 8], Size: 200, Offset: 786432
+Name: traffic_convention, Shape: [1, 2], Size: 2, Offset: 786632
+Name: lateral_control_params, Shape: [1, 2], Size: 2, Offset: 786634
+Name: prev_desired_curv, Shape: [1, 25, 1], Size: 25, Offset: 786636
+Name: features_buffer, Shape: [1, 24, 512], Size: 12288, Offset: 786661
+
+Outputs:
+Name: outputs, Shape: [1, 6500], Size: 6500, Offset: 0
+
+{'output_slices': 
+{'plan': slice(0, 4955, None),
+ 'lane_lines': slice(4955, 5483, None),
+ 'lane_lines_prob': slice(5483, 5491, None),
+ 'road_edges': slice(5491, 5755, None),
+ 'lead': slice(5755, 5857, None),
+ 'lead_prob': slice(5857, 5860, None),
+ 'desire_state': slice(5860, 5868, None),
+ 'meta': slice(5868, 5923, None),
+ 'desire_pred': slice(5923, 5955, None),
+ 'pose': slice(5955, 5967, None),
+ 'wide_from_device_euler': slice(5967, 5973, None),
+ 'road_transform': slice(5973, 5985, None),
+ 'desired_curvature': slice(5985, 5987, None),
+ 'hidden_state': slice(5987, -1, None),
+ 'pad': slice(-1, None, None)},
+ 'input_shapes': {'input_imgs': (1, 12, 128, 256), 'big_input_imgs': (1, 12, 128, 256), 'desire': (1, 25, 8),
+ 'traffic_convention': (1, 2), 'lateral_control_params': (1, 2), 'prev_desired_curv': (1, 25, 1),
+ 'features_buffer': (1, 24, 512)}, 'output_shapes': {'outputs': (1, 6500)}}
 
  */
 
-const int DESIRED_CURV_OFFSET = 5983;
-const int FEATURE_BUF_OFFSET = 5985;
+const int DESIRED_CURV_OFFSET = 5985;
+const int FEATURE_BUF_OFFSET = 5987;
 const int IMAGE_LEN = 393216;
-const int DESIRE_LEN = 800;
+const int DESIRE_LEN = 200;
 const int TRAF_CONV_LEN = 2;
-const int PREV_DESIRED_CURVS_LEN = 100;
-const int FEATURE_BUF_LEN = 50688;
+const int PREV_DESIRED_CURVS_LEN = 25;
+const int FEATURE_BUF_LEN = 12288;
 const int LAT_CON_PARMS_LEN = 2;
 const int FEATURE_LEN = 512;
-const int HISTORY_BUFFER_LEN = 99;
+const int HISTORY_BUFFER_LEN = 24;
 
 std::string *pathString;
 jfloat* outputs;
