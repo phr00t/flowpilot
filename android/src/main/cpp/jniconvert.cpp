@@ -957,12 +957,15 @@ Name: outputs, Shape: [1, 6500], Size: 6500, Offset: 0
 
  */
 
+const int DESIRE_SIZE = 8;
 const int DESIRED_CURV_OFFSET = 5985;
 const int FEATURE_BUF_OFFSET = 5987;
 const int IMAGE_LEN = 393216;
-const int DESIRE_LEN = 200;
 const int TRAF_CONV_LEN = 2;
 const int PREV_DESIRED_CURVS_LEN = 25;
+const int FULL_PREV_DESIRED_CURVS_LEN = 100;
+const int SMALL_DESIRE_LEN = PREV_DESIRED_CURVS_LEN * DESIRE_SIZE;
+const int FULL_DESIRE_LEN = FULL_PREV_DESIRED_CURVS_LEN * DESIRE_SIZE;
 const int LAT_CON_PARMS_LEN = 2;
 const int FEATURE_LEN = 512;
 const int INPUT_HISTORY_BUFFER_LEN = 24;
@@ -974,6 +977,7 @@ jint output_len;
 ThneedModel *thneed;
 float *zero_buf;
 float *features_buf;
+float *small_features_buf;
 float *prev_curvs_buf;
 float *desire_buf;
 float *prev_desire_buf;
@@ -994,18 +998,21 @@ extern "C" {
         // Allocate a float array of the given size
         outputs = new jfloat[size];
         output_len = size;
-        desire_buf = new float[DESIRE_LEN];
-        prev_desire_buf = new float[8];
+        desire_buf = new float[FULL_DESIRE_LEN];
+        prev_desire_buf = new float[DESIRE_SIZE];
         zero_buf = new float[zero_len];
         features_buf = new float[FULL_HISTORY_BUFFER_LEN*FEATURE_LEN];
+        small_features_buf = new float[INPUT_HISTORY_BUFFER_LEN*FEATURE_LEN];
         prev_curvs_buf = new float[PREV_DESIRED_CURVS_LEN];
-        for (int i=0; i<8; i++)
+        for (int i=0; i<DESIRE_SIZE; i++)
             prev_desire_buf[i] = 0;
         for (int i=0; i<zero_len; i++)
             zero_buf[i] = 0;
         for (int i=0; i<FULL_HISTORY_BUFFER_LEN*FEATURE_LEN; i++)
             features_buf[i] = 0;
-        for (int i=0; i<DESIRE_LEN; i++)
+        for (int i=0; i<INPUT_HISTORY_BUFFER_LEN*FEATURE_LEN; i++)
+            small_features_buf[i] = 0;
+        for (int i=0; i<FULL_DESIRE_LEN; i++)
             desire_buf[i] = 0;
         for (int i=0; i<PREV_DESIRED_CURVS_LEN; i++)
             prev_curvs_buf[i] = 0;
@@ -1029,14 +1036,14 @@ extern "C" {
         if (desireIn >= 1 && desireIn <= 7) vec_desire[desireIn] = 1;
 
         // Shift the elements in inputs_desire to the left by 8 (length of a single desire value)
-        memmove(desire_buf, desire_buf + 8, (DESIRE_LEN - 8) * sizeof(float));
+        memmove(desire_buf, desire_buf + 8, (FULL_DESIRE_LEN - 8) * sizeof(float));
 
         // Update the last 8 elements of inputs_desire
         for (int i = 0; i < 8; i++) {
             if (vec_desire[i] - prev_desire_buf[i] > 0.99) {
-                desire_buf[DESIRE_LEN - 8 + i] = vec_desire[i];
+                desire_buf[FULL_DESIRE_LEN - 8 + i] = vec_desire[i];
             } else {
-                desire_buf[DESIRE_LEN - 8 + i] = 0;
+                desire_buf[FULL_DESIRE_LEN - 8 + i] = 0;
             }
         }
 
@@ -1045,13 +1052,13 @@ extern "C" {
 
         thneed->setInputBuffer("input_imgs", input_imgs_buf, IMAGE_LEN);
         thneed->setInputBuffer("big_input_imgs", big_input_imgs_buf, IMAGE_LEN);
-        thneed->setInputBuffer("desire", desire_buf, DESIRE_LEN);
+        thneed->setInputBuffer("desire", desire_buf, SMALL_DESIRE_LEN);
         thneed->setInputBuffer("traffic_convention", zero_buf, TRAF_CONV_LEN);
         thneed->setInputBuffer("lateral_control_params", lat_params, LAT_CON_PARMS_LEN);
         thneed->setInputBuffer("prev_desired_curvs", prev_curvs_buf, PREV_DESIRED_CURVS_LEN);
         //thneed->setInputBuffer("nav_features", zero_buf, 1024/4);
         //thneed->setInputBuffer("nav_instructions", zero_buf, 600/4);
-        thneed->setInputBuffer("features_buffer", features_buf, INPUT_HISTORY_BUFFER_LEN*FEATURE_LEN);
+        thneed->setInputBuffer("features_buffer", small_features_buf, INPUT_HISTORY_BUFFER_LEN*FEATURE_LEN);
 
         // ok execute model
         thneed->execute();
@@ -1062,6 +1069,11 @@ extern "C" {
         // handle features
         std::memmove(&features_buf[0], &features_buf[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(FULL_HISTORY_BUFFER_LEN-1));
         std::memcpy(&features_buf[FEATURE_LEN*(FULL_HISTORY_BUFFER_LEN-1)], &outputs[FEATURE_BUF_OFFSET], sizeof(float) * FEATURE_LEN);
+
+        // prepare small_features with a stride of 4 (should result in 24*FEATURE_LEN copied)
+        int j=0;
+        for (int i = 4; i <= FULL_HISTORY_BUFFER_LEN - 4; i += 4)
+            std::memcpy(&small_features_buf[FEATURE_LEN*j++], &features_buf[FEATURE_LEN*i], sizeof(float) * FEATURE_LEN);
 
         // handle previous curves
         std::memmove(&prev_curvs_buf[0], &prev_curvs_buf[1], PREV_DESIRED_CURVS_LEN - 1);
