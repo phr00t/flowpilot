@@ -222,13 +222,26 @@ struct ModelOutputDesireProb {
 };
 static_assert(sizeof(ModelOutputDesireProb) == sizeof(float)*DESIRE_LEN);
 
+/*class Meta:
+  ENGAGED = slice(0, 1)
+  # next 2, 4, 6, 8, 10 seconds
+  GAS_DISENGAGE = slice(1, 36, 7)
+  BRAKE_DISENGAGE = slice(2, 36, 7)
+  STEER_OVERRIDE = slice(3, 36, 7)
+  HARD_BRAKE_3 = slice(4, 36, 7)
+  HARD_BRAKE_4 = slice(5, 36, 7)
+  HARD_BRAKE_5 = slice(6, 36, 7)
+  GAS_PRESS = slice(7, 36, 7)
+  # next 0, 2, 4, 6, 8, 10 seconds
+  LEFT_BLINKER = slice(36, 48, 2)
+  RIGHT_BLINKER = slice(37, 48, 2)*/
+
 struct ModelOutputMeta {
   ModelOutputDesireProb desire_state_prob;
   float engaged_prob;
   std::array<ModelOutputDisengageProb, DISENGAGE_LEN> disengage_prob;
   std::array<ModelOutputBlinkerProb, BLINKER_LEN> blinker_prob;
   std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
-  std::array<char, 5> filler; // brings this end to position 5916 -> 5921 for CDv2
 };
 //static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
 
