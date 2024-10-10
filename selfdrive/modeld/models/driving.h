@@ -15,7 +15,7 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 
 constexpr int FEATURE_LEN = 512; // 128 for nicki, 512 for latest
-constexpr int HISTORY_BUFFER_LEN = 24;
+constexpr int HISTORY_BUFFER_LEN = 99;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
