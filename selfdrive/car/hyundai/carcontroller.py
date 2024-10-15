@@ -238,7 +238,7 @@ class CarController:
             dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
             # clamp speed to model's speed uncertainty window
             # l0vstd is usually too tight, so allow distspeed more wiggle room
-            range_allowed = l0vstd * 1.75
+            range_allowed = l0vstd * 2.5
             max_allowed = (l0v + range_allowed) * CV.MS_TO_MPH
             min_allowed = (l0v - range_allowed) * CV.MS_TO_MPH
             raw_distspeed = dist_diff / time_diff
@@ -254,7 +254,7 @@ class CarController:
               # average the model and distspeed values
               avg_speeds = 0.5 * (lead_vdiff_mph + clamp(statistics.fmean(self.lead_distance_distavg), min_allowed, max_allowed))
               # use model speed more if there is poor distance confidence
-              lead_vdiff_mph = interp(l0dstd, [2.0, 8.0], [avg_speeds, lead_vdiff_mph])
+              lead_vdiff_mph = interp(l0dstd, [3.0, 8.0], [avg_speeds, lead_vdiff_mph])
               self.lead_distance_distavg.pop(0)
     else:
       # no lead, clear data
