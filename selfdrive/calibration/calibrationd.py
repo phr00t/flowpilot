@@ -208,6 +208,10 @@ class Calibrator:
                              np.arctan2(trans[1], trans[0])])
     new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
+    
+    # throw out invalid calibration values instead of using them
+    if not is_calibration_valid(new_rpy):
+      return None
 
     if len(wide_from_device_euler) == 3:
       new_wide_from_device_euler = np.array(wide_from_device_euler)
