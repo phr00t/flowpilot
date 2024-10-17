@@ -10,16 +10,16 @@ from common.params import Params
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.12
+CAMERA_OFFSET = 0.14
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
 TYPICAL_MIN_LANE_DISTANCE = 2.7
 TYPICAL_MAX_LANE_DISTANCE = 3.4
-CENTER_FORCE_GENERAL_SCALE = 0.45
+CENTER_FORCE_GENERAL_SCALE = 0.5
 # higher offset means steering more right
-DESIRED_CURVE_OFFSET = 0.05
+DESIRED_CURVE_OFFSET = 0.025
 DESIRED_CURVE_TO_STEERANGLE_RATIO = -0.04
-STEER_DISAGREEMENT_SCALE = 0.065
+STEER_DISAGREEMENT_SCALE = 0.075
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -198,12 +198,12 @@ class LanePlanner:
       target_centering = rightBorder + leftBorder
       # fancy smooth increasing centering force based on lane width
       self.center_force = CENTER_FORCE_GENERAL_SCALE * (TYPICAL_MAX_LANE_DISTANCE / self.lane_width) * target_centering
+      # apply a cap centering force
+      self.center_force = clamp(self.center_force, -0.8, 0.8)
       # if we are in a small lane, reduce centering force to prevent pingponging
       self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [2.6, 2.8], [0.0, 1.0])
       # likewise if the lane is really big, reduce centering force to not throw us around in it
       self.center_force *= interp((lane_tightness + self.lane_width) * 0.5, [4.0, 6.0], [1.0, 0.0])
-      # apply a cap centering force
-      self.center_force = clamp(self.center_force, -0.8, 0.8)
       # apply less lane centering for a direction we are already turning
       # this helps avoid overturning in an existing turn
       if math.copysign(1, self.center_force) == math.copysign(1, vcurv[0]):
