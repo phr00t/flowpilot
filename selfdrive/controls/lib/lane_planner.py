@@ -10,16 +10,16 @@ from common.params import Params
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.15
+CAMERA_OFFSET = 0.14
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
 TYPICAL_MIN_LANE_DISTANCE = 2.7
 TYPICAL_MAX_LANE_DISTANCE = 3.4
 CENTER_FORCE_GENERAL_SCALE = 0.5
 # higher offset means steering more right
-DESIRED_CURVE_OFFSET = 0.03
+DESIRED_CURVE_OFFSET = 0.04
 DESIRED_CURVE_TO_STEERANGLE_RATIO = -0.04
-STEER_DISAGREEMENT_SCALE = 0.075
+STEER_DISAGREEMENT_SCALE = 0.07
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
