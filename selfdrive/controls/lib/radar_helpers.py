@@ -149,27 +149,31 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Stds, dStds, model_v_ego):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Stds, dStds, vEgos, model_v_ego):
     # this data is a little noisy, let's smooth it out
     finalv = v_ego
     finald = 150.0
     finalp = 0.0
     finals = 0.0
     finaldu = 0.0
+    finalvego = v_ego
 
     if lead_msg.prob < 0.5:
       Dists.clear()
       vLeads.clear()
       Stds.clear()
       dStds.clear()
+      vEgos.clear()
     else:
       Dists.append(lead_msg.x[0])
       vLeads.append(lead_msg.v[0] - model_v_ego)
       Stds.append(lead_msg.vStd[0])
       dStds.append(lead_msg.xStd[0])
+      vEgos.append(v_ego)
       if len(vLeads) > LEAD_DATA_COUNT_SPEED:
         vLeads.pop(0)
         Stds.pop(0)
+        vEgos.pop(0)
       if len(Dists) > LEAD_DATA_COUNT_DISTANCE:
         Dists.pop(0)
         dStds.pop(0)
@@ -178,6 +182,7 @@ class Cluster():
       finalv = np.average(reject_outliers(vLeads))
       finals = np.average(reject_outliers(Stds))
       finaldu = np.average(reject_outliers(dStds))
+      finalvego = np.average(vEgos)
       # only consider we've got a lead when we've collected some data on it
       if len(vLeads) >= LEAD_DATA_COUNT_BEFORE_VALID:
         finalp = float(lead_msg.prob)
@@ -186,7 +191,7 @@ class Cluster():
       "dRel": float(finald - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
       "vRel": float(finalv),
-      "vLead": float(finalv + v_ego),
+      "vLead": float(finalv + finalvego),
       "vLeadK": float(finals),
       "aLeadK": float(finaldu),
       "aLeadTau": float((datetime.datetime.now() - PROGRAM_START).total_seconds()),
