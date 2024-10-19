@@ -149,7 +149,7 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Stds, dStds):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, vLeads, Dists, Stds, dStds, model_v_ego):
     # this data is a little noisy, let's smooth it out
     finalv = v_ego
     finald = 150.0
@@ -164,7 +164,7 @@ class Cluster():
       dStds.clear()
     else:
       Dists.append(lead_msg.x[0])
-      vLeads.append(lead_msg.v[0] - v_ego)
+      vLeads.append(lead_msg.v[0] - model_v_ego)
       Stds.append(lead_msg.vStd[0])
       dStds.append(lead_msg.xStd[0])
       if len(vLeads) > LEAD_DATA_COUNT_SPEED:
