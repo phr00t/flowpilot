@@ -44,13 +44,14 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputL
   lead.setAStd(to_kj_array_ptr(lead_a_std));
 }
 
-void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data) {
+void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data, const float* raw_pred) {
   std::array<float, DESIRE_LEN> desire_state_softmax;
   softmax(meta_data.desire_state_prob.array.data(), desire_state_softmax.data(), DESIRE_LEN);
 
+  std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> fixed_desire_preds = *(std::array<ModelOutputDesireProb, DESIRE_PRED_LEN>*)(&raw_pred[DESIRE_PRED_OFFSET]);
   std::array<float, DESIRE_PRED_LEN * DESIRE_LEN> desire_pred_softmax;
   for (int i=0; i<DESIRE_PRED_LEN; i++) {
-    softmax(meta_data.desire_pred_prob[i].array.data(), desire_pred_softmax.data() + (i * DESIRE_LEN), DESIRE_LEN);
+    softmax(fixed_desire_preds[i].array.data(), desire_pred_softmax.data() + (i * DESIRE_LEN), DESIRE_LEN);
   }
 
   std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
@@ -273,7 +274,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
+void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs, const float* raw_pred) {
   const auto &best_plan = net_outputs.plans.get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
@@ -302,7 +303,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   fill_road_edges(framed, plan_t, net_outputs.road_edges);
 
   // meta
-  fill_meta(framed.initMeta(), net_outputs.meta);
+  fill_meta(framed.initMeta(), net_outputs.meta, raw_pred);
 
   // confidence
   fill_confidence(framed);
@@ -343,7 +344,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id
   if (send_raw_pred) {
     framed.setRawPredictions(kj::ArrayPtr<const float>(raw_pred, NET_OUTPUT_SIZE).asBytes());
   }
-  fill_model(framed, net_outputs);
+  fill_model(framed, net_outputs, raw_pred);
   pm.send("modelV2", msg);
 }
 
@@ -396,7 +397,7 @@ uint32_t parse_model(uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint3
   if (send_raw_pred) {
     framed.setRawPredictions(kj::ArrayPtr<const float>(raw_pred, NET_OUTPUT_SIZE).asBytes());
   }
-  fill_model(framed, net_outputs);
+  fill_model(framed, net_outputs, raw_pred);
   
   auto bytes = msg.toBytes();
   uint32_t msg_size = bytes.size();
