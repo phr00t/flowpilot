@@ -20,7 +20,8 @@ CENTER_FORCE_GENERAL_SCALE = 0.48
 # higher offset means steering more right
 DESIRED_CURVE_OFFSET = 0.048
 DESIRED_CURVE_TO_STEERANGLE_RATIO = -0.04
-STEER_DISAGREEMENT_SCALE = 0.068
+# overall desire curve steer scale, set to 0 to disable using desired_curvature
+STEER_DISAGREEMENT_SCALE = 0.0 #0.068
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
