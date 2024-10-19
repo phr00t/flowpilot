@@ -238,7 +238,7 @@ class CarController:
             dist_diff = self.lead_distance_hist[-1] - self.lead_distance_hist[0]
             # clamp speed to model's speed uncertainty window
             # l0vstd is usually too tight, so allow distspeed more wiggle room
-            range_allowed = l0vstd * 2.5
+            range_allowed = l0vstd * 2.25
             max_allowed = (l0v + range_allowed) * CV.MS_TO_MPH
             min_allowed = (l0v - range_allowed) * CV.MS_TO_MPH
             raw_distspeed = dist_diff / time_diff
