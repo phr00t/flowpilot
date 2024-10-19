@@ -64,7 +64,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
     return None
 
 
-def get_lead(v_ego, ready, clusters, lead_msg, vLeads, Dists, Stds, dStds, low_speed_override=True, model_v_ego, vEgos):
+def get_lead(v_ego, ready, clusters, lead_msg, vLeads, Dists, Stds, dStds, model_v_ego, vEgos, low_speed_override=True):
   # Determine leads, this is where the essential logic happens
   if len(clusters) > 0 and ready and lead_msg.prob > .5:
     cluster = match_vision_to_cluster(v_ego, lead_msg, clusters)
@@ -187,8 +187,8 @@ class RadarD():
       else:
         model_v_ego = self.v_ego
          
-      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], self.vLeads0, self.Dists0, self.vStds0, self.dStds0, low_speed_override=True, model_v_ego, self.vEgos0)
-      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], self.vLeads1, self.Dists1, self.vStds1, self.dStds1, low_speed_override=False, model_v_ego, self.vEgos1)
+      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], self.vLeads0, self.Dists0, self.vStds0, self.dStds0, model_v_ego, self.vEgos0, low_speed_override=True)
+      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], self.vLeads1, self.Dists1, self.vStds1, self.dStds1, model_v_ego, self.vEgos1, low_speed_override=False)
     return dat
 
 
