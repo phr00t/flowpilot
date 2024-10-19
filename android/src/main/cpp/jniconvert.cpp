@@ -831,11 +831,10 @@ Name: prev_desired_curv, Shape: [1, 100, 1], Size: 100, Offset: 787236
 Name: features_buffer, Shape: [1, 99, 512], Size: 50688, Offset: 787336
 
 Outputs:
-Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0 (notre dame)
+Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0
 
- {'output_slices':
- {'plan': slice(0, 4955, None),
- 'lane_lines': slice(4955, 5483, None),
+{'output_slices': {'plan': slice(0, 4955, None), 
+'lane_lines': slice(4955, 5483, None),
  'lane_lines_prob': slice(5483, 5491, None),
  'road_edges': slice(5491, 5755, None),
  'lead': slice(5755, 5857, None),
@@ -850,13 +849,9 @@ Name: outputs, Shape: [1, 6512], Size: 6512, Offset: 0 (notre dame)
  'desired_curvature': slice(5995, 5997, None),
  'hidden_state': slice(5997, -3, None),
  'pad': slice(-3, None, None)},
- 'input_shapes': {'input_imgs': (1, 12, 128, 256),
- 'big_input_imgs': (1, 12, 128, 256),
- 'desire': (1, 100, 8), 'traffic_convention':
- (1, 2), 'lateral_control_params': (1, 2),
- 'prev_desired_curv': (1, 100, 1),
- 'features_buffer': (1, 99, 512)},
- 'output_shapes': {'outputs': (1, 6512)}} <-- from notre dame, duck amigo is 6504
+ 'input_shapes': {'input_imgs': (1, 12, 128, 256), 'big_input_imgs': (1, 12, 128, 256), 'desire': (1, 100, 8),
+ 'traffic_convention': (1, 2), 'lateral_control_params': (1, 2), 'prev_desired_curv': (1, 100, 1),
+ 'features_buffer': (1, 99, 512)}, 'output_shapes': {'outputs': (1, 6512)}}
 
  DUCK AMIGO OUTPUT:
 
@@ -922,8 +917,8 @@ Name: outputs, Shape: [1, 6500], Size: 6500, Offset: 0
 
  */
 
-const int DESIRED_CURV_OFFSET = 5983;
-const int FEATURE_BUF_OFFSET = 5985;
+const int DESIRED_CURV_OFFSET = 5995;
+const int FEATURE_BUF_OFFSET = 5997;
 const int IMAGE_LEN = 393216;
 const int DESIRE_LEN = 800;
 const int TRAF_CONV_LEN = 2;

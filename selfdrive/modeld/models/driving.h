@@ -276,16 +276,16 @@ struct ModelOutput {
   const ModelOutputMeta meta;
   const ModelOutputPose pose;
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
-  //const ModelOutputTemporalPose temporal_pose; // removed for CDv2
+  const ModelOutputTemporalPose temporal_pose; // removed for CDv2, but here for notre dame
   const ModelOutputRoadTransform road_transform; // added after Nikki
   const LateralAction action; // LA-model thing (in replacement of NLP)
   const float padding, padding2;
 };
 
 const int MODEL_POSE_OFFSET = 5953;
-const int ROAD_TRANSFORM_OFFSET = 5971;
+const int ROAD_TRANSFORM_OFFSET = 5983;
 const int WIDE_DEVICE_EULER_OFFSET = 5965;
-const int DESIRED_CURV_OFFSET = 5983;
+const int DESIRED_CURV_OFFSET = 5995;
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 
 #ifdef TEMPORAL
@@ -293,7 +293,7 @@ constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE = 6500; //OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
+constexpr int NET_OUTPUT_SIZE = 6512; //OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
