@@ -10,18 +10,18 @@ from common.params import Params
 
 TRAJECTORY_SIZE = 33
 # positive numbers go right
-CAMERA_OFFSET = 0.07
-LANE_OFFSET = 0.135
+CAMERA_OFFSET = 0.05
+LANE_OFFSET = 0.14
 MIN_LANE_DISTANCE = 2.6
 MAX_LANE_DISTANCE = 3.7
 TYPICAL_MIN_LANE_DISTANCE = 2.7
 TYPICAL_MAX_LANE_DISTANCE = 3.4
-CENTER_FORCE_GENERAL_SCALE = 0.48
+CENTER_FORCE_GENERAL_SCALE = 0.5
 # higher offset means steering more right
-DESIRED_CURVE_OFFSET = 0.053
+DESIRED_CURVE_OFFSET = 0.055
 DESIRED_CURVE_TO_STEERANGLE_RATIO = -0.04
 # overall desire curve steer scale, set to 0 to disable using desired_curvature
-STEER_DISAGREEMENT_SCALE = 0.07
+STEER_DISAGREEMENT_SCALE = 0.077
 
 def clamp(num, min_value, max_value):
   # weird broken case, do something reasonable
@@ -240,7 +240,7 @@ class LanePlanner:
         ultimate_path_mix = lane_trust * interp(max_lane_width_seen, [4.0, 6.0], [1.0, 0.0])
 
       # max out at 50% model/lane system
-      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.8)
+      final_ultimate_path_mix = clamp(self.lane_change_multiplier * ultimate_path_mix, 0.0, 0.9)
 
       # now that we have steer_disagreement as a solid guide, we don't always need to rely on center_force
       # so, scale back center_force if we are not very confident in our lane lines
