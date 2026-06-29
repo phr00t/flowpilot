@@ -2,6 +2,7 @@ package ai.flow.app;
 
 import ai.flow.app.helpers.GifDecoder;
 import ai.flow.app.helpers.Utils;
+import ai.flow.common.OBDData;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
@@ -9,6 +10,7 @@ import ai.flow.common.utils;
 import ai.flow.definitions.CarDefinitions.CarControl.HUDControl.AudibleAlert;
 import ai.flow.definitions.Definitions;
 import ai.flow.modeld.CommonModelF3;
+import ai.flow.modeld.LeadDataV3;
 import ai.flow.modeld.ModelExecutor;
 import ai.flow.modeld.ModelExecutorF3;
 import ai.flow.modeld.ParsedOutputs;
@@ -127,6 +129,16 @@ public class OnRoadScreen extends ScreenAdapter {
     ScrollPane notificationScrollPane;
     ImageButton settingsButton;
     ParsedOutputs parsed = new ParsedOutputs();
+    // ELM327 advisory mode: openpilot can't control the car, so spoken cues are
+    // announced instead. Set once from the UseELM327 param.
+    boolean advisoryMode = false;
+    long lastLeadAdvisoryMs = 0;
+    long lastLaneDepartureMs = 0;
+    long lastCurveAdvisoryMs = 0;
+    // advisory tuning (conservative defaults; tune on-road)
+    static final float LANE_DEPARTURE_DIST_M = 1.0f;     // warn when an ego lane line is closer than this
+    static final float CURVE_YAW_RAD = 0.15f;            // ~8.6 deg predicted heading change => curve
+    static final int CURVE_LOOKAHEAD_IDX = 20;           // trajectory index (~2-3 s ahead)
     int canErrCount = 0;
     int canErrCountPrev = 0;
     int canMisses = 0;
@@ -415,6 +427,7 @@ public class OnRoadScreen extends ScreenAdapter {
         velocityUnitLabel = new Label("", appContext.skin, "default-font", "white");
         velocityUnitLabel.setColor(0.5f, 1f, 0.5f, 1f);
         isMetric = params.existsAndCompare("IsMetric", true);
+        advisoryMode = params.getBool("UseELM327");
 
         alertText1 = new Label("Flowpilot Unavailable", appContext.skin, "default-font-bold-med", "white");
         alertText2 = new Label("Waiting for controls to start", appContext.skin, "default-font", "white");
@@ -605,6 +618,76 @@ public class OnRoadScreen extends ScreenAdapter {
             //lead2s = Draw.getTriangleCameraFrame(parsed.leads.get(1), K, Rt, leadDrawScale);
             //lead3s = Draw.getTriangleCameraFrame(parsed.leads.get(2), K, Rt, leadDrawScale);
         }
+
+        if (advisoryMode)
+            runAdvisory();
+    }
+
+    // In ELM327 advisory mode openpilot cannot control the car, so it announces the actions
+    // it would take as spoken cues. These use the camera model output (always available
+    // without a panda) plus the ELM327 speed. Thresholds are conservative and may need
+    // on-road tuning; each cue is debounced so it speaks at most once every few seconds.
+    private void runAdvisory() {
+        long now = System.currentTimeMillis();
+        runLeadAdvisory(now);
+        runLaneDepartureAdvisory(now);
+        runCurveAdvisory(now);
+    }
+
+    // Longitudinal: warn about a close lead vehicle (would-be braking).
+    private void runLeadAdvisory(long now) {
+        LeadDataV3 lead = parsed.leads.get(0);
+        if (lead == null || lead.x == null || lead.x.length == 0 || lead.prob < 0.5f)
+            return;
+
+        float distM = lead.x[0];                          // distance to lead, meters
+        float egoMs = OBDData.speedKph / 3.6f;            // our speed from the ELM327, m/s
+        boolean moving = !Float.isNaN(egoMs) && egoMs > 2.0f;
+        float headwaySec = moving ? distM / egoMs : Float.MAX_VALUE;
+
+        if (distM < 12.0f || (moving && headwaySec < 1.4f)) {
+            if (now - lastLeadAdvisoryMs > 5000) {
+                appContext.hardwareManager.announce("Vehicle ahead, slow down");
+                lastLeadAdvisoryMs = now;
+            }
+        }
+    }
+
+    // Lateral: warn when the car drifts close to a high-confidence ego lane line (would-be
+    // lane-keeping correction). Only active above ~30 km/h, like a normal lane-departure warning.
+    private void runLaneDepartureAdvisory(long now) {
+        float egoMs = OBDData.speedKph / 3.6f;
+        if (Float.isNaN(egoMs) || egoMs < 8.3f)           // ~30 km/h
+            return;
+
+        // laneLines: 0=far-left, 1=left ego, 2=right ego, 3=far-right; get(1)[] is lateral y.
+        float distToLeft = parsed.laneLines.get(1).get(1)[0];     // +y is left
+        float distToRight = -parsed.laneLines.get(2).get(1)[0];   // right line y is negative
+
+        String drift = null;
+        if (parsed.laneLineProbs[1] > 0.5f && distToLeft < LANE_DEPARTURE_DIST_M)
+            drift = "Lane departure, drifting left";
+        else if (parsed.laneLineProbs[2] > 0.5f && distToRight < LANE_DEPARTURE_DIST_M)
+            drift = "Lane departure, drifting right";
+
+        if (drift != null && now - lastLaneDepartureMs > 4000) {
+            appContext.hardwareManager.announce(drift);
+            lastLaneDepartureMs = now;
+        }
+    }
+
+    // Lateral: warn about an upcoming curve (would-be steering) using the model's predicted
+    // heading change a couple of seconds ahead.
+    private void runCurveAdvisory(long now) {
+        float[] yaw = parsed.orientation.get(2);          // predicted yaw (rad) along the path
+        if (yaw == null || yaw.length <= CURVE_LOOKAHEAD_IDX)
+            return;
+
+        float futureYaw = yaw[CURVE_LOOKAHEAD_IDX];
+        if (Math.abs(futureYaw) > CURVE_YAW_RAD && now - lastCurveAdvisoryMs > 6000) {
+            appContext.hardwareManager.announce(futureYaw > 0 ? "Curve ahead on the left" : "Curve ahead on the right");
+            lastCurveAdvisoryMs = now;
+        }
     }
 
     public void handleSounds(Definitions.ControlsState.Reader controlState, AudibleAlert alert){
@@ -618,6 +701,14 @@ public class OnRoadScreen extends ScreenAdapter {
         if (currentAudibleAlert == alert)
             return;
         currentAudibleAlert = alert;
+
+        // In advisory mode, also speak openpilot's own alert text aloud (e.g. "Brake!",
+        // "Take Control") since the car isn't being controlled. Fires once per alert change.
+        if (advisoryMode && alert != AudibleAlert.NONE && controlState != null) {
+            String spoken = controlState.getAlertText1().toString();
+            if (spoken != null && !spoken.isEmpty())
+                appContext.hardwareManager.announce(spoken);
+        }
 
         for (AudibleAlert repeatAlerts : repeatingAlerts){
             soundAlerts.get(repeatAlerts).stop();

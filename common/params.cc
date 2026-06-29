@@ -64,6 +64,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SensitiveSlow", PERSISTENT},
     {"UseDistSpeed", PERSISTENT},
     {"UseModelPath", PERSISTENT},
+    {"UseELM327", PERSISTENT},
     {"IsLdwEnabled", PERSISTENT},
     {"IsRHD", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},

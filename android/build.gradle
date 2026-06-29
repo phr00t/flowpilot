@@ -2,7 +2,8 @@ apply plugin: 'com.android.application'
 
 android {
 	compileSdkVersion 34
-	ndkVersion "21.1.6352462"
+	buildToolsVersion "34.0.0"
+	ndkVersion "27.1.12297006"
 	sourceSets {
 		main {
 			manifest.srcFile 'AndroidManifest.xml'

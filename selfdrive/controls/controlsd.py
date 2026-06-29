@@ -125,6 +125,13 @@ class Controls:
 
     controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
     self.read_only = not car_recognized or not controller_available or self.CP.dashcamOnly
+
+    # ELM327 (Bluetooth OBD-II) is a diagnostic-only adapter: it cannot send the control
+    # CAN frames openpilot needs, so force read-only mode and never allow engagement when
+    # the user has selected it. See android ELM327Manager / OBDDiagnosticScreen.
+    if self.params.get_bool("UseELM327"):
+      self.read_only = True
+
     if self.read_only:
       safety_config = car.CarParams.SafetyConfig.new_message()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput

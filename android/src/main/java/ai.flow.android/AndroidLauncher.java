@@ -1,6 +1,7 @@
 package ai.flow.android;
 
 import ai.flow.android.sensor.CameraManager;
+import ai.flow.android.sensor.ELM327Manager;
 import ai.flow.android.sensor.SensorManager;
 import ai.flow.android.vision.ONNXModelRunner;
 import ai.flow.android.vision.SNPEModelRunner;
@@ -9,15 +10,16 @@ import ai.flow.app.FlowUI;
 import ai.flow.common.ParamsInterface;
 import ai.flow.common.Path;
 import ai.flow.common.transformations.Camera;
-import ai.flow.common.transformations.Model;
 import ai.flow.common.utils;
 import ai.flow.hardware.HardwareManager;
 import ai.flow.launcher.Launcher;
 import ai.flow.modeld.*;
 import ai.flow.sensor.SensorInterface;
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Process;
 import android.os.*;
 import android.provider.Settings;
@@ -39,8 +41,6 @@ import com.termux.shared.termux.TermuxConstants;
 import org.acra.ACRA;
 import org.acra.ErrorReporter;
 import org.jetbrains.annotations.NotNull;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -77,23 +77,10 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			Camera.CenterY = numbers[3];
 			Camera.UseCameraID = (int)numbers[4];
 
-			// recalculate values using loaded new stuff
-			Camera.actual_cam_focal_length = (Camera.FocalX + Camera.FocalY) * 0.5f;
-			Camera.digital_zoom_apply = Camera.actual_cam_focal_length / (utils.F2 ? Model.MEDMODEL_F2_FL : Model.MEDMODEL_FL);
-			Camera.OffsetX = Camera.CenterX - (Camera.frameSize[0]*0.5f);
-			Camera.OffsetY = Camera.CenterY - (Camera.frameSize[1]*0.5f);
-
-			Camera.CameraIntrinsics = new float[] {
-					Camera.FocalX, 0.0f, Camera.frameSize[0] * 0.5f + Camera.OffsetX * Camera.digital_zoom_apply,
-					0.0f, Camera.FocalY, Camera.frameSize[1] * 0.5f + Camera.OffsetY * Camera.digital_zoom_apply,
-					0.0f,   0.0f, 1.0f
-			};
-
-			Camera.cam_intrinsics = Nd4j.createFromArray(new float[][]{
-					{ Camera.CameraIntrinsics[0],  0.0f,  Camera.CameraIntrinsics[2]},
-					{0.0f,  Camera.CameraIntrinsics[4],  Camera.CameraIntrinsics[5]},
-					{0.0f,  0.0f,  1.0f}
-			});
+			// recalculate the derived values using the loaded intrinsics and flag
+			// them as user-provided so they aren't overwritten by auto-detection.
+			Camera.updateIntrinsics();
+			Camera.intrinsicsLoadedFromFile = true;
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -148,6 +135,15 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 
 		// get camera intrinsics from file if they exist
 		LoadIntrinsicsFromFile();
+
+		// Optional read-only OBD-II diagnostics via a Bluetooth ELM327 adapter. This is a
+		// DIAGNOSTIC tool only, not a comma-device/panda replacement: it never enters the
+		// control path and openpilot engagement stays disabled (see controlsd.py UseELM327).
+		ai.flow.common.OBDData.enabled = params.getBool("UseELM327");
+		if (params.getBool("UseELM327")) {
+			requestBluetoothPermission();
+			new ELM327Manager(appContext).start();
+		}
 
 		AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
 		CameraManager cameraManager, cameraManagerWide = null;
@@ -244,6 +240,15 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 			return true;
 		}
 		return false;
+	}
+
+	// Android 12+ requires the BLUETOOTH_CONNECT runtime permission to talk to a paired
+	// ELM327 adapter. Request it best-effort; the ELM327Manager retries connecting until granted.
+	private void requestBluetoothPermission() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+				&& checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+			requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 1001);
+		}
 	}
 
 	@Override

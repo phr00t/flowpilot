@@ -24,6 +24,7 @@ import android.hardware.camera2.params.TonemapCurve;
 import android.os.Build;
 import android.util.Range;
 import android.util.Size;
+import android.util.SizeF;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
@@ -88,7 +89,12 @@ public class CameraManager extends SensorInterface {
         OnRoadScreen.CamSelected = Camera.UseCameraID;
         if (wide || Camera.UseCameraID != 0) {
             List<CameraInfo> availableCamerasInfo = cameraProvider.getAvailableCameraInfos();
-            return availableCamerasInfo.get(OnRoadScreen.CamSelected).getCameraSelector();
+            // The default camera index is tuned for the LG G8. Other phones may
+            // expose a different number of cameras, so guard against picking an
+            // index that doesn't exist and fall back to the default back camera.
+            if (OnRoadScreen.CamSelected >= 0 && OnRoadScreen.CamSelected < availableCamerasInfo.size())
+                return availableCamerasInfo.get(OnRoadScreen.CamSelected).getCameraSelector();
+            OnRoadScreen.CamSelected = 0;
         }
 
         return new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
@@ -299,9 +305,49 @@ public class CameraManager extends SensorInterface {
         camera = cameraProvider.bindToLifecycle(lifeCycleFragment.getViewLifecycleOwner(), cameraSelector, imageAnalysis);
 
         cameraControl = camera.getCameraControl();
-        cameraControl.setZoomRatio(Camera.digital_zoom_apply);
         c2control = Camera2CameraControl.from(cameraControl);
         c2info = Camera2CameraInfo.from(camera.getCameraInfo());
+
+        // The bundled defaults are calibrated for the LG G8. On other phones the
+        // focal length differs, so derive the intrinsics from the actual camera
+        // hardware (unless the user supplied a camerainfo override file).
+        if (!Camera.intrinsicsLoadedFromFile)
+            updateIntrinsicsFromCamera();
+
+        cameraControl.setZoomRatio(Camera.digital_zoom_apply);
+    }
+
+    // Estimate the camera intrinsics (focal length in pixels and principal point)
+    // from the bound camera's hardware characteristics. This lets flowpilot run on
+    // Android phones other than the LG G8 it was originally tuned for, without
+    // requiring a manual camerainfo file.
+    @SuppressLint({"RestrictedApi", "UnsafeOptInUsageError"})
+    private void updateIntrinsicsFromCamera() {
+        // The LG G8 defaults are already known-good, so leave them untouched.
+        if (Build.MANUFACTURER != null && Build.MANUFACTURER.toLowerCase().contains("lg"))
+            return;
+        try {
+            float[] focalLengths = c2info.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+            SizeF physicalSize = c2info.getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+            if (focalLengths == null || focalLengths.length == 0 || physicalSize == null || physicalSize.getWidth() <= 0f)
+                return;
+
+            // Our analysis stream is 16:9 cropped from the (usually 4:3) sensor while
+            // keeping the full sensor width, so pixels-per-mm is set by the width.
+            float pixelsPerMm = W / physicalSize.getWidth();
+            float focalPx = focalLengths[0] * pixelsPerMm;
+
+            Camera.FocalX = focalPx;
+            Camera.FocalY = focalPx;
+            // assume the principal point sits at the image center
+            Camera.CenterX = W * 0.5f;
+            Camera.CenterY = H * 0.5f;
+            Camera.updateIntrinsics();
+
+            params.put("DeviceCameraFocalPx", Integer.toString(Math.round(focalPx)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean isRunning() {

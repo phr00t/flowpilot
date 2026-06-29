@@ -34,7 +34,7 @@ public class SettingsScreen extends ScreenAdapter {
     TextButton buttonDevice, buttonCalibrate, buttonWideCalibrate, buttonCalibrateExtrinsic,
             buttonTraining, buttonPowerOff, buttonReboot, buttonSoftware,
             buttonUninstall, buttonToggle, buttonCheckUpdate, buttonLogOut,
-            buttonVehicles;
+            buttonVehicles, buttonOBD;
     ImageButton closeButton;
     SelectBox<String> carBrandSelectBox;
     SpriteBatch batch;
@@ -81,7 +81,10 @@ public class SettingsScreen extends ScreenAdapter {
         addKeyValueTable(currentSettingTable, "Device Manufacturer", deviceManufacturer, true);
         String deviceModel = params.exists("DeviceModel") ? params.getString("DeviceModel") : "";
         addKeyValueTable(currentSettingTable, "Device Name", deviceModel, true);
+        if (params.exists("DeviceCameraFocalPx"))
+            addKeyValueTable(currentSettingTable, "Camera Focal Length (px)", params.getString("DeviceCameraFocalPx"), true);
         addKeyValueTable(currentSettingTable, "Log Out", buttonLogOut, true);
+        addKeyValueTable(currentSettingTable, "OBD-II Diagnostics (ELM327)", buttonOBD, true);
         addKeyValueTable(currentSettingTable, "Reset Extrinsic Calibration", buttonCalibrateExtrinsic, true);
         addKeyValueTable(currentSettingTable, "Review Training Guide", buttonTraining, true);
         currentSettingTable.add(buttonReboot).pad(20);
@@ -137,6 +140,11 @@ public class SettingsScreen extends ScreenAdapter {
         AdditionalToggles.add("SensitiveSlow");
         AdditionalToggles.add("Always Use Model Path");
         AdditionalToggles.add("UseModelPath");
+        // ELM327 Bluetooth OBD-II adapter: read-only diagnostics ONLY. Enabling this does
+        // NOT enable driving features (no steering/gas/brake, no engagement) - it forces
+        // openpilot into read-only mode. See OBDDiagnosticScreen for details/warning.
+        AdditionalToggles.add("Use ELM327 OBD (Diagnostic Only)");
+        AdditionalToggles.add("UseELM327");
 
         stage = new Stage(new FitViewport(1280, 720));
         batch = new SpriteBatch();
@@ -249,6 +257,14 @@ public class SettingsScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 appContext.setScreen(new TrainingScreen(appContext));
+            }
+        });
+
+        buttonOBD = getPaddedButton("OPEN", appContext.skin, 5);
+        buttonOBD.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                appContext.setScreen(new OBDDiagnosticScreen(appContext));
             }
         });
 
